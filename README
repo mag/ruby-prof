@@ -1,0 +1,31 @@
+= README for ruby-prof
+
+== Overview
+
+ruby-prof is a profiler for Ruby.
+
+== Install
+
+  $ ruby extconf.rb
+  $ make
+  # make install
+
+== Usage
+
+Please require unprof.rb to run the profiler.
+
+  $ ruby -runprof foo.rb
+
+You can specify the clock mode by the RUBY_PROF_CLOCK_MODE environment variable.
+
+ $ export RUBY_PROF_CLOCK_MODE=gettimeofday
+
+Valid options are:
+
+: clock
+    use clock(3). This is default.
+: gettimeofday
+    use gettimeofday(2).
+: cpu
+    use the CPU clock counter like RDTSC on Pentium.
+    This mode is supported on Pentium or PowerPC only.
