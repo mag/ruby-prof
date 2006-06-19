@@ -308,6 +308,8 @@ stack_peek(prof_stack_t *stack)
 /* -- Hash keyed on calss/method_id to hold information
       about each method ---- */
 typedef struct {
+    /* Store precomputed hash to save lookup time. */
+    int hash;
     VALUE klass;
     ID mid;
 } minfo_t;
@@ -315,13 +317,13 @@ typedef struct {
 static int
 minfo_cmp(minfo_t *x, minfo_t *y)
 {
-    return x->klass != y->klass || x->mid != y->mid;
+    return x->hash != y->hash;
 }
 
 static int
 minfo_hash(minfo_t *m)
 {
-    return m->klass ^ m->mid;
+    return m->hash;
 }
 
 static VALUE
@@ -399,6 +401,8 @@ minfo_table_insert(st_table *table, VALUE klass, ID mid, prof_method_t *val)
     key = ALLOC(minfo_t);
     key->klass = klass;
     key->mid = mid;
+    key->hash = klass ^ mid;
+
     return st_insert(table, (st_data_t ) key, (st_data_t) val);
 }
 
