@@ -1,0 +1,17 @@
+
+0.4.0 (2006-06-16)
+========================
+Features
+--------
+* added support for call graphs
+* added support for printers.  Currently there is a FlatPrinter,
+  GraphPrinter and GraphHtmlPrinter.
+* added support for recursive methods
+* added Windows support
+* now packaged as a RubyGem
+
+Fixes
+-------
+* Fixes bug where RubyProf would crash depending on the
+  way it was invoked - for example, it did not run when
+  used with Arachno Ruby's customized version of Ruby.
