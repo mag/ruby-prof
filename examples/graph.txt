@@ -120,6 +120,14 @@ All values are in seconds.  For the primary line, the columns represent:
 	self         - The time spent in this method.
 	children     - The time spent in this method's children.
   calls        - The number of times this method was called.
+  name         - The name of the method.
+  
+The interpretation of method names is:
+* #toplevel - The root method that calls all other methods
+* Object#test - An instance method "test" on the class "Object"
+* <Class:Object>#test - A class method "test" on the class "Object"
+* <Object:Object>#test - A singleton method "test" on a singleton class inherited from "Object"
+* Module.test - An instance method "test" on the module "Module"
 
 For example, we see that 99.48% of the time was spent in Integer#upto and its children.
 Of that time, 4.06 seconds was spent in Integer#upto itself and 4.66 in its children.
