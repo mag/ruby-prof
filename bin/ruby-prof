@@ -1,0 +1,119 @@
+#! /usr/bin/env ruby
+
+# == Synopsis
+#
+# Profiles a Ruby program.
+#
+# == Usage
+#
+# ruby_prof [options] <script.rb> [--extra-options-for-script]
+#
+# Options:
+#     -p, --printer=printer            Select a printer:
+#                                        flat - Prints a flat profile as text.
+#                                        graph - Prints a graph profile as text.
+#                                        graph_html - Prints a graph profile as html.
+#     -f, --file=path                  Output results to a file instead of standard out.
+#     -c, --clock-mode=clock_mode      Select a clock mode:
+#                                        clock - Use clock. This is default.
+#                                        gettimeofday - Use gettimeofday.
+#                                        cpu - Use the CPU clock counter
+#                                              (only supported on Pentium and PowerPCs).
+#     -h, --help                       Show help message
+#         --version                    Show version
+# 
+#
+# See also: {flat profiles}[link:files/examples/flat_txt.html], {graph profiles}[link:files/examples/graph_txt.html], {html graph profiles}[link:files/examples/graph_html.html]
+#
+
+
+require 'ostruct'
+require 'optparse'
+require 'ruby-prof'
+
+options = OpenStruct.new
+options.clock_mode = :clock
+options.printer = RubyProf::GraphPrinter
+options.file = nil
+
+opts = OptionParser.new do |opts|
+	opts.banner = "ruby_prof #{RubyProf::VERSION}\n" +
+	              "Usage: ruby_prof [options] <script.rb> [--extra-options-for-script]"
+ 
+	opts.separator ""
+	opts.separator "Options:"
+
+		
+	opts.on('-p printer', '--printer=printer', [:flat, :graph, :graph_html],
+					'Select a printer:',
+					'  flat - Prints a flat profile as text.',
+					'  graph - Prints a graph profile as text.',
+					'  graph_html - Prints a graph profile as html.') do |printer|
+		options.printer = printer
+	end
+		
+	opts.on('-f path', '--file=path',
+				'Output results to a file instead of standard out.') do |file|
+		options.file = file
+	end
+		
+	opts.on('-c clock_mode', '--clock-mode=clock_mode',
+			[:clock, :gettimeofday, :cpu],
+			'Select a clock mode:',
+			'  clock - Use clock. This is default.',
+			'  gettimeofday - Use gettimeofday.',
+			'  cpu - Use the CPU clock counter',
+			'        (only supported on Pentium and PowerPCs).') do |clock_mode|
+		options.clock_mode = clock_mode
+	end
+		
+	opts.on_tail("-h", "--help", "Show help message") do
+			puts opts
+			exit
+	end
+    
+	opts.on_tail("--version", "Show version") do
+			puts "ruby_prof " + RubyProf::VERSION
+			exit
+	end
+end
+
+begin
+	opts.parse! ARGV
+rescue OptionParser::InvalidOption, OptionParser::InvalidArgument,
+       OptionParser::MissingArgument => e
+	puts opts
+  puts
+  puts e.message
+  exit(-1)
+end
+
+# Make sure the user specified at least one file
+if ARGV.length < 1
+	puts opts
+	puts ""
+	puts "Must specify a script to run"
+  exit(-1)
+end
+
+# Get the scripts, then replace ARGV
+script = ARGV.shift
+
+# Start profiling
+result = RubyProf.profile do 
+  load script
+end
+
+begin
+	if options.file
+		output = File.open(options.file, 'w')
+	else
+  	output = STDOUT
+	end
+
+	# Print out the result
+	printer = options.printer.new(result)
+	printer.print(output)
+ensure
+	output.close
+end

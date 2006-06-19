@@ -1,0 +1,1268 @@
+Loaded suite printers_test
+Started
+Thread ID: 21277412
+ %self  cumulative  total     self   children  calls self/call total/call  name
+ 50.11     4.92      9.78     4.92     4.86      501     0.01     0.02     Integer#upto
+ 19.07     6.80      1.87     1.87     0.00   339268     0.00     0.00     Fixnum#==
+ 17.14     8.48      1.69     1.69     0.00   339268     0.00     0.00     Fixnum#%
+ 13.20     9.78      1.30     1.30     0.00       63     0.02     0.02     Kernel.sleep
+  0.16     9.80      0.03     0.02     0.01        1     0.02     0.03     Array#each_index
+  0.16     9.81      0.02     0.02     0.00      501     0.00     0.00     Fixnum#-
+  0.15     9.83      0.01     0.01     0.00      500     0.00     0.00     Kernel.rand
+  0.00     9.83      0.00     0.00     0.00        1     0.00     0.00     Array#length
+  0.00     9.83      0.00     0.00     0.00        1     0.00     0.00     Array#first
+  0.00     9.83      8.50     0.00     8.50        1     0.00     8.50     Array#select
+  0.00     9.83      0.00     0.00     0.00        1     0.00     0.00     Array#initialize
+  0.00     9.83      9.83     0.00     9.83        1     0.00     9.83     Object#run_primes
+  0.00     9.83      0.00     0.00     0.00        1     0.00     0.00     Integer#to_int
+  0.00     9.83      8.50     0.00     8.50        1     0.00     8.50     Object#find_primes
+  0.00     9.83      1.30     0.00     1.30        1     0.00     1.30     Object#find_largest
+  0.00     9.83      0.03     0.00     0.03        1     0.00     0.03     Object#make_random_array
+  0.00     9.83      8.50     0.00     8.50      500     0.00     0.02     Object#is_prime
+  0.00     9.83      0.00     0.00     0.00        1     0.00     0.00     Class#new
+  0.00     9.83      0.00     0.00     0.00       63     0.00     0.00     Fixnum#>
+  0.00     9.83      0.00     0.00     0.00       63     0.00     0.00     Array#[]
+  0.00     9.83      9.83     0.00     9.83        1     0.00     9.83     #toplevel
+  0.00     9.83      0.00     0.00     0.00      500     0.00     0.00     Array#[]=
+
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <style media="all" type="text/css">
+    table {
+	    border-collapse: collapse;
+	    border: 1px solid #CCC;
+	    font-family: Verdana, Arial, Helvetica, sans-serif;
+	    font-size: 9pt;
+	    line-height: normal;
+    }
+
+    th {
+	    text-align: center;
+	    border-top: 1px solid #FB7A31;
+	    border-bottom: 1px solid #FB7A31;
+	    background: #FFC;
+	    padding: 0.3em;
+	    border-left: 1px solid silver;
+    }
+
+		tr.break td {
+		  border: 0;
+	    border-top: 1px solid #FB7A31;
+			padding: 0;
+			margin: 0;
+		}
+
+    tr.method td {
+			font-weight: bold;
+    }
+
+    td {
+	    padding: 0.3em;
+    }
+
+    td:first-child {
+	    width: 190px;
+	    }
+
+    td {
+	    border-left: 1px solid #CCC;
+	    text-align: center;
+    }	
+  </style>
+	</head>
+	<body>
+		<h1>Profile Report</h1>
+		<!-- Threads Table -->
+		<table>
+			<tr>
+				<th>Thread ID</th>
+				<th>Total Time</th>
+			</tr>
+			
+			<tr>
+				<td><a href="#21277412">21277412</a></td>
+				<td>9.828</td>
+			</tr>
+			
+		</table>
+
+		<!-- Methods Tables -->
+		
+			<a name="21277412"><h2>Thread 21277412</h2></a>
+
+			<table>
+				<tr>
+					<th>  %Total</th>
+					<th>   %Self</th>
+					<th>     Total</th>
+					<th>      Self</th>
+					<th>    Children</th>
+					<th>               Calls</th>
+					<th>Name</th>
+				</tr>
+
+				
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						
+
+						<tr class="method">
+							<td> 100.00%</td>
+							<td>   0.00%</td>
+							<td>      9.83</td>
+							<td>      0.00</td>
+							<td>      9.83</td>
+							<td>                   1</td>
+							<td><a name="_toplevel_21277412">#toplevel</a></td>
+						</tr>
+
+						<!-- Children -->
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      9.83</td>
+								<td>      0.00</td>
+								<td>      9.83</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Object_run_primes_21277412">Object#run_primes</a></td>
+							</tr>
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      9.83</td>
+								<td>      0.00</td>
+								<td>      9.83</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#_toplevel_21277412">#toplevel</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td> 100.00%</td>
+							<td>   0.00%</td>
+							<td>      9.83</td>
+							<td>      0.00</td>
+							<td>      9.83</td>
+							<td>                   1</td>
+							<td><a name="Object_run_primes_21277412">Object#run_primes</a></td>
+						</tr>
+
+						<!-- Children -->
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.03</td>
+								<td>      0.00</td>
+								<td>      0.03</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Object_make_random_array_21277412">Object#make_random_array</a></td>
+							</tr>
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      1.30</td>
+								<td>      0.00</td>
+								<td>      1.30</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Object_find_largest_21277412">Object#find_largest</a></td>
+							</tr>
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      8.50</td>
+								<td>      0.00</td>
+								<td>      8.50</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Object_find_primes_21277412">Object#find_primes</a></td>
+							</tr>
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      8.48</td>
+								<td>      4.92</td>
+								<td>      3.56</td>
+								
+								<td>             500/501</td>
+								<td><a href="#Object_is_prime_21277412">Object#is_prime</a></td>
+							</tr>
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      1.30</td>
+								<td>      0.00</td>
+								<td>      1.30</td>
+								
+								<td>               1/501</td>
+								<td><a href="#Object_find_largest_21277412">Object#find_largest</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>  99.52%</td>
+							<td>  50.11%</td>
+							<td>      9.78</td>
+							<td>      4.92</td>
+							<td>      4.86</td>
+							<td>                 501</td>
+							<td><a name="Integer_upto_21277412">Integer#upto</a></td>
+						</tr>
+
+						<!-- Children -->
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>               63/63</td>
+								<td><a href="#Array_[]_21277412">Array#[]</a></td>
+							</tr>
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>               63/63</td>
+								<td><a href="#Fixnum_>_21277412">Fixnum#></a></td>
+							</tr>
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      1.30</td>
+								<td>      1.30</td>
+								<td>      0.00</td>
+								
+								<td>               63/63</td>
+								<td><a href="#Kernel_sleep_21277412">Kernel.sleep</a></td>
+							</tr>
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      1.87</td>
+								<td>      1.87</td>
+								<td>      0.00</td>
+								
+								<td>       339268/339268</td>
+								<td><a href="#Fixnum____21277412">Fixnum#==</a></td>
+							</tr>
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      1.69</td>
+								<td>      1.69</td>
+								<td>      0.00</td>
+								
+								<td>       339268/339268</td>
+								<td><a href="#Fixnum_%_21277412">Fixnum#%</a></td>
+							</tr>
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      8.50</td>
+								<td>      0.00</td>
+								<td>      8.50</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Object_find_primes_21277412">Object#find_primes</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>  86.49%</td>
+							<td>   0.00%</td>
+							<td>      8.50</td>
+							<td>      0.00</td>
+							<td>      8.50</td>
+							<td>                   1</td>
+							<td><a name="Array_select_21277412">Array#select</a></td>
+						</tr>
+
+						<!-- Children -->
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      8.50</td>
+								<td>      0.00</td>
+								<td>      8.50</td>
+								
+								<td>             500/500</td>
+								<td><a href="#Object_is_prime_21277412">Object#is_prime</a></td>
+							</tr>
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      8.50</td>
+								<td>      0.00</td>
+								<td>      8.50</td>
+								
+								<td>             500/500</td>
+								<td><a href="#Array_select_21277412">Array#select</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>  86.49%</td>
+							<td>   0.00%</td>
+							<td>      8.50</td>
+							<td>      0.00</td>
+							<td>      8.50</td>
+							<td>                 500</td>
+							<td><a name="Object_is_prime_21277412">Object#is_prime</a></td>
+						</tr>
+
+						<!-- Children -->
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.02</td>
+								<td>      0.02</td>
+								<td>      0.00</td>
+								
+								<td>             500/501</td>
+								<td><a href="#Fixnum_-_21277412">Fixnum#-</a></td>
+							</tr>
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      8.48</td>
+								<td>      4.92</td>
+								<td>      3.56</td>
+								
+								<td>             500/501</td>
+								<td><a href="#Integer_upto_21277412">Integer#upto</a></td>
+							</tr>
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      8.50</td>
+								<td>      0.00</td>
+								<td>      8.50</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Object_run_primes_21277412">Object#run_primes</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>  86.49%</td>
+							<td>   0.00%</td>
+							<td>      8.50</td>
+							<td>      0.00</td>
+							<td>      8.50</td>
+							<td>                   1</td>
+							<td><a name="Object_find_primes_21277412">Object#find_primes</a></td>
+						</tr>
+
+						<!-- Children -->
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      8.50</td>
+								<td>      0.00</td>
+								<td>      8.50</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Array_select_21277412">Array#select</a></td>
+							</tr>
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      1.87</td>
+								<td>      1.87</td>
+								<td>      0.00</td>
+								
+								<td>       339268/339268</td>
+								<td><a href="#Integer_upto_21277412">Integer#upto</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>  19.07%</td>
+							<td>  19.07%</td>
+							<td>      1.87</td>
+							<td>      1.87</td>
+							<td>      0.00</td>
+							<td>              339268</td>
+							<td><a name="Fixnum____21277412">Fixnum#==</a></td>
+						</tr>
+
+						<!-- Children -->
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      1.69</td>
+								<td>      1.69</td>
+								<td>      0.00</td>
+								
+								<td>       339268/339268</td>
+								<td><a href="#Integer_upto_21277412">Integer#upto</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>  17.14%</td>
+							<td>  17.14%</td>
+							<td>      1.69</td>
+							<td>      1.69</td>
+							<td>      0.00</td>
+							<td>              339268</td>
+							<td><a name="Fixnum_%_21277412">Fixnum#%</a></td>
+						</tr>
+
+						<!-- Children -->
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      1.30</td>
+								<td>      1.30</td>
+								<td>      0.00</td>
+								
+								<td>               63/63</td>
+								<td><a href="#Integer_upto_21277412">Integer#upto</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>  13.20%</td>
+							<td>  13.20%</td>
+							<td>      1.30</td>
+							<td>      1.30</td>
+							<td>      0.00</td>
+							<td>                  63</td>
+							<td><a name="Kernel_sleep_21277412">Kernel.sleep</a></td>
+						</tr>
+
+						<!-- Children -->
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      1.30</td>
+								<td>      0.00</td>
+								<td>      1.30</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Object_run_primes_21277412">Object#run_primes</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>  13.20%</td>
+							<td>   0.00%</td>
+							<td>      1.30</td>
+							<td>      0.00</td>
+							<td>      1.30</td>
+							<td>                   1</td>
+							<td><a name="Object_find_largest_21277412">Object#find_largest</a></td>
+						</tr>
+
+						<!-- Children -->
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>               1/501</td>
+								<td><a href="#Fixnum_-_21277412">Fixnum#-</a></td>
+							</tr>
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      1.30</td>
+								<td>      0.00</td>
+								<td>      1.30</td>
+								
+								<td>               1/501</td>
+								<td><a href="#Integer_upto_21277412">Integer#upto</a></td>
+							</tr>
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Array_first_21277412">Array#first</a></td>
+							</tr>
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Array_length_21277412">Array#length</a></td>
+							</tr>
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.03</td>
+								<td>      0.00</td>
+								<td>      0.03</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Object_run_primes_21277412">Object#run_primes</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>   0.32%</td>
+							<td>   0.00%</td>
+							<td>      0.03</td>
+							<td>      0.00</td>
+							<td>      0.03</td>
+							<td>                   1</td>
+							<td><a name="Object_make_random_array_21277412">Object#make_random_array</a></td>
+						</tr>
+
+						<!-- Children -->
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.03</td>
+								<td>      0.02</td>
+								<td>      0.01</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Array_each_index_21277412">Array#each_index</a></td>
+							</tr>
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Class_new_21277412">Class#new</a></td>
+							</tr>
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.03</td>
+								<td>      0.02</td>
+								<td>      0.01</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Object_make_random_array_21277412">Object#make_random_array</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>   0.32%</td>
+							<td>   0.16%</td>
+							<td>      0.03</td>
+							<td>      0.02</td>
+							<td>      0.01</td>
+							<td>                   1</td>
+							<td><a name="Array_each_index_21277412">Array#each_index</a></td>
+						</tr>
+
+						<!-- Children -->
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.01</td>
+								<td>      0.01</td>
+								<td>      0.00</td>
+								
+								<td>             500/500</td>
+								<td><a href="#Kernel_rand_21277412">Kernel.rand</a></td>
+							</tr>
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>             500/500</td>
+								<td><a href="#Array_[]__21277412">Array#[]=</a></td>
+							</tr>
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.02</td>
+								<td>      0.02</td>
+								<td>      0.00</td>
+								
+								<td>             500/501</td>
+								<td><a href="#Object_is_prime_21277412">Object#is_prime</a></td>
+							</tr>
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>               1/501</td>
+								<td><a href="#Object_find_largest_21277412">Object#find_largest</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>   0.16%</td>
+							<td>   0.16%</td>
+							<td>      0.02</td>
+							<td>      0.02</td>
+							<td>      0.00</td>
+							<td>                 501</td>
+							<td><a name="Fixnum_-_21277412">Fixnum#-</a></td>
+						</tr>
+
+						<!-- Children -->
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.01</td>
+								<td>      0.01</td>
+								<td>      0.00</td>
+								
+								<td>             500/500</td>
+								<td><a href="#Array_each_index_21277412">Array#each_index</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>   0.15%</td>
+							<td>   0.15%</td>
+							<td>      0.01</td>
+							<td>      0.01</td>
+							<td>      0.00</td>
+							<td>                 500</td>
+							<td><a name="Kernel_rand_21277412">Kernel.rand</a></td>
+						</tr>
+
+						<!-- Children -->
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Integer_to_int_21277412">Integer#to_int</a></td>
+							</tr>
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Kernel_rand_21277412">Kernel.rand</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>   0.00%</td>
+							<td>   0.00%</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>                   1</td>
+							<td><a name="Integer_to_int_21277412">Integer#to_int</a></td>
+						</tr>
+
+						<!-- Children -->
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Object_find_largest_21277412">Object#find_largest</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>   0.00%</td>
+							<td>   0.00%</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>                   1</td>
+							<td><a name="Array_first_21277412">Array#first</a></td>
+						</tr>
+
+						<!-- Children -->
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Class_new_21277412">Class#new</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>   0.00%</td>
+							<td>   0.00%</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>                   1</td>
+							<td><a name="Array_initialize_21277412">Array#initialize</a></td>
+						</tr>
+
+						<!-- Children -->
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Object_find_largest_21277412">Object#find_largest</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>   0.00%</td>
+							<td>   0.00%</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>                   1</td>
+							<td><a name="Array_length_21277412">Array#length</a></td>
+						</tr>
+
+						<!-- Children -->
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>               63/63</td>
+								<td><a href="#Integer_upto_21277412">Integer#upto</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>   0.00%</td>
+							<td>   0.00%</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>                  63</td>
+							<td><a name="Fixnum_>_21277412">Fixnum#></a></td>
+						</tr>
+
+						<!-- Children -->
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>               63/63</td>
+								<td><a href="#Integer_upto_21277412">Integer#upto</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>   0.00%</td>
+							<td>   0.00%</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>                  63</td>
+							<td><a name="Array_[]_21277412">Array#[]</a></td>
+						</tr>
+
+						<!-- Children -->
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Object_make_random_array_21277412">Object#make_random_array</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>   0.00%</td>
+							<td>   0.00%</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>                   1</td>
+							<td><a name="Class_new_21277412">Class#new</a></td>
+						</tr>
+
+						<!-- Children -->
+						 
+							
+							
+
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>                 1/1</td>
+								<td><a href="#Array_initialize_21277412">Array#initialize</a></td>
+							</tr>
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+					
+					
+					
+					
+						<!-- Parents -->
+						 
+							<tr>
+								<td>&nbsp;</td>
+								<td>&nbsp;</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								<td>      0.00</td>
+								
+								<td>             500/500</td>
+								<td><a href="#Array_each_index_21277412">Array#each_index</a></td>
+							</tr>
+						
+
+						<tr class="method">
+							<td>   0.00%</td>
+							<td>   0.00%</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>      0.00</td>
+							<td>                 500</td>
+							<td><a name="Array_[]__21277412">Array#[]=</a></td>
+						</tr>
+
+						<!-- Children -->
+						
+						<!-- Create divider row -->
+						<tr class="break"><td colspan="7"></td></tr>
+				
+			</table>
+		
+	</body>
+</html>Thread ID: 21277412
+  %total   %self     total      self    children               calls   Name
+--------------------------------------------------------------------------------
+ 100.00%   0.00%      9.83      0.00      9.83                   1     #toplevel
+                      9.83      0.00      9.83                 1/1     Object#run_primes
+--------------------------------------------------------------------------------
+                      9.83      0.00      9.83                 1/1     #toplevel
+ 100.00%   0.00%      9.83      0.00      9.83                   1     Object#run_primes
+                      0.03      0.00      0.03                 1/1     Object#make_random_array
+                      1.30      0.00      1.30                 1/1     Object#find_largest
+                      8.50      0.00      8.50                 1/1     Object#find_primes
+--------------------------------------------------------------------------------
+                      8.48      4.92      3.56             500/501     Object#is_prime
+                      1.30      0.00      1.30               1/501     Object#find_largest
+  99.52%  50.11%      9.78      4.92      4.86                 501     Integer#upto
+                      0.00      0.00      0.00               63/63     Array#[]
+                      0.00      0.00      0.00               63/63     Fixnum#>
+                      1.30      1.30      0.00               63/63     Kernel.sleep
+                      1.87      1.87      0.00       339268/339268     Fixnum#==
+                      1.69      1.69      0.00       339268/339268     Fixnum#%
+--------------------------------------------------------------------------------
+                      8.50      0.00      8.50                 1/1     Object#find_primes
+  86.49%   0.00%      8.50      0.00      8.50                   1     Array#select
+                      8.50      0.00      8.50             500/500     Object#is_prime
+--------------------------------------------------------------------------------
+                      8.50      0.00      8.50             500/500     Array#select
+  86.49%   0.00%      8.50      0.00      8.50                 500     Object#is_prime
+                      0.02      0.02      0.00             500/501     Fixnum#-
+                      8.48      4.92      3.56             500/501     Integer#upto
+--------------------------------------------------------------------------------
+                      8.50      0.00      8.50                 1/1     Object#run_primes
+  86.49%   0.00%      8.50      0.00      8.50                   1     Object#find_primes
+                      8.50      0.00      8.50                 1/1     Array#select
+--------------------------------------------------------------------------------
+                      1.87      1.87      0.00       339268/339268     Integer#upto
+  19.07%  19.07%      1.87      1.87      0.00              339268     Fixnum#==
+--------------------------------------------------------------------------------
+                      1.69      1.69      0.00       339268/339268     Integer#upto
+  17.14%  17.14%      1.69      1.69      0.00              339268     Fixnum#%
+--------------------------------------------------------------------------------
+                      1.30      1.30      0.00               63/63     Integer#upto
+  13.20%  13.20%      1.30      1.30      0.00                  63     Kernel.sleep
+--------------------------------------------------------------------------------
+                      1.30      0.00      1.30                 1/1     Object#run_primes
+  13.20%   0.00%      1.30      0.00      1.30                   1     Object#find_largest
+                      0.00      0.00      0.00               1/501     Fixnum#-
+                      1.30      0.00      1.30               1/501     Integer#upto
+                      0.00      0.00      0.00                 1/1     Array#first
+                      0.00      0.00      0.00                 1/1     Array#length
+--------------------------------------------------------------------------------
+                      0.03      0.00      0.03                 1/1     Object#run_primes
+   0.32%   0.00%      0.03      0.00      0.03                   1     Object#make_random_array
+                      0.03      0.02      0.01                 1/1     Array#each_index
+                      0.00      0.00      0.00                 1/1     Class#new
+--------------------------------------------------------------------------------
+                      0.03      0.02      0.01                 1/1     Object#make_random_array
+   0.32%   0.16%      0.03      0.02      0.01                   1     Array#each_index
+                      0.01      0.01      0.00             500/500     Kernel.rand
+                      0.00      0.00      0.00             500/500     Array#[]=
+--------------------------------------------------------------------------------
+                      0.02      0.02      0.00             500/501     Object#is_prime
+                      0.00      0.00      0.00               1/501     Object#find_largest
+   0.16%   0.16%      0.02      0.02      0.00                 501     Fixnum#-
+--------------------------------------------------------------------------------
+                      0.01      0.01      0.00             500/500     Array#each_index
+   0.15%   0.15%      0.01      0.01      0.00                 500     Kernel.rand
+                      0.00      0.00      0.00                 1/1     Integer#to_int
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00                 1/1     Kernel.rand
+   0.00%   0.00%      0.00      0.00      0.00                   1     Integer#to_int
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00                 1/1     Object#find_largest
+   0.00%   0.00%      0.00      0.00      0.00                   1     Array#first
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00                 1/1     Class#new
+   0.00%   0.00%      0.00      0.00      0.00                   1     Array#initialize
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00                 1/1     Object#find_largest
+   0.00%   0.00%      0.00      0.00      0.00                   1     Array#length
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00               63/63     Integer#upto
+   0.00%   0.00%      0.00      0.00      0.00                  63     Fixnum#>
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00               63/63     Integer#upto
+   0.00%   0.00%      0.00      0.00      0.00                  63     Array#[]
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00                 1/1     Object#make_random_array
+   0.00%   0.00%      0.00      0.00      0.00                   1     Class#new
+                      0.00      0.00      0.00                 1/1     Array#initialize
+--------------------------------------------------------------------------------
+                      0.00      0.00      0.00             500/500     Array#each_index
+   0.00%   0.00%      0.00      0.00      0.00                 500     Array#[]=
+
+
+.
+Finished in 9.891 seconds.
+
+1 tests, 1 assertions, 0 failures, 0 errors
