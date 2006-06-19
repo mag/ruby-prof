@@ -56,7 +56,3 @@ def run_primes
   # Find the largest primes
  	largest = find_largest(primes)
 end
-
-  
-
-
