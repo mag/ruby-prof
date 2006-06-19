@@ -33,14 +33,16 @@ ruby-prof is provided as a RubyGem.  To install:
 
 == Usage
 
-There are two ways of running ruby-prof.
+There are three ways of running ruby-prof.
 
 === ruby-prof executable
+
 The first is to use ruby-prof to run the Ruby program
 you want to profile.  For more information refer to
 the ruby-prof documentation[link:files/bin/ruby-prof.html].
 
 === ruby-prof API
+
 The second way is to use the ruby-prof API to profile
 particular segements of code.  
 
@@ -73,8 +75,22 @@ to profile:
   printer = RubyProf::GraphPrinter.new(result)
   printer.print(STDOUT, 0)
 
+  
+=== require unprof
+
+The third way of using ruby-prof is by requiring unprof.rb:
+
+	require 'unprof'
+
+This will start profiling immediately and will output the results
+using a flat profile report.
+
+This method is provided for backwards compatibility.  Using
+{ruby-prof}[link:files/bin/ruby-prof.html] provides more flexibility.
+  
 
 == Reports
+
 ruby-prof can generate flat profile and graph profile reports.
 
 Flat profiles show the overall time spent in each method.  They
@@ -110,22 +126,56 @@ the minimum percentage a method must take to be printed.  For more
 information please see the documentation for the different printers.
 
 
-== Timings
+== Timing Data
 
-The timings are based on wall clock time as opposed to process time, 
-so if there is anything else running on your computer it will lengthen
-the reported times.  
+Depending on the mode and platform, ruby-prof measures either process time
+or wall time.
 
-ruby-prof can measure times using three different methods:
-*clock - Use clock(3). This is default.
-*gettimeofday - Use gettimeofday(2).
+Process time measures the time used by a process between any two moments.
+It is unaffected by other processes concurrently running 
+on the system. Note that Windows does not support measuring process
+times - therefore, all measurements on Windows use wall time.
+
+Wall time measures the real-world time elapsed between any two moments.
+If there are other processes concurrently running on the system
+that use significant CPU or disk time during a profiling run
+then the reported results will be too large.
+
+ruby-prof can measure times three different ways:
+*clock - Uses the clock method provided by the C runtime library.  This is the default.
+*gettimeofday - On Linux uses gettimeofday kernel method while on Windows uses GetLocalTime API.
 *cpu - Use the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms.
 
-You can specify the method to use as a command line parameter to ruby-prof or in the
-RUBY_PROF_CLOCK_MODE environment variable
-    
+On Linux, clock reports process times while gettimeofday and cpu report wall times.
+One thing to watch out for on Linux is that clock does not report time spent 
+in child processes and does report time spent in Ruby's Kernel.sleep method.  If
+you need to measure these values, then use wall time.  On Windows all 
+three methods report wall time.
+
+To set the clock_mode:
+
+	RubyProf.clock_mode = RubyProf::CLOCK
+	RubyProf.clock_mode = RubyProf::GETTIMEOFDAY
+	RubyProf.clock_mode = RubyProf::CPU
+
+You may also specify the clock_mode by using the RUBY_PROF_CLOCK_MODE
+environment variable:
+
+	export RUBY_PROF_CLOCK_MODE=clock
 	export RUBY_PROF_CLOCK_MODE=gettimeofday
-  
+	export RUBY_PROF_CLOCK_MODE=cpu
+	
+When using CPU time, ruby-prof needs to know the CPU frequency.  On Linux,
+it tries to read this value from "/proc/cpuinfo."  On Windows, you must
+specify the clock frequency.  This can be done using the
+RUBY_PROF_CPU_FREQUENCY environment variable:
+
+	export RUBY_PROF_CPU_FREQUENCY=<value>
+	
+You can also directly set the cpu_frequency by calling:
+
+	RubyProf.cpu_frequency = <value> 
+
 
 == Recursive Calls
 
@@ -140,5 +190,6 @@ accurate, but these should be carefully analyzed to verify their veracity.
 
 
 == License
+
 See LICENSE for license information.
 
