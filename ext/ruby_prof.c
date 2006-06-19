@@ -332,15 +332,31 @@ minfo_name(VALUE klass, ID mid)
     
     if (klass == Qnil)
         result = rb_str_plus(rb_str_new2("#"), method_name);
+    else if (TYPE(klass) == T_CLASS && 
+             FL_TEST(klass, FL_SINGLETON))
+    {
+        /* This is a meta-class.  First go back and get the
+           class so we have a reasonable name to use.  But
+           distinguish it by putting <Class: > around it
+           like Ruby does. */
+        VALUE attached = rb_iv_get(klass, "__attached__");
+        result = rb_str_new2("<Class:");
+        rb_str_append(result, rb_inspect(attached));
+    	rb_str_cat2(result, ">");
+        rb_str_cat2(result, "#");
+        rb_str_append(result, method_name);
+    }
     else if (TYPE(klass) == T_CLASS)
     {
-        VALUE klass_name = rb_String(klass);
-        result = rb_str_plus(rb_str_plus(klass_name, rb_str_new2("#")), method_name);
+        result = rb_inspect(klass);
+        rb_str_cat2(result, "#");
+        rb_str_append(result, method_name);
     }
-    else
+    else /* TYPE(klass) == T_MODULE */
     {
-        VALUE klass_name = rb_String(klass);
-        result = rb_str_plus(rb_str_plus(klass_name, rb_str_new2(".")), method_name);
+        result = rb_inspect(klass);
+        rb_str_cat2(result, ".");
+        rb_str_append(result, method_name);
     }
 
     return result;
@@ -973,31 +989,29 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     VALUE thread;
     static int profiling = 0;
 
-    if (mid == ID_ALLOCATOR) return;
     if (profiling) return;
 
-    if (!NIL_P(klass)) {
-		if (TYPE(klass) == T_ICLASS) {
-    	    klass = RBASIC(klass)->klass;
-	    }
-	    else if (FL_TEST(klass, FL_SINGLETON)) {
-	        klass = self;
-		}
-    }
+    if (mid == ID_ALLOCATOR) return;
 
     /* Special case - skip any methods from the mProf 
        module, such as Prof.stop, since they clutter
        the results but are not important to the results. */
-    if (klass == mProf) 
-        return;
-  
+    if (self == mProf) return;
+
     /* Set flag showing we have started profiling */
     profiling++;
 
+    /* Is this an include for a module?  If so get the actual
+       module class since we want to combine all profiling
+       results for that module. */
+    if (TYPE(klass) == T_ICLASS)
+        klass = RBASIC(klass)->klass;
+      
     thread = rb_thread_current();
 
     thread_data = threads_table_lookup(threads_tbl, thread);
-    
+
+  
     switch (event) {
     case RUBY_EVENT_CALL:
     case RUBY_EVENT_C_CALL:
@@ -1263,7 +1277,7 @@ prof_stop(VALUE self)
         rb_raise(rb_eRuntimeError, "RubyProf.start is not called yet");
     }
 
-    /* Now unregister from event hook */
+    /* Now unregister from event   */
     rb_remove_event_hook(prof_event_hook);
 
     /* Create the result */
