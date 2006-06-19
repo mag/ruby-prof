@@ -21,7 +21,7 @@ module RubyProf
        		  f.each_line do |line|
          		  s = line.slice(/cpu MHz\s*:\s*(.*)/, 1)
          		  if s
-           		  Prof.cpu_frequency = s.to_f * 1000000
+           		  RubyProf.cpu_frequency = s.to_f * 1000000
            		  break
          		  end
        		  end
