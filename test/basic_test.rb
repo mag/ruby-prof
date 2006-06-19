@@ -26,8 +26,6 @@ class BasicTest < Test::Unit::TestCase
       method1
     end
     
-    print_test_result(result)
-    
     assert_equal(1, result.threads.length)
 
     methods = result.threads.values.first
@@ -64,8 +62,6 @@ class BasicTest < Test::Unit::TestCase
       method3
     end
     
-    print_test_result(result)
-
     assert_equal(1, result.threads.length)
 
     methods = result.threads.values.first
