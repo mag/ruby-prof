@@ -168,8 +168,8 @@ cpu_get_clock()
     __asm
     {
         rdtsc
-            mov DWORD PTR cycles, eax
-            mov DWORD PTR [cycles + 4], edx
+        mov DWORD PTR cycles, eax
+        mov DWORD PTR [cycles + 4], edx
     }
     return cycles;
 }
