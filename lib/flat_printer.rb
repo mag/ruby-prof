@@ -6,31 +6,27 @@ module RubyProf
   #			[code to profile]
   #		end
   #
-  # 	printer = RubyProf::FlatPrinter.new(result, 5)
+  # 	printer = RubyProf::FlatPrinter.new(result)
   # 	printer.print(STDOUT, 0)
   #
-  # The constructor takes two arguments.  The first is
-  # a RubyProf::Result object generated from a profiling
-  # run.  The second is the minimum %self (the methods 
-  # self time divided by the overall total time) that
-  # a method must take for it to be printed out in 
-  # the report.  Use this parameter to eliminate methods
-  # that are not important to the overall profiling results.
 	class FlatPrinter
   	# Create a FlatPrinter.  Result is a RubyProf::Result	
-  	# object generated from a profiling run.  min_percent
-  	# specifies the minimum %self (the methods 
-  	# self time divided by the overall total time) that
-  	# a method must take for it to be printed out in 
-  	# the report. 
-    def initialize(result, min_percent = 0)
+  	# object generated from a profiling run.
+    def initialize(result)
   	  @result = result
-  	  @min_percent = min_percent
  	  end
 
-  	# Print a graph report to the provided output.  Output
-  	# can be any IO oject, including STDOUT or a file.
- 	  def print(output)
+  	# Print a flat profile report to the provided output.
+  	# 
+  	# output - Any IO oject, including STDOUT or a file. 
+  	# The default value is STDOUT.
+  	# 
+  	# min_percent - The minimum %self (the methods 
+  	# self time divided by the overall total time) that
+  	# a method must take for it to be printed out in 
+  	# the report. Default value is 0.
+ 	  def print(output = STDOUT, min_percent = 0)
+  	  @min_percent = min_percent
       @output = output
       print_threads
 		end      

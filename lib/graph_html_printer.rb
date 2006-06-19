@@ -25,20 +25,24 @@ module RubyProf
 	  CALL_WIDTH = 20
 	
   	# Create a GraphPrinter.  Result is a RubyProf::Result	
-  	# object generated from a profiling run.  min_percent
-  	# specifies the minimum %total (the methods 
-  	# total time divided by the overall total time) that
-  	# a method must take for it to be printed out in 
-  	# the report. 
-    def initialize(result, min_percent = 0)
+  	# object generated from a profiling run.
+    def initialize(result)
   	  @result = result
-  	  @min_percent = min_percent
  	  end
 
-  	# Print a graph report to the provided output.  Output
-  	# can be any IO oject, including STDOUT or a file.
- 	  def print(output)
+  	# Print a graph html report to the provided output.
+  	# 
+  	# output - Any IO oject, including STDOUT or a file. 
+  	# The default value is STDOUT.
+  	# 
+  	# min_percent - The minimum %total (the methods 
+  	# total time divided by the overall total time) that
+  	# a method must take for it to be printed out in 
+  	# the report. Default value is 0.
+ 	  def print(output = STDOUT, min_percent = 0)
       @output = output
+      @min_percent = min_percent
+      
       _erbout = @output
       erb = ERB.new(template, nil, nil)
       @output << erb.result(binding)
