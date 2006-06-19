@@ -1045,12 +1045,14 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
             seen it when running a test case using Test::Unit under Arachno when
             a condition is raised.  There is an extra Array#each method at the end.
             Hmm....If this happens just skip it for now and put out an error message. */
-
             VALUE temp_name = temp_name = rb_String(klass);
             char* class_name = StringValuePtr(temp_name);
             char* method_name = rb_id2name(mid);
+            ruby_set_current_source();
 
             printf("rurby-prof error: unmatched method.  Event: %d, Method: %s#%s\n", event, class_name, method_name);
+            printf("Called from %s:%d\n", ruby_sourcefile, ruby_sourceline);
+
             /*   rb_raise(rb_eTypeError, "Stack is empty"); */
             return;
         }
