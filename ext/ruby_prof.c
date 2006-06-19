@@ -331,33 +331,46 @@ minfo_name(VALUE klass, ID mid)
     VALUE method_name = rb_String(ID2SYM(mid));
     
     if (klass == Qnil)
-        result = rb_str_plus(rb_str_new2("#"), method_name);
-    else if (TYPE(klass) == T_CLASS && 
-             FL_TEST(klass, FL_SINGLETON))
+        result = rb_str_new2("#");
+    else if (TYPE(klass) == T_CLASS && FL_TEST(klass, FL_SINGLETON))
     {
-        /* This is a meta-class.  First go back and get the
-           class so we have a reasonable name to use.  But
-           distinguish it by putting <Class: > around it
-           like Ruby does. */
+        /* This is a singleton object.  It may be a meta-class.
+           First figure out what it is attached to.*/
         VALUE attached = rb_iv_get(klass, "__attached__");
-        result = rb_str_new2("<Class:");
-        rb_str_append(result, rb_inspect(attached));
-    	rb_str_cat2(result, ">");
+        if (TYPE(attached) == T_CLASS)
+        {
+            /* This is a singleton class being used as a meta class.
+               Distinguish it by putting <Class: > around it
+               like Ruby does. Use the name of the class it 
+               is attached to as the class name. */
+            result = rb_str_new2("<Class:");
+            rb_str_append(result, rb_inspect(attached));
+        }
+        else
+        {
+            /* This is plain singleton class associated with some object.
+               Distinguish it by putting <Object: > around it.  Use the
+               super class as the class name.*/
+            VALUE super = RCLASS(klass)->super;
+            result = rb_str_new2("<Object:");
+            rb_str_append(result, rb_inspect(super));
+        }
+  	    rb_str_cat2(result, ">");
         rb_str_cat2(result, "#");
-        rb_str_append(result, method_name);
     }
     else if (TYPE(klass) == T_CLASS)
     {
         result = rb_inspect(klass);
         rb_str_cat2(result, "#");
-        rb_str_append(result, method_name);
     }
     else /* TYPE(klass) == T_MODULE */
     {
         result = rb_inspect(klass);
         rb_str_cat2(result, ".");
-        rb_str_append(result, method_name);
     }
+
+    /* Last add in the method name */
+    rb_str_append(result, method_name);
 
     return result;
 }
