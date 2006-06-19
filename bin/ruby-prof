@@ -32,7 +32,7 @@ require 'optparse'
 require 'ruby-prof'
 
 options = OpenStruct.new
-options.clock_mode = :clock
+options.clock_mode = RubyProf::CLOCK
 options.printer = RubyProf::GraphPrinter
 options.min_percent = 0
 options.file = nil
@@ -79,7 +79,15 @@ opts = OptionParser.new do |opts|
 			'  gettimeofday - Use gettimeofday.',
 			'  cpu - Use the CPU clock counter',
 			'        (only supported on Pentium and PowerPCs).') do |clock_mode|
-		options.clock_mode = clock_mode || ENV["RUBY_PROF_CLOCK_MODE"]
+			
+			case
+			when :clock
+				options.clock_mode = RubyProf::CLOCK			
+			when :gettimeofday
+				options.clock_mode = RubyProf::GETTIMEOFDAY			
+			when :cpu
+				options.clock_mode = RubyProf::CPU
+			end
 	end
 		
 	opts.on_tail("-h", "--help", "Show help message") do
@@ -114,28 +122,22 @@ end
 script = ARGV.shift
 
 # Set clock mode
-RubyProf::set_clock_mode(clock_mode)
+RubyProf.clock_mode = options.clock_mode
+
+# Start profiling
+result = RubyProf.profile do 
+ 	load script
+end
+
+# Get printer
+printer = options.printer.new(result)
 
 # Get output
 if options.file
-	output = File.open(options.file, 'w')
-else
- 	output = STDOUT
-end
-
-
-begin
-	# Start profiling
-	result = RubyProf.profile do 
-  	load script
+	File.open(options.file, 'w') do |file|
+		printer.print(file, options.min_percent)
 	end
-
-	# Get printer
-	printer = options.printer.new(result)
-
+else
 	# Print out results	
-	printer.print(output, options.min_percent)
-ensure
-	# Close output
-	output.close
+	printer.print(STDOUT, options.min_percent)
 end
