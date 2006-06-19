@@ -85,4 +85,24 @@ class BasicTest < Test::Unit::TestCase
     assert_equal(1, method.parents.length)
     assert_equal(3, method.children.length)
   end
+  
+  def test_double_profile
+    RubyProf.start
+    assert_raise(RuntimeError) do
+    	RubyProf.start
+    end
+    
+    assert_raise(RuntimeError) do
+      RubyProf.profile do
+        puts 1
+      end
+    end
+    RubyProf.stop
+  end
+  
+  def test_no_block
+    assert_raise(ArgumentError) do
+			RubyProf.profile
+  	end
+  end
 end
