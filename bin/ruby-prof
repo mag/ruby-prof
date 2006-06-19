@@ -118,26 +118,37 @@ if ARGV.length < 1
   exit(-1)
 end
 
-# Get the scripts, then replace ARGV
-script = ARGV.shift
 
-# Set clock mode
+# Install at_exit handler.  It is important that we do this 
+# before loading the scripts so our at_exit handler run
+# *after* any other one that will be installed. 
+
+at_exit {
+  # Stop profiling
+	result = RubyProf.stop
+
+	# Create a printer
+	printer = options.printer.new(result)
+
+	# Get output
+	if options.file
+		File.open(options.file, 'w') do |file|
+			printer.print(file, options.min_percent)
+		end
+	else
+		# Print out results	
+		printer.print(STDOUT, options.min_percent)
+	end
+}
+
+# Now set clock mode
 RubyProf.clock_mode = options.clock_mode
 
+# Get the script we will execute
+script = ARGV.shift
+
 # Start profiling
-result = RubyProf.profile do 
- 	load script
-end
+RubyProf.start 
 
-# Get printer
-printer = options.printer.new(result)
-
-# Get output
-if options.file
-	File.open(options.file, 'w') do |file|
-		printer.print(file, options.min_percent)
-	end
-else
-	# Print out results	
-	printer.print(STDOUT, options.min_percent)
-end
+# Load the script
+load script
