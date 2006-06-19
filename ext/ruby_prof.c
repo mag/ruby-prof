@@ -308,8 +308,6 @@ stack_peek(prof_stack_t *stack)
 /* -- Hash keyed on calss/method_id to hold information
       about each method ---- */
 typedef struct {
-    /* Store precomputed hash to save lookup time. */
-    int hash;
     VALUE klass;
     ID mid;
 } minfo_t;
@@ -317,13 +315,13 @@ typedef struct {
 static int
 minfo_cmp(minfo_t *x, minfo_t *y)
 {
-    return x->hash != y->hash;
+    return x->klass != y->klass || x->mid != y->mid;
 }
 
 static int
 minfo_hash(minfo_t *m)
 {
-    return m->hash;
+    return m->klass ^ m->mid;
 }
 
 static VALUE
@@ -401,8 +399,6 @@ minfo_table_insert(st_table *table, VALUE klass, ID mid, prof_method_t *val)
     key = ALLOC(minfo_t);
     key->klass = klass;
     key->mid = mid;
-    key->hash = klass ^ mid;
-
     return st_insert(table, (st_data_t ) key, (st_data_t) val);
 }
 
@@ -1021,7 +1017,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     /* Is this an include for a module?  If so get the actual
        module class since we want to combine all profiling
        results for that module. */
-    if (TYPE(klass) == T_ICLASS)
+    if (BUILTIN_TYPE(klass) == T_ICLASS)
         klass = RBASIC(klass)->klass;
       
     thread = rb_thread_current();
