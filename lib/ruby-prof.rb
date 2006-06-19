@@ -7,7 +7,7 @@ require "graph_html_printer"
 module RubyProf
   # See if the user specified the clock mode via 
   # the RUBY_PROF_CLOCK_MODE environment variable
-  def figure_clock_mode
+  def self.figure_clock_mode
     case ENV["RUBY_PROF_CLOCK_MODE"]
 	  when "gettimeofday"
 		  RubyProf.clock_mode = RubyProf::GETTIMEOFDAY
@@ -36,5 +36,6 @@ module RubyProf
   	  $stderr.puts("use clock(3) for profiling") if $VERBOSE
   	end
  	end
- 	figure_clock_mode
 end
+
+RubyProf::figure_clock_mode
