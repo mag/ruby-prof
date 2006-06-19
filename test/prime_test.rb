@@ -9,13 +9,9 @@ require 'test_helper'
 # --  Tests ----
 class PrimeTest < Test::Unit::TestCase
   def test_consistency
-    length = 500
-    maxnum = 10000
     result = RubyProf.profile do
-		  random_array = make_random_array(length, maxnum)
-		  primes = find_primes(random_array)
-	  	largest = find_largest(primes)
-    end
+			run_primes
+		end
     
     result.threads.values.each do |methods|
 			methods.values.each do |method|
