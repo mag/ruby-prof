@@ -1285,6 +1285,9 @@ Profiles the specified block and returns a RubyProf::Result object. */
 static VALUE
 prof_profile(VALUE self)
 {
+    if (!rb_block_given_p())
+        rb_raise(rb_eArgError, "A block must be provided to the profile method.");
+
     prof_start(self);
     rb_yield(Qnil);
     return prof_stop(self);
