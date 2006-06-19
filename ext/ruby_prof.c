@@ -121,7 +121,6 @@ static prof_clock_t
 gettimeofday_get_clock()
 {
     struct timeval tv;
-
     gettimeofday(&tv, NULL);
     return tv.tv_sec * 1000000 + tv.tv_usec;
 }
@@ -996,6 +995,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     profiling++;
 
     thread = rb_thread_current();
+
     thread_data = threads_table_lookup(threads_tbl, thread);
     
     switch (event) {
@@ -1040,7 +1040,20 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
 
 	    data = stack_pop(thread_data->stack);
         if (data == NULL)
-    	    rb_raise(rb_eTypeError, "Stack is empty");
+        {
+            /* For reasons I don't understand, this is sometimes triggered.  I've only
+            seen it when running a test case using Test::Unit under Arachno when
+            a condition is raised.  There is an extra Array#each method at the end.
+            Hmm....If this happens just skip it for now and put out an error message. */
+
+            VALUE temp_name = temp_name = rb_String(klass);
+            char* class_name = StringValuePtr(temp_name);
+            char* method_name = rb_id2name(mid);
+
+            printf("rurby-prof error: unmatched method.  Event: %d, Method: %s#%s\n", event, class_name, method_name);
+            /*   rb_raise(rb_eTypeError, "Stack is empty"); */
+            return;
+        }
 
         total_time = now - data->start_time;
         self_time = total_time - data->child_cost;
@@ -1179,27 +1192,28 @@ prof_set_clock_mode(VALUE self, VALUE val)
     int mode = NUM2INT(val);
 
     if (threads_tbl) {
-	rb_raise(rb_eRuntimeError, "can't set clock_mode while profiling");
+	    rb_raise(rb_eRuntimeError, "can't set clock_mode while profiling");
     }
+
     switch (mode) {
     case CLOCK_MODE_CLOCK:
-	get_clock = clock_get_clock;
-	clock2sec = clock_clock2sec;
-	break;
+    	get_clock = clock_get_clock;
+	    clock2sec = clock_clock2sec;
+    	break;
     case CLOCK_MODE_GETTIMEOFDAY:
-	get_clock = gettimeofday_get_clock;
-	clock2sec = gettimeofday_clock2sec;
-	break;
+	    get_clock = gettimeofday_get_clock;
+	    clock2sec = gettimeofday_clock2sec;
+	    break;
 #ifdef CLOCK_MODE_CPU
     case CLOCK_MODE_CPU:
-	if (cpu_frequency == 0)
-	    cpu_frequency = get_cpu_frequency();
-	get_clock = cpu_get_clock;
-	clock2sec = cpu_clock2sec;
-	break;
+	    if (cpu_frequency == 0)
+	        cpu_frequency = get_cpu_frequency();
+	        get_clock = cpu_get_clock;
+	        clock2sec = cpu_clock2sec;
+	    break;
 #endif
     default:
-	rb_raise(rb_eArgError, "invalid mode: %d", mode);
+	    rb_raise(rb_eArgError, "invalid mode: %d", mode);
 	break;
     }
     clock_mode = mode;
