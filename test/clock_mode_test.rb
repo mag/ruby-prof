@@ -10,8 +10,8 @@ require 'prime'
 class ClockModeTest < Test::Unit::TestCase
   def test_clock
     return
-    RubyProf::clock_mode = RubyProf::CLOCK
-    assert_equal(RubyProf::CLOCK, RubyProf::clock_mode)
+    RubyProf::clock_mode = RubyProf::PROCESS_TIME
+    assert_equal(RubyProf::PROCESS_TIME, RubyProf::clock_mode)
     result = RubyProf.profile do
 			run_primes
 		end
@@ -29,8 +29,8 @@ class ClockModeTest < Test::Unit::TestCase
   
   def test_gettimeofday
     return
-    RubyProf::clock_mode = RubyProf::GETTIMEOFDAY
-    assert_equal(RubyProf::GETTIMEOFDAY, RubyProf::clock_mode)
+    RubyProf::clock_mode = RubyProf::WALL_TIME
+    assert_equal(RubyProf::WALL_TIME, RubyProf::clock_mode)
     result = RubyProf.profile do
 			run_primes
 		end
@@ -48,7 +48,7 @@ class ClockModeTest < Test::Unit::TestCase
   
   def test_cpu
     #return
-    RubyProf::clock_mode = RubyProf::CPU
+    RubyProf::clock_mode = RubyProf::CPU_TIME
     assert_equal(RubyProf::CPU, RubyProf::clock_mode)
     result = RubyProf.profile do
 			run_primes

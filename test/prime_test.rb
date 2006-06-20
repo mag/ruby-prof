@@ -9,9 +9,12 @@ require 'test_helper'
 # --  Tests ----
 class PrimeTest < Test::Unit::TestCase
   def test_consistency
+    GC.start
     result = RubyProf.profile do
 			run_primes
 		end
+		
+		return
     
     result.threads.values.each do |methods|
 			methods.values.each do |method|

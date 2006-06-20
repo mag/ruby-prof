@@ -43,6 +43,7 @@ class BasicTest < Test::Unit::TestCase
     RubyProf.stop
   end
   
+  
   def test_no_block
     assert_raise(ArgumentError) do
 			RubyProf.profile
@@ -57,10 +58,14 @@ class BasicTest < Test::Unit::TestCase
   
     methods = result.threads.values.first
     
-    # Length should be 5 - one for top level,
-    # one for Class.new, 1 for Object.initialize
-    # one for Class.hello and one for Class.new.hello
-    assert_equal(5, methods.length)
+    # Length should be 6:
+    # 	1 top level,
+    # 	1 Class.new
+    #		1 Class:Object allocate
+    #   1 for Object.initialize
+    #   1 for Class hello
+    #   1 for Object hello
+    assert_equal(6, methods.length)
     
     # Check class method
     method1 = methods['<Class:C1>#hello']
@@ -79,12 +84,13 @@ class BasicTest < Test::Unit::TestCase
   
     methods = result.threads.values.first
    
-    # Length should be 4 - one for top level,
-    # one for Class.new, 1 for Object.initialize
-    # one for Class.hello  and Class.new.hello
-    # (remember, they are the same methdo so are 
-		#  combined)
-    assert_equal(4, methods.length)
+    # Length should be 5:
+    # 	1 top level,
+    # 	1 Class.new
+    #		1 Class:Object allocate
+    #   1 for Object.initialize
+    #   1 for hello
+    assert_equal(5, methods.length)
     
     # Check class method
     method1 = methods['M1.hello']
