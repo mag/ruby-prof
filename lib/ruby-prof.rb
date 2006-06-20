@@ -9,9 +9,8 @@ module RubyProf
   # the RUBY_PROF_CLOCK_MODE environment variable
   def self.figure_clock_mode
     case ENV["RUBY_PROF_CLOCK_MODE"]
-	  when "gettimeofday"
-		  RubyProf.clock_mode = RubyProf::GETTIMEOFDAY
- 		  RubyProf.clock_mode = RubyProf::GETTIMEOFDAY
+	  when "wall"
+		  RubyProf.clock_mode = RubyProf::WALL_TIME
 	  when "cpu"
   	  if ENV.key?("RUBY_PROF_CPU_FREQUENCY")
    		  RubyProf.cpu_frequency = ENV["RUBY_PROF_CPU_FREQUENCY"].to_f
@@ -29,11 +28,9 @@ module RubyProf
    		  rescue Errno::ENOENT
    		  end
   	  end
-  	  RubyProf.clock_mode = RubyProf::CPU
-  	  $stderr.puts("use CPU clock counter for profiling") if $VERBOSE
+  	  RubyProf.clock_mode = RubyProf::CPU_TIME
 	  else
-  	  RubyProf.clock_mode = RubyProf::CLOCK
-  	  $stderr.puts("use clock(3) for profiling") if $VERBOSE
+  	  RubyProf.clock_mode = RubyProf::PROCESS_TIME
   	end
  	end
 end
