@@ -30,6 +30,8 @@ ruby-prof is provided as a RubyGem.  To install:
 
 <tt>gem install ruby-prof</tt>
 
+If you are running Windows, make sure to install the Win32 RubyGem which 
+includes a pre-built binary.
 
 == Usage
 
@@ -159,6 +161,8 @@ environment variable:
 	export RUBY_PROF_CLOCK_MODE=process_time
 	export RUBY_PROF_CLOCK_MODE=wall_time
 	export RUBY_PROF_CLOCK_MODE=cpu_time
+	
+Note that these values have changed since ruby-prof-0.3.0.	
 
 On Linux, process time is measured using the clock method provided 
 by the C runtime library. Note that the clock method does not
@@ -206,8 +210,11 @@ results in a 50% overhead.  Thus if a piece of code takes 10
 seconds to run then when it is profiled it should take around
 15 seconds.  
 
+== Windows Binary
+
+The Windows binary is built with the latest version of MinGW.
+
 
 == License
 
 See LICENSE for license information.
-
