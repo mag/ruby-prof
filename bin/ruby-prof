@@ -32,7 +32,7 @@ require 'optparse'
 require 'ruby-prof'
 
 options = OpenStruct.new
-options.clock_mode = RubyProf::CLOCK
+options.clock_mode = RubyProf::PROCESS_TIME
 options.printer = RubyProf::GraphPrinter
 options.min_percent = 0
 options.file = nil
@@ -73,20 +73,20 @@ opts = OptionParser.new do |opts|
 	end
 		
 	opts.on('-c clock_mode', '--clock-mode=clock_mode',
-			[:clock, :gettimeofday, :cpu],
+			[:process, :wall, :cpu],
 			'Select a clock mode:',
-			'  clock - Use clock. This is default.',
-			'  gettimeofday - Use gettimeofday.',
+			'  process - Use process time. This is default.',
+			'  wall - Use wall time.',
 			'  cpu - Use the CPU clock counter',
 			'        (only supported on Pentium and PowerPCs).') do |clock_mode|
 			
 			case
-			when :clock
-				options.clock_mode = RubyProf::CLOCK			
-			when :gettimeofday
-				options.clock_mode = RubyProf::GETTIMEOFDAY			
+			when :process
+				options.clock_mode = RubyProf::PROCESS_TIME			
+			when :wall
+				options.clock_mode = RubyProf::WALL_TIME			
 			when :cpu
-				options.clock_mode = RubyProf::CPU
+				options.clock_mode = RubyProf::CPU_TIME
 			end
 	end
 		
