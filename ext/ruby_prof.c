@@ -287,7 +287,7 @@ method_name(VALUE klass, ID mid)
             /* This is plain singleton class associated with some object.
                Distinguish it by putting <Object: > around it.  Use the
                super class as the class name.*/
-            VALUE super = RCLASS(klass)->super;
+            VALUE super = rb_class_real(RCLASS(klass)->super);
             result = rb_str_new2("<Object:");
             rb_str_append(result, rb_inspect(super));
         }
@@ -299,10 +299,14 @@ method_name(VALUE klass, ID mid)
         result = rb_inspect(klass);
         rb_str_cat2(result, "#");
     }
-    else /* TYPE(klass) == T_MODULE */
+    else if (TYPE(klass) == T_MODULE)
     {
         result = rb_inspect(klass);
         rb_str_cat2(result, ".");
+    }
+    else
+    {
+        rb_raise(rb_eTypeError, "Unsupported type in method name: %s", TYPE(klass));
     }
 
     /* Last add in the method name */
@@ -992,8 +996,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
       
     key = method_key(klass, mid);
    
-    /*{
-        Debug code:
+/*    {
             VALUE temp_name = temp_name = rb_String(klass);
             char* class_name = StringValuePtr(temp_name);
             char* method_name = rb_id2name(mid);
