@@ -15,8 +15,8 @@
 #                                        graph_html - Prints a graph profile as html.
 #     -f, --file=path                  Output results to a file instead of standard out.
 #     -c, --clock-mode=clock_mode      Select a clock mode:
-#                                        clock - Use clock. This is default.
-#                                        gettimeofday - Use gettimeofday.
+#                                        process - Use process time. This is default.
+#                                        wall - Use wall time.
 #                                        cpu - Use the CPU clock counter
 #                                              (only supported on Pentium and PowerPCs).
 #     -h, --help                       Show help message
