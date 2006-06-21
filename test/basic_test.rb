@@ -86,7 +86,7 @@ class BasicTest < Test::Unit::TestCase
     assert_equal(6, methods.length)
     
     # Check class method
-    method1 = methods['<Class:C1>#hello']
+    method1 = methods['<Class::C1>#hello']
     assert_not_nil(method1)
     
     # Check instance method
@@ -111,7 +111,7 @@ class BasicTest < Test::Unit::TestCase
     assert_equal(5, methods.length)
     
     # Check class method
-    method1 = methods['M1.hello']
+    method1 = methods['M1#hello']
     assert_not_nil(method1)
     assert_equal(2, method1.called)
   end
@@ -135,7 +135,7 @@ class BasicTest < Test::Unit::TestCase
     assert_equal(2, methods.length)
     
     # Check singleton method
-    method1 = methods['<Object:C3>#hello']
+    method1 = methods['<Object::C3>#hello']
     assert_not_nil(method1)
   end
 end

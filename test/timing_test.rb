@@ -50,7 +50,7 @@ class TimingTest < Test::Unit::TestCase
     assert_equal(1, method.parents.length)
     assert_equal(1, method.children.length)
     
-    sleep = methods['Kernel.sleep']
+    sleep = methods['Kernel#sleep']
     assert_not_nil(sleep)
     assert_in_delta(1, sleep.total_time, 0.02)
     assert_in_delta(1, sleep.self_time, 0.02)
