@@ -1,8 +1,8 @@
 require "ruby_prof.so"
 
-require "flat_printer"
-require "graph_printer"
-require "graph_html_printer"
+require "ruby-prof/flat_printer"
+require "ruby-prof/graph_printer"
+require "ruby-prof/graph_html_printer"
 
 module RubyProf
   # See if the user specified the clock mode via 
