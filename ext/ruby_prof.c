@@ -264,18 +264,66 @@ get_thread_id(VALUE thread)
 }
 
 static VALUE
+figure_singleton_name(VALUE klass)
+{
+    VALUE result = Qnil;
+    VALUE temp;
+
+    /* We have come across a singleton object. First
+       figure out what it is attached to.*/
+    VALUE attached = rb_iv_get(klass, "__attached__");
+
+
+    /* Is this a singleton class acting as a metaclass? */
+    if (TYPE(attached) == T_CLASS)
+    {
+        result = rb_str_new2("<Class::");
+        rb_str_append(result, rb_inspect(attached));
+        rb_str_cat2(result, ">#");
+    }
+
+    /* Is this for singleton methods on a module? */
+    else if (TYPE(attached) == T_MODULE)
+    {
+        result = rb_str_new2("<Module::");
+        rb_str_append(result, rb_inspect(attached));
+        rb_str_cat2(result, ">#");
+    }
+
+    /* Is it a regular singleton class for an object? */
+    else if (TYPE(attached) == T_OBJECT)
+    {
+        /* Make sure to get the super class so that we don't
+           mistakenly grab a T_ICLASS which would lead to
+           unknown method errors. */
+        VALUE super = rb_class_real(RCLASS(klass)->super);
+        result = rb_str_new2("<Object::");
+        rb_str_append(result, rb_inspect(super));
+        rb_str_cat2(result, ">#");
+    }
+    else
+    {
+        /* Should never happen. */
+        result = rb_str_new2("<Unknown:");
+        rb_str_append(result, rb_inspect(klass));
+        rb_str_cat2(result, ">#");
+        rb_raise(rb_eRuntimeError, "Unknown singleton class: %i", result);
+    }
+
+    return result;
+}
+
+static VALUE
 method_name(VALUE klass, ID mid)
 {
     VALUE result;
     VALUE method_name;
-    char* c_name1;
 
     if (mid == ID_ALLOCATOR) 
         method_name = rb_str_new2("allocate");
     else
         method_name = rb_String(ID2SYM(mid));
     
-    c_name1 = StringValuePtr(method_name);
 
     if (klass == Qnil)
         result = rb_str_new2("#");
@@ -307,55 +355,6 @@ method_name(VALUE klass, ID mid)
 
     return result;
 }
-
-static VALUE
-figure_singleton_name(VALUE klass)
-{
-    VALUE result = Qnil;
-
-    /* We have come across a singleton object. First
-       figure out what it is attached to.*/
-    VALUE attached = rb_iv_get(klass, "__attached__");
-
-    /* Is this a singleton class acting as a metaclass? */
-    if (TYPE(attached) == T_CLASS)
-    {
-        result = rb_str_new2("<Class:");
-        rb_str_append(result, rb_inspect(attached));
-        rb_str_cat2(result, ">#");
-    }
-
-    /* Is this for singleton methods on a module? */
-    else if (TYPE(attached) == T_MODULE)
-    {
-        result = rb_str_new2("<Module:");
-        rb_str_append(result, rb_inspect(attached));
-        rb_str_cat2(result, ">#");
-    }
-
-    /* Is it a regular singleton class for an object? */
-    else if (TYPE(attached) == T_OBJECT)
-    {
-        /* Make sure to get the super class so that we don't
-           mistakenly grab a T_ICLASS which would lead to
-           unknown method errors. */
-        VALUE super = rb_class_real(RCLASS(klass)->super);
-        result = rb_str_new2("<Object:");
-        rb_str_append(result, rb_inspect(super));
-        rb_str_cat2(result, ">#");
-    }
-    else
-    {
-        /* Should never happen. */
-        result = rb_str_new2("<Unknown:");
-        rb_str_append(result, rb_inspect(klass));
-        rb_str_cat2(result, ">#");
-        rb_raise(rb_eRuntimeError, "Unknown singleton class: %i", result);
-    }
-
-    return result;
-}
-
 
 static inline st_data_t
 method_key(VALUE klass, ID mid)
@@ -1045,14 +1044,14 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     if (BUILTIN_TYPE(klass) == T_ICLASS)
         klass = RBASIC(klass)->klass;
       
-    /* Debug Code
+    /* // Debug Code
     {
         VALUE class_name = rb_String(klass);
         char* c_class_name = StringValuePtr(class_name);
         char* c_method_name = rb_id2name(mid);
         VALUE generated_name = method_name(klass, mid);
         char* c_generated_name = StringValuePtr(generated_name);
-        printf("Event: %2d, Key: %d, Method: %s#%s\n", event, key, c_class_name, c_method_name);
+        printf("Event: %2d, Method: %s#%s\n", event, c_class_name, c_method_name);
     }*/
 
     thread = rb_thread_current();
@@ -1096,14 +1095,13 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
 
         if (data == NULL)
         {
-            /* For reasons I don't understand, this is sometimes triggered.  I've only
-            seen it when running a test case using Test::Unit under Arachno when
-            a condition is raised.  There is an extra Array#each method at the end.
-            Hmm....If this happens just skip it for now and put out an error message. */
-            st_data_t key = method_key(klass, mid);
-            VALUE name = method_name(child->klass, child->mid);
-            child = minfo_table_lookup(thread_data->minfo_table, key);
-            rb_warn("Empty stack for %s", StringValuePtr(name));
+            /* Can happen on exceptions.  The stack gets unwound without RubyProf.stop
+               being called. */
+            VALUE name = method_name(klass, mid);
+            VALUE message = rb_str_new2("ruby-prof: An error occured when leaving the method %s.\n");
+            rb_str_cat2(message, "   Perhaps an exception occured in the code being profiled?\n" );
+
+            rb_warn(StringValuePtr(message), StringValuePtr(name));
                     
             return;
         }
@@ -1172,7 +1170,7 @@ prof_result_mark(prof_result_t *prof_result)
 static void
 prof_result_free(prof_result_t *prof_result)
 {
-    prof_result->threads = NULL;
+    prof_result->threads = Qnil;
     xfree(prof_result);
 }
 
