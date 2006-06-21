@@ -42,24 +42,13 @@ static VALUE cResult;
 static VALUE cMethodInfo;
 static VALUE cCallInfo;
 
+static VALUE temp;
+
 #ifdef HAVE_LONG_LONG
 typedef LONG_LONG prof_clock_t;
 #else
 typedef unsigned long prof_clock_t;
 #endif
-
-typedef struct {
-    /* Cache hash value for speed reasons. */
-    st_data_t key;
-    prof_clock_t start_time;
-    prof_clock_t child_cost;
-} prof_data_t;
-
-typedef struct {
-    prof_data_t *start;
-    prof_data_t *end;
-    prof_data_t *ptr;
-} prof_stack_t;
 
 typedef struct {
     VALUE klass;
@@ -91,9 +80,28 @@ typedef struct {
 } prof_method_t;
 
 typedef struct {
+    /* Cache prof_method_t values to significantly 
+       increase speed. */
+    prof_method_t *method_info;
+    prof_clock_t start_time;
+    prof_clock_t child_cost;
+} prof_data_t;
+
+typedef struct {
+    prof_data_t *start;
+    prof_data_t *end;
+    prof_data_t *ptr;
+} prof_stack_t;
+
+typedef struct {
     prof_stack_t* stack;
     st_table* minfo_table;
+    int thread_id;
 } thread_data_t;
+
+typedef struct {
+    VALUE threads;
+} prof_result_t;
 
 static VALUE toplevel_id;
 static st_data_t toplevel_key;
@@ -260,53 +268,38 @@ method_name(VALUE klass, ID mid)
 {
     VALUE result;
     VALUE method_name;
-    
+    char* c_name1;
+
     if (mid == ID_ALLOCATOR) 
         method_name = rb_str_new2("allocate");
     else
         method_name = rb_String(ID2SYM(mid));
     
+    c_name1 = StringValuePtr(method_name);
+
     if (klass == Qnil)
         result = rb_str_new2("#");
+    else if (TYPE(klass) == T_MODULE)
+    {
+        result = rb_inspect(klass);
+        rb_str_cat2(result, "#");
+    }
     else if (TYPE(klass) == T_CLASS && FL_TEST(klass, FL_SINGLETON))
     {
-        /* This is a singleton object.  It may be a meta-class.
-           First figure out what it is attached to.*/
-        VALUE attached = rb_iv_get(klass, "__attached__");
-        if (TYPE(attached) == T_CLASS)
-        {
-            /* This is a singleton class being used as a meta class.
-               Distinguish it by putting <Class: > around it
-               like Ruby does. Use the name of the class it 
-               is attached to as the class name. */
-            result = rb_str_new2("<Class:");
-            rb_str_append(result, rb_inspect(attached));
-        }
-        else
-        {
-            /* This is plain singleton class associated with some object.
-               Distinguish it by putting <Object: > around it.  Use the
-               super class as the class name.*/
-            VALUE super = rb_class_real(RCLASS(klass)->super);
-            result = rb_str_new2("<Object:");
-            rb_str_append(result, rb_inspect(super));
-        }
-  	    rb_str_cat2(result, ">");
-        rb_str_cat2(result, "#");
+        result = figure_singleton_name(klass);
     }
     else if (TYPE(klass) == T_CLASS)
     {
         result = rb_inspect(klass);
         rb_str_cat2(result, "#");
     }
-    else if (TYPE(klass) == T_MODULE)
-    {
-        result = rb_inspect(klass);
-        rb_str_cat2(result, ".");
-    }
     else
     {
-        rb_raise(rb_eTypeError, "Unsupported type in method name: %s", TYPE(klass));
+        /* Should never happen. */
+        result = rb_str_new2("Unknown#");
+        rb_str_append(result, rb_inspect(klass));
+        rb_str_cat2(result, ">#");
+        rb_raise(rb_eRuntimeError, "Unsupported type in method name: %i\n", result);
     }
 
     /* Last add in the method name */
@@ -314,6 +307,55 @@ method_name(VALUE klass, ID mid)
 
     return result;
 }
+
+static VALUE
+figure_singleton_name(VALUE klass)
+{
+    VALUE result = Qnil;
+
+    /* We have come across a singleton object. First
+       figure out what it is attached to.*/
+    VALUE attached = rb_iv_get(klass, "__attached__");
+
+    /* Is this a singleton class acting as a metaclass? */
+    if (TYPE(attached) == T_CLASS)
+    {
+        result = rb_str_new2("<Class:");
+        rb_str_append(result, rb_inspect(attached));
+        rb_str_cat2(result, ">#");
+    }
+
+    /* Is this for singleton methods on a module? */
+    else if (TYPE(attached) == T_MODULE)
+    {
+        result = rb_str_new2("<Module:");
+        rb_str_append(result, rb_inspect(attached));
+        rb_str_cat2(result, ">#");
+    }
+
+    /* Is it a regular singleton class for an object? */
+    else if (TYPE(attached) == T_OBJECT)
+    {
+        /* Make sure to get the super class so that we don't
+           mistakenly grab a T_ICLASS which would lead to
+           unknown method errors. */
+        VALUE super = rb_class_real(RCLASS(klass)->super);
+        result = rb_str_new2("<Object:");
+        rb_str_append(result, rb_inspect(super));
+        rb_str_cat2(result, ">#");
+    }
+    else
+    {
+        /* Should never happen. */
+        result = rb_str_new2("<Unknown:");
+        rb_str_append(result, rb_inspect(klass));
+        rb_str_cat2(result, ">#");
+        rb_raise(rb_eRuntimeError, "Unknown singleton class: %i", result);
+    }
+
+    return result;
+}
+
 
 static inline st_data_t
 method_key(VALUE klass, ID mid)
@@ -375,34 +417,12 @@ stack_peek(prof_stack_t *stack)
 }
 
 
-/* -- Hash keyed on class/method_id to hold information
-      about each method ---- */
-static int
-value_cmp(int x, int y)
-{
-    return x != y;
-}
-
-static inline int
-value_hash(int v)
-{
-    return v;
-}
-
-static struct st_hash_type type_value_hash = {
-    value_cmp,
-    value_hash,
-#if RUBY_VERSION_CODE >= 190
-    st_nothing_key_free,
-    st_nothing_key_clone
-#endif
-};
  
 /* --- Keeps track of the methods the current method calls */
 static st_table *
 minfo_table_create()
 {
-    return st_init_table(&type_value_hash);
+    return st_init_numtable();
 }
 
 static inline int
@@ -426,7 +446,7 @@ minfo_table_lookup(st_table *table, st_data_t key)
 static void
 minfo_table_free(st_table *table)
 {
-    xfree(table);
+    st_free_table(table);
 }
 
 
@@ -435,7 +455,7 @@ minfo_table_free(st_table *table)
 static st_table *
 child_table_create()
 {
-    return st_init_table(&type_value_hash);
+    return st_init_numtable();
 }
 
 static inline int
@@ -454,6 +474,12 @@ child_table_lookup(st_table *table, st_data_t key)
     else {
 	    return NULL;
     }
+}
+
+static void
+child_table_free(st_table *table)
+{
+    st_free_table(table);
 }
 
 /* Document-class: RubyProf::CallInfo
@@ -494,14 +520,16 @@ static VALUE
 call_info_new(prof_call_info_t *result)
 {
     /* We don't want Ruby freeing the underlying C structures, that
-       is done when the prof_method_t is freed. */
+       is when the prof_method_t is freed. */
     return Data_Wrap_Struct(cCallInfo, NULL, NULL, result);
 }
 
 static prof_call_info_t *
 get_call_info_result(VALUE obj)
 {
-    if (TYPE(obj) != T_DATA) {
+    if (TYPE(obj) != T_DATA)
+    {
+        /* Should never happen */
 	    rb_raise(rb_eTypeError, "Not a call info object");
     }
     return (prof_call_info_t *) DATA_PTR(obj);
@@ -599,7 +627,7 @@ prof_method_free(prof_method_t *data)
 {
     st_foreach(data->children, free_call_infos, 0);
     minfo_table_free(data->parents);
-    xfree(data->children);
+    child_table_free(data->children);
     xfree(data);
 }
 
@@ -614,8 +642,10 @@ static prof_method_t *
 get_prof_method(VALUE obj)
 {
     if (TYPE(obj) != T_DATA ||
-	    RDATA(obj)->dfree != (RUBY_DATA_FUNC) prof_method_free) {
-	    rb_raise(rb_eTypeError, "wrong profile result");
+	    RDATA(obj)->dfree != (RUBY_DATA_FUNC) prof_method_free)
+    {
+	    /* Should never happen */
+        rb_raise(rb_eTypeError, "wrong profile result");
     }
     return (prof_method_t *) DATA_PTR(obj);
 }
@@ -738,9 +768,6 @@ to RubyProf::MethodInfo objects.*/
 static VALUE
 prof_method_parents(VALUE self)
 {
-    /* Returns a hash table, keyed on method name, of call info
-       objects for all methods that call this method. */
-       
     VALUE result = rb_hash_new();
     VALUE parents = rb_ary_new();
     int len = 0;
@@ -762,8 +789,14 @@ prof_method_parents(VALUE self)
         
         /* Now get the call info */
         call_info = child_table_lookup(parent->children, child->key);
+        
         if (call_info == NULL)
-            rb_raise(rb_eTypeError, "Could not find parent call info");
+        {
+           /* Should never happen */
+            rb_raise(rb_eRuntimeError,
+                    "Could not find parent call info object for %s",
+                    method_name(child->klass, child->mid));
+        }
 
         /* Create a new Ruby CallInfo object and store it into the hash
            keyed on the parent's name.  We use the parent's name because
@@ -838,7 +871,23 @@ collect_methods(st_data_t key, st_data_t value, st_data_t result)
     prof_method_t *method = (prof_method_t *) value;
     VALUE name = method_name(method->klass, method->mid);
     VALUE hash = (VALUE) result;
+
+    VALUE existing_value = rb_hash_aref(hash, name);
+    
+    /* Sanity check.  If we have generated the same method name for another prof_method 
+       then we cannot put the current prof_method into the hash table.  If we do, we
+       overwrite the reference to the other prof_method.  That will mean that Ruby
+       will garbage collect it wreaking all sorts of havoc! Trust me - this one took
+       a long time to track down. */
+    if (existing_value != Qnil)
+    {
+        /* Definitely should never happen! */
+        rb_raise(rb_eRuntimeError, 
+                 "The name %s has already been assigned to another method.  This is a bug - please report it.",
+                 name);
+    }
     rb_hash_aset(hash, name, prof_method_new(method));
+
     return ST_CONTINUE;
 }
 
@@ -868,15 +917,14 @@ thread_data_free(thread_data_t* thread_data)
 static st_table *
 threads_table_create()
 {
-    return st_init_table(&type_value_hash);
+    return st_init_numtable();
 }
 
 static inline int
 threads_table_insert(st_table *table, VALUE thread, thread_data_t *thread_data)
 {
-    /* Get thread id, don't want to store the thread and influence GC. */
-    int thread_id = get_thread_id(thread);
-    return st_insert(table, (st_data_t ) thread_id, (st_data_t) thread_data);
+    /* Its too slow to key on the real thread id so just typecast thread instead. */
+    return st_insert(table, (st_data_t ) thread, (st_data_t) thread_data);
 }
 
 static inline thread_data_t *
@@ -885,10 +933,8 @@ threads_table_lookup(st_table *table, VALUE thread)
     thread_data_t* result;
     st_data_t val;
 
-    /* Get thread id, don't want to store the thread and influence GC. */
-    int thread_id = get_thread_id(thread);
-
-    if (st_lookup(table, (st_data_t) thread_id, &val))
+    /* Its too slow to key on the real thread id so just typecast thread instead. */
+    if (st_lookup(table, (st_data_t) thread, &val))
     {
 	    result = (thread_data_t *) val;
     }
@@ -896,6 +942,8 @@ threads_table_lookup(st_table *table, VALUE thread)
     {
         prof_method_t *toplevel;
         result = thread_data_create();
+        /* Store the real thread id here so it can be shown in the results. */
+        result->thread_id = get_thread_id(thread);
 
         /* Add a toplevel method to the thread */
         toplevel = prof_method_create(Qnil, toplevel_id, thread);
@@ -910,6 +958,12 @@ threads_table_lookup(st_table *table, VALUE thread)
     return result;
 }
 
+static void
+threads_table_free(st_table *table)
+{
+    st_free_table(table);
+}
+
 static int
 free_thread_data(st_data_t key, st_data_t value, st_data_t dummy)
 {
@@ -921,18 +975,16 @@ static void
 free_threads(st_table* thread_table)
 {
     st_foreach(thread_table, free_thread_data, 0);
-    xfree(thread_table);
 }
 
 static int
 collect_threads(st_data_t key, st_data_t value, st_data_t result)
 {
-    int thread_id = (int) key;
     thread_data_t* thread_data = (thread_data_t*) value;
     VALUE threads_hash = (VALUE) result;
     VALUE minfo_hash = rb_hash_new();
     st_foreach(thread_data->minfo_table, collect_methods, minfo_hash);
-    rb_hash_aset(threads_hash, INT2NUM(thread_id), minfo_hash);
+    rb_hash_aset(threads_hash, INT2NUM(thread_data->thread_id), minfo_hash);
 
     return ST_CONTINUE;
 }
@@ -972,11 +1024,10 @@ update_result(prof_method_t * parent, prof_method_t *child,
 static void
 prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
 {
-    thread_data_t* thread_data;
-    st_data_t key;
-    prof_data_t *data;
-    VALUE thread;
     static int profiling = 0;
+    VALUE thread;
+    thread_data_t* thread_data;
+    prof_data_t *data;
     
     if (profiling) return;
 
@@ -994,33 +1045,26 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     if (BUILTIN_TYPE(klass) == T_ICLASS)
         klass = RBASIC(klass)->klass;
       
-    key = method_key(klass, mid);
-   
-/*    {
-            VALUE temp_name = temp_name = rb_String(klass);
-            char* class_name = StringValuePtr(temp_name);
-            char* method_name = rb_id2name(mid);
-     
-            printf("Event: %2d, Key: %d, Method: %s#%s\n", event, key, class_name, method_name);
-    }
-*/
+    /* Debug Code
+    {
+        VALUE class_name = rb_String(klass);
+        char* c_class_name = StringValuePtr(class_name);
+        char* c_method_name = rb_id2name(mid);
+        VALUE generated_name = method_name(klass, mid);
+        char* c_generated_name = StringValuePtr(generated_name);
+        printf("Event: %2d, Key: %d, Method: %s#%s\n", event, key, c_class_name, c_method_name);
+    }*/
+
     thread = rb_thread_current();
-
     thread_data = threads_table_lookup(threads_tbl, thread);
-
   
     switch (event) {
     case RUBY_EVENT_CALL:
     case RUBY_EVENT_C_CALL:
     {
-	    prof_method_t *child;
+        st_data_t key = method_key(klass, mid);
+        prof_method_t *child = minfo_table_lookup(thread_data->minfo_table, key);
 
-        data = stack_push(thread_data->stack);
-        data->key = key;
-	    data->start_time = get_clock();
-	    data->child_cost = 0;
-
-   	    child = minfo_table_lookup(thread_data->minfo_table, key);
 	    if (child == NULL) {
 		    child = prof_method_create(klass, mid, thread);
 		    minfo_table_insert(thread_data->minfo_table, key, child);
@@ -1029,6 +1073,12 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         /* Increment count of number of times this child has been called on
            the current stack. */
         child->stack_count++;
+    
+        /* Push the data for this method onto our stack */
+        data = stack_push(thread_data->stack);
+        data->method_info = child;
+	    data->start_time = get_clock();
+	    data->child_cost = 0;
 
 	    break;
     }
@@ -1041,14 +1091,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         prof_clock_t now = get_clock();
 	    prof_clock_t total_time, self_time;
 
-        /* Look up the child.  If it doesn't exist then that means
-           profiling started after this method was entered, thus
-           we are seeing the returns but not the enters.  So just
-           skip this method.*/
-        child = minfo_table_lookup(thread_data->minfo_table, key);
-        if (child == NULL)
-            break;
-
+        /* Pop data for this method off the stack. */
 	    data = stack_pop(thread_data->stack);
 
         if (data == NULL)
@@ -1057,34 +1100,35 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
             seen it when running a test case using Test::Unit under Arachno when
             a condition is raised.  There is an extra Array#each method at the end.
             Hmm....If this happens just skip it for now and put out an error message. */
-            VALUE temp_name = temp_name = rb_String(klass);
-            char* class_name = StringValuePtr(temp_name);
-            char* method_name = rb_id2name(mid);
-            ruby_set_current_source();
-
-            printf("rurby-prof error: unmatched method.  Event: %d, Method: %s#%s\n", event, class_name, method_name);
-            printf("Called from %s:%d\n", ruby_sourcefile, ruby_sourceline);
-
-            /*   rb_raise(rb_eTypeError, "Stack is empty"); */
+            st_data_t key = method_key(klass, mid);
+            VALUE name = method_name(child->klass, child->mid);
+            child = minfo_table_lookup(thread_data->minfo_table, key);
+            rb_warn("Empty stack for %s", StringValuePtr(name));
+                    
             return;
         }
 
+        /* Update timing information. */
         total_time = now - data->start_time;
         self_time = total_time - data->child_cost;
 
+        /* Okay, get the method that called this method (ie, parent) */
         caller = stack_peek(thread_data->stack);
 
 	    if (caller == NULL)
+        {
             /* We are at the top of the stack, so grab the toplevel method */
             parent = minfo_table_lookup(thread_data->minfo_table, toplevel_key);
+        }
         else
         {
             caller->child_cost += total_time;
-    	    parent = minfo_table_lookup(thread_data->minfo_table, caller->key);
+    	    parent = caller->method_info;
         }
         
         /* Decrement count of number of times this child has been called on
            the current stack. */
+        child = data->method_info;
         child->stack_count--;
 
         /* If the stack count is greater than zero, then this
@@ -1096,30 +1140,14 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
             total_time = 0;
 
         update_result(parent, child, total_time, self_time);
+	    break;
 	}
-	break;
     }
     profiling--;
 }
 
 
 /* ========  ProfResult ============== */
-static VALUE
-result_new()
-{
-    /* Returns a regular Ruby object that wraps a hash
-       table of MethodInfo objects keyed on name.*/
-    VALUE threads = rb_hash_new();
-    int argc;
-    VALUE argv[1];
-
-    st_foreach(threads_tbl, collect_threads, threads);
-
-    /* Create result object */
-    argc = 1;
-    argv[0] = threads;
-    return rb_class_new_instance(argc, argv, cResult);
-}
 
 /* Document-class: RubyProf::Result
 The RubyProf::Result class is used to store the results of a 
@@ -1133,12 +1161,44 @@ for each method called during the threads execution.  That
 hash table is keyed on method name and contains
 RubyProf::MethodInfo objects. */
 
-/* :nodoc:  */
-static VALUE
-result_initialize(VALUE self, VALUE threads)
+
+static void
+prof_result_mark(prof_result_t *prof_result)
 {
-    rb_iv_set(self, "@threads", threads);
-    return self;
+    VALUE threads = prof_result->threads;
+    rb_gc_mark(threads);
+}
+
+static void
+prof_result_free(prof_result_t *prof_result)
+{
+    prof_result->threads = NULL;
+    xfree(prof_result);
+}
+
+static VALUE
+prof_result_new()
+{
+    prof_result_t *prof_result = ALLOC(prof_result_t);
+
+    /* Wrap threads in Ruby regular Ruby hash table. */
+    prof_result->threads = rb_hash_new();
+    st_foreach(threads_tbl, collect_threads, prof_result->threads);
+
+    return Data_Wrap_Struct(cResult, prof_result_mark, prof_result_free, prof_result);
+}
+
+
+static prof_result_t *
+get_prof_result(VALUE obj)
+{
+    if (TYPE(obj) != T_DATA ||
+	    RDATA(obj)->dfree != (RUBY_DATA_FUNC) prof_result_free)
+    {
+        /* Should never happen */
+	    rb_raise(rb_eTypeError, "wrong result object");
+    }
+    return (prof_result_t *) DATA_PTR(obj);
 }
 
 /* call-seq:
@@ -1150,9 +1210,10 @@ information for each method called during the threads execution.
 That hash table is keyed on method name and contains 
 RubyProf::MethodInfo objects. */
 static VALUE
-result_threads(VALUE self)
+prof_result_threads(VALUE self)
 {
-    return rb_iv_get(self, "@threads");
+    prof_result_t *prof_result = get_prof_result(self);
+    return prof_result->threads;
 }
 
 
@@ -1165,15 +1226,18 @@ calling method for this thread.  This method will always
 be named #toplevel and contains the total amount of time spent
 executing code in this thread. */
 static VALUE
-result_toplevel(VALUE self, VALUE thread_id)
+prof_result_toplevel(VALUE self, VALUE thread_id)
 {
-    VALUE threads = rb_iv_get(self, "@threads");
-    VALUE methods = rb_hash_aref(threads, thread_id);
+    prof_result_t *prof_result = get_prof_result(self);
+    VALUE methods = rb_hash_aref(prof_result->threads, thread_id);
     VALUE key = method_name(Qnil, toplevel_id);
     VALUE result = rb_hash_aref(methods, key);
 
     if (result == Qnil)
+    {
+        /* Should never happen */
 	    rb_raise(rb_eRuntimeError, "Could not find toplevel method information");
+    }
     return result;
 }
 
@@ -1203,7 +1267,8 @@ prof_set_clock_mode(VALUE self, VALUE val)
 {
     int mode = NUM2INT(val);
 
-    if (threads_tbl) {
+    if (threads_tbl)
+    {
 	    rb_raise(rb_eRuntimeError, "can't set clock_mode while profiling");
     }
 
@@ -1245,7 +1310,8 @@ prof_start(VALUE self)
     toplevel_id = rb_intern("toplevel");
     toplevel_key = method_key(Qnil, toplevel_id);
 
-    if (threads_tbl != NULL) {
+    if (threads_tbl != NULL)
+    {
         rb_raise(rb_eRuntimeError, "RubyProf.start was already called");
     }
 
@@ -1268,9 +1334,10 @@ prof_start(VALUE self)
 static VALUE
 prof_stop(VALUE self)
 {
-    VALUE result;
+    VALUE result = Qnil;
 
-    if (threads_tbl == NULL) {
+    if (threads_tbl == NULL)
+    {
         rb_raise(rb_eRuntimeError, "RubyProf.start is not called yet");
     }
 
@@ -1278,10 +1345,12 @@ prof_stop(VALUE self)
     rb_remove_event_hook(prof_event_hook);
 
     /* Create the result */
-    result = result_new();
+    result = prof_result_new();
+    temp = result;
 
     /* Free threads table */
     free_threads(threads_tbl);
+    threads_table_free(threads_tbl);
     threads_tbl = NULL;
 
     /* Free reference to class_tbl */
@@ -1299,7 +1368,9 @@ static VALUE
 prof_profile(VALUE self)
 {
     if (!rb_block_given_p())
+    {
         rb_raise(rb_eArgError, "A block must be provided to the profile method.");
+    }
 
     prof_start(self);
     rb_yield(Qnil);
@@ -1333,9 +1404,8 @@ Init_ruby_prof()
 
     cResult = rb_define_class_under(mProf, "Result", rb_cObject);
     rb_undef_method(CLASS_OF(cMethodInfo), "new");
-    rb_define_method(cResult, "initialize", result_initialize, 1);
-    rb_define_method(cResult, "threads", result_threads, 0);
-    rb_define_method(cResult, "toplevel", result_toplevel, 1);
+    rb_define_method(cResult, "threads", prof_result_threads, 0);
+    rb_define_method(cResult, "toplevel", prof_result_toplevel, 1);
 
     cMethodInfo = rb_define_class_under(mProf, "MethodInfo", rb_cObject);
     rb_include_module(cMethodInfo, rb_mComparable);
@@ -1359,7 +1429,6 @@ Init_ruby_prof()
     rb_define_method(cCallInfo, "self_time", call_info_self_time, 0);
     rb_define_method(cCallInfo, "children_time", call_info_children_time, 0);
 
-    class_tbl = Qnil;
     rb_global_variable(&class_tbl);
 }
 
