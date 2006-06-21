@@ -9,9 +9,9 @@ module RubyProf
   # the RUBY_PROF_CLOCK_MODE environment variable
   def self.figure_clock_mode
     case ENV["RUBY_PROF_CLOCK_MODE"]
-	  when "wall_time"
+	  when "wall" || "wall_time"
 		  RubyProf.clock_mode = RubyProf::WALL_TIME
-	  when "cpu_time"
+	  when "cpu" || "cpu_time"
   	  if ENV.key?("RUBY_PROF_CPU_FREQUENCY")
    		  RubyProf.cpu_frequency = ENV["RUBY_PROF_CPU_FREQUENCY"].to_f
   	  else
