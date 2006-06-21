@@ -18,7 +18,7 @@ ruby-prof is a fast code profiler for Ruby.  Its features include:
 ruby-prof requires Ruby 1.8.2 or higher.
 
 If you are running Linux or Unix you'll need a C compiler so the extension
-can be compiled when it is insalled.
+can be compiled when it is installed.
 
 If you are running Windows, then install the Windows specific RubyGem which
 includes an already built extension.
@@ -46,7 +46,7 @@ the ruby-prof documentation[link:files/bin/ruby-prof.html].
 === ruby-prof API
 
 The second way is to use the ruby-prof API to profile
-particular segements of code.  
+particular segments of code.  
 
   require 'ruby-prof'
   
@@ -144,7 +144,7 @@ that use significant CPU or disk time during a profiling run
 then the reported results will be too large.
 
 CPU time uses the CPU clock counter to measure time.  The returned
-values are dependent on the correctly setting the CPU's frequence.
+values are dependent on the correctly setting the CPU's frequency.
 This mode is only supported on Pentium or PowerPC platforms.
 
 To set the clock_mode:
@@ -158,9 +158,9 @@ This default value is PROCESS_TIME.
 You may also specify the clock_mode by using the RUBY_PROF_CLOCK_MODE
 environment variable:
 
-	export RUBY_PROF_CLOCK_MODE=process_time
-	export RUBY_PROF_CLOCK_MODE=wall_time
-	export RUBY_PROF_CLOCK_MODE=cpu_time
+	export RUBY_PROF_CLOCK_MODE=process
+	export RUBY_PROF_CLOCK_MODE=wall
+	export RUBY_PROF_CLOCK_MODE=cpu
 	
 Note that these values have changed since ruby-prof-0.3.0.	
 
@@ -179,14 +179,14 @@ Wall time is measured using the GetLocalTime API.
 
 On both platforms, cpu time is measured using the RDTSC assembly
 function provided by the Pentium and PowerPC platforms. CPU time
-is dependent on the cpu's frequence.  On Linux, ruby-prof attempts 
+is dependent on the cpu's frequency.  On Linux, ruby-prof attempts 
 to read this value from "/proc/cpuinfo."  On Windows, you must
 specify the clock frequency.  This can be done using the
 RUBY_PROF_CPU_FREQUENCY environment variable:
 
 	export RUBY_PROF_CPU_FREQUENCY=<value>
 	
-You can also directly set the cpu_frequency by calling:
+You can also directly set the cpu frequency by calling:
 
 	RubyProf.cpu_frequency = <value> 
 
@@ -205,10 +205,10 @@ accurate, but these should be carefully analyzed to verify their veracity.
 == Performance
 
 Significant effort has been put into reducing ruby-prof's overhead
-as much as possible.  Our tests show that profiling code generally
-results in a 50% overhead.  Thus if a piece of code takes 10
-seconds to run then when it is profiled it should take around
-15 seconds.  
+as much as possible.  Our tests show that the overhead associated
+with profiling code varies considerably with the code being
+profiled.  On the low end overhead is around 10% while on the
+high end its can around 80%.
 
 == Windows Binary
 
