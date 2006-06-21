@@ -42,8 +42,6 @@ static VALUE cResult;
 static VALUE cMethodInfo;
 static VALUE cCallInfo;
 
-static VALUE temp;
-
 #ifdef HAVE_LONG_LONG
 typedef LONG_LONG prof_clock_t;
 #else
@@ -267,7 +265,6 @@ static VALUE
 figure_singleton_name(VALUE klass)
 {
     VALUE result = Qnil;
-    VALUE temp;
 
     /* We have come across a singleton object. First
        figure out what it is attached to.*/
@@ -1344,7 +1341,6 @@ prof_stop(VALUE self)
 
     /* Create the result */
     result = prof_result_new();
-    temp = result;
 
     /* Free threads table */
     free_threads(threads_tbl);
