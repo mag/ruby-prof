@@ -13,7 +13,7 @@ FILES = FileList[
   'LICENSE',
   'CHANGES',
   'bin/*',
-  'lib/*',
+  'lib/**/*',
   'examples/*',
   'ext/*',
   'doc/**/*',
