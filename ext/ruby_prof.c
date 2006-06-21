@@ -976,6 +976,10 @@ free_threads(st_table* thread_table)
 static int
 collect_threads(st_data_t key, st_data_t value, st_data_t result)
 {
+    /* Although threads are keyed on an id, that is actually a 
+       pointer to the VALUE object of the thread.  So its bogus.
+       However, in thread_data is the real thread id stored
+       as an int. */
     thread_data_t* thread_data = (thread_data_t*) value;
     VALUE threads_hash = (VALUE) result;
     VALUE minfo_hash = rb_hash_new();
