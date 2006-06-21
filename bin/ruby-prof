@@ -6,16 +6,16 @@
 #
 # == Usage
 #
-# ruby_prof [options] <script.rb> [--extra-options-for-script]
+# ruby_prof [options] <script.rb> [options-for-script]
 #
 # Options:
 #     -p, --printer=printer            Select a printer:
-#                                        flat - Prints a flat profile as text.
+#                                        flat - Prints a flat profile as text (default).
 #                                        graph - Prints a graph profile as text.
 #                                        graph_html - Prints a graph profile as html.
 #     -f, --file=path                  Output results to a file instead of standard out.
 #     -c, --clock-mode=clock_mode      Select a clock mode:
-#                                        process - Use process time. This is default.
+#                                        process - Use process time (default).
 #                                        wall - Use wall time.
 #                                        cpu - Use the CPU clock counter
 #                                              (only supported on Pentium and PowerPCs).
@@ -33,7 +33,7 @@ require 'ruby-prof'
 
 options = OpenStruct.new
 options.clock_mode = RubyProf::PROCESS_TIME
-options.printer = RubyProf::GraphPrinter
+options.printer = RubyProf::FlatPrinter
 options.min_percent = 0
 options.file = nil
 
@@ -47,7 +47,7 @@ opts = OptionParser.new do |opts|
 		
 	opts.on('-p printer', '--printer=printer', [:flat, :graph, :graph_html],
 					'Select a printer:',
-					'  flat - Prints a flat profile as text.',
+					'  flat - Prints a flat profile as text (default).',
 					'  graph - Prints a graph profile as text.',
 					'  graph_html - Prints a graph profile as html.') do |printer|
 					
@@ -75,7 +75,7 @@ opts = OptionParser.new do |opts|
 	opts.on('-c clock_mode', '--clock-mode=clock_mode',
 			[:process, :wall, :cpu],
 			'Select a clock mode:',
-			'  process - Use process time. This is default.',
+			'  process - Use process time (default).',
 			'  wall - Use wall time.',
 			'  cpu - Use the CPU clock counter',
 			'        (only supported on Pentium and PowerPCs).') do |clock_mode|
