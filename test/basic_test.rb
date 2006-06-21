@@ -27,6 +27,24 @@ class C3
   end
 end
 
+module M4
+  def hello
+  end
+end
+
+module M5
+  include M4
+  def goodbye
+    hello
+  end
+end
+
+class C6
+  include M5
+  def test
+    goodbye
+  end
+end
 
 class BasicTest < Test::Unit::TestCase
   def test_double_profile

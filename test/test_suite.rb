@@ -1,6 +1,7 @@
 # file ts_dbaccess.rb
 require 'test/unit'
 require 'basic_test'
+require 'module_test'
 require 'timing_test'
 require 'prime_test'
 require 'printers_test'
