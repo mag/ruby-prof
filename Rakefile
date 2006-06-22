@@ -73,8 +73,8 @@ end
 
 # Rake task to build the default package
 Rake::GemPackageTask.new(default_spec) do |pkg|
-	pkg.need_zip = false
-  pkg.need_tar = false
+  pkg.need_tar = true
+  pkg.need_tar = true
 end
 
 
