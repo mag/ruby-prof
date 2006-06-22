@@ -63,11 +63,10 @@ module RubyProf
       
       print_heading(thread_id)
     
-      # Get methods and sort by time
-      methods = methods.values.sort.reverse
-    
       # Print each method
-      methods.each do |method|
+      methods.sort.reverse.each do |pair|
+        name = pair[0]
+        method = pair[1]
         total_percentage = (method.total_time/total_time) * 100
         self_percentage = (method.self_time/total_time) * 100
         
@@ -84,7 +83,7 @@ module RubyProf
         @output << sprintf("%#{TIME_WIDTH}.2f", method.self_time)
         @output << sprintf("%#{TIME_WIDTH}.2f", method.children_time)
         @output << sprintf("%#{CALL_WIDTH}i", method.called)
-        @output << sprintf("     %s", method.name)
+        @output << sprintf("     %s", name)
         @output << "\n"
     
         print_children(thread_id, method)

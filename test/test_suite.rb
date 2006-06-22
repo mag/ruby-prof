@@ -2,6 +2,7 @@
 require 'test/unit'
 require 'basic_test'
 require 'module_test'
+require 'duplicate_names_test'
 require 'timing_test'
 require 'prime_test'
 require 'printers_test'

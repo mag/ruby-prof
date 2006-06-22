@@ -734,10 +734,9 @@ prof_method_id(VALUE self)
 /* call-seq:
    method_name -> string
 
-Returns the name of this object.  The name may be in the form:
-    Object#method
-    Module.method
-    .method */
+Returns the name of this method in the format Object#method.  Singletons
+methods will be returned in the format <Object::Object>#method.*/
+
 static VALUE
 prof_method_name(VALUE self)
 {
@@ -865,24 +864,27 @@ static int
 collect_methods(st_data_t key, st_data_t value, st_data_t result)
 {
     prof_method_t *method = (prof_method_t *) value;
-    VALUE name = method_name(method->klass, method->mid);
     VALUE hash = (VALUE) result;
+    VALUE base_name = method_name(method->klass, method->mid);
+    VALUE method_key = base_name;
 
-    VALUE existing_value = rb_hash_aref(hash, name);
-    
     /* Sanity check.  If we have generated the same method name for another prof_method 
-       then we cannot put the current prof_method into the hash table.  If we do, we
-       overwrite the reference to the other prof_method.  That will mean that Ruby
-       will garbage collect it wreaking all sorts of havoc! Trust me - this one took
-       a long time to track down. */
-    if (existing_value != Qnil)
+       then we will overrite a pre-existing MethodInfo object in the table.  
+       That would leave the original one unreferenced, which means it will 
+       be garbage collected which leads to segmentation faults.  */
+    VALUE existing_value = rb_hash_aref(hash, method_key);
+    
+    int i = 1;
+    while(existing_value != Qnil)
     {
-        /* Definitely should never happen! */
-        rb_raise(rb_eRuntimeError, 
-                 "The name %s has already been assigned to another method.  This is a bug - please report it.",
-                 name);
+        method_key = rb_str_dup(base_name);
+        rb_str_cat2(method_key, "_");
+        rb_str_concat(method_key, rb_inspect(INT2NUM(i)));
+        existing_value = rb_hash_aref(hash, method_key);
+        i++;
     }
-    rb_hash_aset(hash, name, prof_method_new(method));
+
+    rb_hash_aset(hash, method_key, prof_method_new(method));
 
     return ST_CONTINUE;
 }
@@ -1102,7 +1104,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
             VALUE message = rb_str_new2("ruby-prof: An error occured when leaving the method %s.\n");
             rb_str_cat2(message, "   Perhaps an exception occured in the code being profiled?\n" );
 
-            rb_warn(StringValuePtr(message), StringValuePtr(name));
+          //  rb_warn(StringValuePtr(message), StringValuePtr(name));
                     
             return;
         }

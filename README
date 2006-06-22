@@ -55,7 +55,7 @@ particular segments of code.
   ...
   [code to profile]
   ...
-  result = RubyProf.end
+  result = RubyProf.stop
   
   # Print a flat profile to text
   printer = RubyProf::TextPrinter.new(result)

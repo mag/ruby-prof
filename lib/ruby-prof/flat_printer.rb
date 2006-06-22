@@ -45,16 +45,15 @@ module RubyProf
       toplevel = @result.toplevel(thread_id)
       total_time = toplevel.total_time
 
-      methods = methods.values.sort do |method1, method2|
-        method1.self_time <=> method2.self_time
-     	end
-     	methods.reverse!
       
   	  sum = 0
   	  @output << "Thread ID: " << thread_id << "\n"
   	  @output << " %self  cumulative  total     self   children  calls self/call total/call  name\n"
+		
+  	  methods.sort.reverse.each do |pair|
+        method_name = pair[0]
+        method = pair[1]
 
-  	  for method in methods
         self_percent = (method.self_time / total_time) * 100
         next if self_percent < @min_percent
         
@@ -65,10 +64,10 @@ module RubyProf
 	                    method.total_time,                   # total
 	                    method.self_time,                    # self
 	                    method.children_time,                # children
-	                    method.called,                        # calls
-  	                  method.self_time  / method.called,    # self/call
-  	                  method.total_time  / method.called,   # total/call
-    	                method.name)                         # name
+	                    method.called,                       # calls
+  	                  method.self_time  / method.called,   # self/call
+  	                  method.total_time  / method.called,  # total/call
+    	                method_name)                         # name
   	  end
 	  end
   end

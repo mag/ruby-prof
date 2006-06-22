@@ -141,30 +141,6 @@ module RubyProf
       	Dir.mkdir(output_directory)
       end
     end
-    
-    # Run script
-    #def figure_printer
-      #printer = nil
-      #@options.each do |option|
-        #match = option.match(/-p\s*=?(.*)/)
-        #if match
-        	#printer = match[1]
-        #elsif match = option.match(/--printer\s*=?\s*(.*)/)
-          #printer = match[1]
-        #end
-      #end
-      
-      #case printer
-      	#when nil
-          #printer = 'flat'
-        #when 'flat', 'graph', 'graph_html'
-          ## do nothing
-        #else
-          #printer = 'flat'
-      #end
-        
-      #printer
-    #end
 
     def option_list # :nodoc:
       ENV['TESTOPTS'] || @options.join(" ") || ""

@@ -168,8 +168,9 @@ module RubyProf
 					<th>Name</th>
 				</tr>
 
-				<% methods = methods.values.sort.reverse %>
-				<% for method in methods %>
+				<% methods.sort.reverse.each do |pair| %>
+	        <% name = pair[0] %>
+  	      <% method = pair[1] %>
 					<% method_total_percent = self.total_percent(method) %>
 					<% next if method_total_percent < @min_percent %>
 					<% method_self_percent = self.self_percent(method) %>
