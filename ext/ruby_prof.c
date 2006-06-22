@@ -1103,8 +1103,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
             VALUE name = method_name(klass, mid);
             VALUE message = rb_str_new2("ruby-prof: An error occured when leaving the method %s.\n");
             rb_str_cat2(message, "   Perhaps an exception occured in the code being profiled?\n" );
-
-          //  rb_warn(StringValuePtr(message), StringValuePtr(name));
+            rb_warn(StringValuePtr(message), StringValuePtr(name));
                     
             return;
         }
