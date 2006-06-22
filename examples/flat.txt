@@ -1,4 +1,4 @@
-=Flat Profiles
+= Flat Profiles
 
 Flat profiles show the total amount of time spent in each method.
 As an example, here is the output from running printers_test.rb.
@@ -33,12 +33,12 @@ All values are in seconds.
 The columns are:
 
 	%self        - The percentage of time spent in this method, derived from self_time/total_time
-  cumulative   - The sum of the time spent in this method and all the methods listed above it.
+	cumulative   - The sum of the time spent in this method and all the methods listed above it.
 	total        - The time spent in this method and its children.
 	self         - The time spent in this method.
 	children     - The time spent in this method's children.
-  calls        - The number of times this method was called.
-  self/call    - The average time spent per call in this method.
+	calls        - The number of times this method was called.
+	self/call    - The average time spent per call in this method.
   total/call   - The average time spent per call in this method and its children.
   name         - The name of the method.
 
@@ -47,10 +47,8 @@ first.
 
 The interpretation of method names is:
 * #toplevel - The root method that calls all other methods
-* Object#test - An instance method "test" on the class "Object"
-* <Class:Object>#test - A class method "test" on the class "Object"
-* <Object:Object>#test - A singleton method "test" on a singleton class inherited from "Object"
-* Module.test - An instance method "test" on the module "Module"
+* MyObject#test - An instance method "test" of the class "MyObject"
+* <Object:MyObject>#test - The <> characters indicate a singleton method on a singleton class.
 
 For example, wee can see that Integer#upto took the most time, 4.06 seconds.  An additional
 4.66 seconds were spent in its children, for a total time of 8.72 seconds.
