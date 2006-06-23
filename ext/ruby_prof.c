@@ -878,7 +878,7 @@ collect_methods(st_data_t key, st_data_t value, st_data_t result)
     while(existing_value != Qnil)
     {
         method_key = rb_str_dup(base_name);
-        rb_str_cat2(method_key, "_");
+        rb_str_cat2(method_key, "-");
         rb_str_concat(method_key, rb_inspect(INT2NUM(i)));
         existing_value = rb_hash_aref(hash, method_key);
         i++;
