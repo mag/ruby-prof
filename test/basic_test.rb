@@ -47,6 +47,14 @@ class C6
 end
 
 class BasicTest < Test::Unit::TestCase
+  def test_running
+    assert(!RubyProf.running?)
+    RubyProf.start
+    assert(RubyProf.running?)
+    RubyProf.stop
+    assert(!RubyProf.running?)
+  end
+  
   def test_double_profile
     RubyProf.start
     assert_raise(RuntimeError) do
@@ -60,7 +68,6 @@ class BasicTest < Test::Unit::TestCase
     end
     RubyProf.stop
   end
-  
   
   def test_no_block
     assert_raise(ArgumentError) do

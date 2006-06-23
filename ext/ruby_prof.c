@@ -35,7 +35,7 @@
 #include <node.h>
 #include <st.h>
 
-#define PROF_VERSION "0.4.0"
+#define PROF_VERSION "0.4.1"
 
 static VALUE mProf;
 static VALUE cResult;
@@ -1301,6 +1301,19 @@ prof_set_clock_mode(VALUE self, VALUE val)
 
 
 /* call-seq:
+   running? -> boolean
+   
+   Returns whether a profile is currently running.*/
+static VALUE
+prof_running(VALUE self)
+{
+    if (threads_tbl != NULL)
+        return Qtrue;
+    else
+        return Qfalse;
+}
+
+/* call-seq:
    start -> void
    
    Starts recording profile data.*/
@@ -1388,6 +1401,7 @@ Init_ruby_prof()
     rb_define_const(mProf, "VERSION", rb_str_new2(PROF_VERSION));
     rb_define_module_function(mProf, "start", prof_start, 0);
     rb_define_module_function(mProf, "stop", prof_stop, 0);
+    rb_define_module_function(mProf, "running?", prof_running, 0);
     rb_define_module_function(mProf, "profile", prof_profile, 0);
     rb_define_singleton_method(mProf, "clock_mode", prof_get_clock_mode, 0);
     rb_define_singleton_method(mProf, "clock_mode=", prof_set_clock_mode, 1);

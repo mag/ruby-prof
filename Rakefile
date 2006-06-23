@@ -5,7 +5,7 @@ require 'rake/rdoctask'
 SO_NAME = "ruby_prof.so"
 
 # ------- Default Package ----------
-RUBY_PROF_VERSION = "0.4.0"
+RUBY_PROF_VERSION = "0.4.1"
 
 FILES = FileList[
   'Rakefile',
@@ -74,7 +74,7 @@ end
 # Rake task to build the default package
 Rake::GemPackageTask.new(default_spec) do |pkg|
   pkg.need_tar = true
-  pkg.need_tar = true
+  pkg.need_zip = true
 end
 
 
