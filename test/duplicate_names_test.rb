@@ -28,10 +28,10 @@ class DuplicateNames < Test::Unit::TestCase
 		method_info = methods['DuplicateNames::Foo::Bar#foo']
 		assert_not_nil(method_info)
 		
-		method_info = methods['DuplicateNames::Foo::Bar#foo_1']
+		method_info = methods['DuplicateNames::Foo::Bar#foo-1']
 		assert_not_nil(method_info)
 		
-		method_info = methods['DuplicateNames::Foo::Bar#foo_2']
+		method_info = methods['DuplicateNames::Foo::Bar#foo-2']
 		assert_not_nil(method_info)
 	end
 end
