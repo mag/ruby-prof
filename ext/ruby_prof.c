@@ -288,7 +288,7 @@ figure_singleton_name(VALUE klass)
     }
 
     /* Is it a regular singleton class for an object? */
-    else if (TYPE(attached) == T_OBJECT)
+    else if (rb_obj_is_kind_of(attached, T_OBJECT)) 
     {
         /* Make sure to get the super class so that we don't
            mistakenly grab a T_ICLASS which would lead to
