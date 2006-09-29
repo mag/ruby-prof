@@ -61,7 +61,7 @@ typedef struct {
     st_data_t key;
     VALUE klass;
     ID mid;
-    int thread_id;
+    unsigned long thread_id;
     int called;
     prof_clock_t self_time;
     prof_clock_t total_time;
@@ -94,7 +94,7 @@ typedef struct {
 typedef struct {
     prof_stack_t* stack;
     st_table* minfo_table;
-    int thread_id;
+    unsigned long thread_id;
 } thread_data_t;
 
 typedef struct {
@@ -255,10 +255,10 @@ static double (*clock2sec)(prof_clock_t) = clock_clock2sec;
 
 
 /* Helper method to get the id of a Ruby thread. */
-static inline int
+static inline unsigned long
 get_thread_id(VALUE thread)
 {
-    return NUM2INT(rb_obj_id(thread));
+    return NUM2LONG(rb_obj_id(thread));
 }
 
 static VALUE
@@ -704,7 +704,7 @@ prof_thread_id(VALUE self)
 {
     prof_method_t *result = get_prof_method(self);
 
-    return INT2FIX(result->thread_id);
+    return LONG2NUM(result->thread_id);
 }
 
 /* call-seq:
@@ -749,7 +749,7 @@ prof_method_collect_parents(st_data_t key, st_data_t value, st_data_t parents)
 {
     prof_method_t *parent = (prof_method_t *) value;
 
-    rb_ary_push(parents, INT2FIX((int) parent));
+    rb_ary_push(parents, INT2NUM((long) parent));
     return ST_CONTINUE;
 }
 
@@ -780,7 +780,7 @@ prof_method_parents(VALUE self)
 
         /* First get the parent */
         VALUE item = rb_ary_entry(parents, i);
-        prof_method_t *parent = (prof_method_t *)(FIX2INT(item));
+        prof_method_t *parent = (prof_method_t *)(FIX2LONG(item));
         
         /* Now get the call info */
         call_info = child_table_lookup(parent->children, child->key);
@@ -1265,7 +1265,7 @@ prof_get_clock_mode(VALUE self)
 static VALUE
 prof_set_clock_mode(VALUE self, VALUE val)
 {
-    int mode = NUM2INT(val);
+    long mode = NUM2LONG(val);
 
     if (threads_tbl)
     {
