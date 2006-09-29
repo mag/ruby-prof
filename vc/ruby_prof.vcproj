@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="ruby-prof"
+	Name="ruby_prof"
 	ProjectGUID="{DDB3E992-BF4B-4413-B061-288E40AECAD3}"
 	RootNamespace="rubyprof"
 	Keyword="Win32Proj"
