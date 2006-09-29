@@ -7,6 +7,7 @@ Features
 * Added suport for outputting data in the format used by
   KCacheGrind (patch from Carl Shimer)
 * Add filename and line numbers to call tree information (patch from Carl Shimer)
+* Added Visual Studio 2005 project file.
 
 Fixes
 -------
