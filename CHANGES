@@ -1,3 +1,32 @@
+0.5.0 (?)
+========================
+
+Features
+--------
+* Added support for 64 bit systems (patch from Diego 'Flameeyes' Pettenò)
+* Added suport for outputting data in the format used by
+  KCacheGrind (patch from Carl Shimer)
+* Add filename and line numbers to call tree information (patch from Carl Shimer)
+
+Fixes
+-------
+* Fixes a bug when the type of an attached object (singleton) is inherited
+  from T_OBJECT as opposed to being a T_OBJECT (identified by Francis Cianfrocca)
+
+
+0.4.1 (2006-06-26)
+========================
+
+Features
+--------
+* Added a RubyProf.running? method to indicate whether a profile is in progress.
+* Added tgz and zip archives to release
+
+Fixes
+-------
+* Duplicate method names are now allowed
+* The documentation has been updated to show the correct API usage is RubyProf.stop not RubyProf.end
+
 
 0.4.0 (2006-06-16)
 ========================
