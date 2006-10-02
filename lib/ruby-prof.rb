@@ -3,6 +3,7 @@ require "ruby_prof.so"
 require "ruby-prof/flat_printer"
 require "ruby-prof/graph_printer"
 require "ruby-prof/graph_html_printer"
+require "ruby-prof/calltree_printer"
 
 module RubyProf
   # See if the user specified the clock mode via 

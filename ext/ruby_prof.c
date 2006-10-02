@@ -63,6 +63,9 @@ typedef struct {
     ID mid;
     unsigned long thread_id;
     int called;
+    int line_no;
+    int called_line_no; // the line this method was called from
+    const char* sourcefile;
     prof_clock_t self_time;
     prof_clock_t total_time;
     st_table *parents;
@@ -591,7 +594,7 @@ the RubyProf::Result object.
 
 /* :nodoc: */
 static prof_method_t *
-prof_method_create(VALUE klass, ID mid, VALUE thread)
+prof_method_create(VALUE klass, ID mid, VALUE thread,NODE* node,int called_from_line)
 {
     prof_method_t *result;
 
@@ -609,6 +612,19 @@ prof_method_create(VALUE klass, ID mid, VALUE thread)
     result->parents = minfo_table_create();
     result->children = child_table_create();
     result->stack_count = 0;
+    result->line_no = node != NULL ? nd_line(node) : 0;
+    result->called_line_no = called_from_line;
+    if(node != NULL) {
+	// set the sourcefile.  the source file, while not referenced
+	// as a const variable appears safe to keep a pointer to
+	// and reference later in the report generation because ruby
+	// internally keeps a static table of source files.  for more information
+	// see gc.c:rb_source_filename
+	result->sourcefile = node->nd_file;
+    }
+    else {
+	result->sourcefile = 0;
+    }
     return result;
 }
 
@@ -684,6 +700,27 @@ prof_method_self_time(VALUE self)
 }
 
 /* call-seq:
+   line_no -> int
+
+   returns the line number of the method */
+static VALUE
+prof_method_line_no(VALUE self)
+{
+    return rb_int_new(get_prof_method(self)->line_no);
+}
+
+/* call-seq:
+   called_line_no -> int
+
+   returns the line number where this method was invoked 
+*/
+static VALUE
+prof_method_called_line_no(VALUE self)
+{
+    return rb_int_new(get_prof_method(self)->called_line_no);
+}
+
+/* call-seq:
    children_time -> float
 
 Returns the total amount of time spent in this method's children. */
@@ -694,6 +731,21 @@ prof_method_children_time(VALUE self)
     prof_clock_t children_time = result->total_time - result->self_time;
     return rb_float_new(clock2sec(children_time));
 }
+
+/* call-seq:
+   source_file => string
+
+return the source file of the method 
+*/
+static VALUE prof_method_sourcefile(VALUE self)
+{
+    const char* sf = get_prof_method(self)->sourcefile;
+    if(!sf) {
+	return rb_str_new2("toplevel");
+    }
+    return rb_str_new2(sf);
+}
+
 
 /* call-seq:
    thread_id -> id
@@ -944,7 +996,7 @@ threads_table_lookup(st_table *table, VALUE thread)
         result->thread_id = get_thread_id(thread);
 
         /* Add a toplevel method to the thread */
-        toplevel = prof_method_create(Qnil, toplevel_id, thread);
+        toplevel = prof_method_create(Qnil, toplevel_id, thread,NULL,0);
         toplevel->called = 1;
         toplevel->total_time = 0;
         toplevel->self_time = 0;
@@ -993,7 +1045,7 @@ collect_threads(st_data_t key, st_data_t value, st_data_t result)
 
 static void
 update_result(prof_method_t * parent, prof_method_t *child,
-              prof_clock_t total_time, prof_clock_t self_time)
+              prof_clock_t total_time, prof_clock_t self_time,NODE* node)
 {
     /* Update child information on parent (ie, the method that
        called the current method) */
@@ -1027,9 +1079,17 @@ static void
 prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
 {
     static int profiling = 0;
+    static int source_line = 0;
     VALUE thread;
     thread_data_t* thread_data;
     prof_data_t *data;
+
+    if(event == RUBY_EVENT_LINE) {
+	// keep the last source line around
+	source_line = nd_line(node);
+	return;
+    }
+
     
     if (profiling) return;
 
@@ -1064,12 +1124,13 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     case RUBY_EVENT_CALL:
     case RUBY_EVENT_C_CALL:
     {
+        //printf("called line #: %d\n",nd_line(node)); 
         st_data_t key = method_key(klass, mid);
         prof_method_t *child = minfo_table_lookup(thread_data->minfo_table, key);
 
 	    if (child == NULL) {
-		    child = prof_method_create(klass, mid, thread);
-		    minfo_table_insert(thread_data->minfo_table, key, child);
+		child = prof_method_create(klass, mid, thread,node,source_line);
+		minfo_table_insert(thread_data->minfo_table, key, child);
 	    }
 
         /* Increment count of number of times this child has been called on
@@ -1095,6 +1156,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
 
         /* Pop data for this method off the stack. */
 	    data = stack_pop(thread_data->stack);
+
 
         if (data == NULL)
         {
@@ -1139,7 +1201,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         if (child->stack_count != 0)
             total_time = 0;
 
-        update_result(parent, child, total_time, self_time);
+        update_result(parent, child, total_time, self_time,node);
 	    break;
 	}
     }
@@ -1333,8 +1395,9 @@ prof_start(VALUE self)
     threads_tbl = threads_table_create();
     
     rb_add_event_hook(prof_event_hook,
-        RUBY_EVENT_CALL | RUBY_EVENT_RETURN |
-        RUBY_EVENT_C_CALL | RUBY_EVENT_C_RETURN);
+		      RUBY_EVENT_CALL | RUBY_EVENT_RETURN |
+		      RUBY_EVENT_C_CALL | RUBY_EVENT_C_RETURN 
+		      | RUBY_EVENT_LINE);
 
     return Qnil;
 }
@@ -1426,6 +1489,8 @@ Init_ruby_prof()
     rb_define_method(cMethodInfo, "called", prof_method_called, 0);
     rb_define_method(cMethodInfo, "total_time", prof_method_total_time, 0);
     rb_define_method(cMethodInfo, "self_time", prof_method_self_time, 0);
+    rb_define_method(cMethodInfo, "line_no", prof_method_line_no, 0);
+    rb_define_method(cMethodInfo, "called_line_no", prof_method_called_line_no, 0);
     rb_define_method(cMethodInfo, "children_time", prof_method_children_time, 0);
     rb_define_method(cMethodInfo, "name", prof_method_name, 0);
     rb_define_method(cMethodInfo, "method_class", prof_method_class, 0);
@@ -1434,6 +1499,7 @@ Init_ruby_prof()
     rb_define_method(cMethodInfo, "parents", prof_method_parents, 0);
     rb_define_method(cMethodInfo, "children", prof_method_children, 0);
     rb_define_method(cMethodInfo, "<=>", prof_method_cmp, 1);
+    rb_define_method(cMethodInfo,"source_file",prof_method_sourcefile,0);
 
     cCallInfo = rb_define_class_under(mProf, "CallInfo", rb_cObject);
     rb_undef_method(CLASS_OF(cCallInfo), "new");
