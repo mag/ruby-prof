@@ -20,6 +20,7 @@
 #                                        wall - Use wall time.
 #                                        cpu - Use the CPU clock counter
 #                                              (only supported on Pentium and PowerPCs).
+#         --replace-progname           Replace $0 when loading the .rb files.
 #     -h, --help                       Show help message
 #         --version                    Show version
 # 
@@ -37,6 +38,7 @@ options.clock_mode = RubyProf::PROCESS_TIME
 options.printer = RubyProf::FlatPrinter
 options.min_percent = 0
 options.file = nil
+options.replace_prog_name = false
 
 opts = OptionParser.new do |opts|
 	opts.banner = "ruby_prof #{RubyProf::VERSION}\n" +
@@ -93,6 +95,10 @@ opts = OptionParser.new do |opts|
 				options.clock_mode = RubyProf::CPU_TIME
 			end
 	end
+        
+        opts.on("--replace-progname", "Replace $0 when loading the .rb files.") do
+                options.replace_prog_name = true
+        end
 		
 	opts.on_tail("-h", "--help", "Show help message") do
 			puts opts
@@ -150,6 +156,9 @@ RubyProf.clock_mode = options.clock_mode
 
 # Get the script we will execute
 script = ARGV.shift
+if options.replace_prog_name
+        $0 = File.basename(File.expand_path(script))
+end
 
 # Start profiling
 RubyProf.start 
