@@ -100,7 +100,7 @@ task :create_win32_gem do
   gem_file = "#{win_spec.name}-#{win_spec.version}-#{win_spec.platform}.gem"
   mv(gem_file, "pkg/#{gem_file}")
 
-  # Remove win extension fro top level directory  
+  # Remove win extension from top level directory  
   rm(target)
 end
 
