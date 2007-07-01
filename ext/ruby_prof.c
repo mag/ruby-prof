@@ -318,7 +318,7 @@ figure_singleton_name(VALUE klass)
     }
 
     /* Is it a regular singleton class for an object? */
-    else if (rb_obj_is_kind_of(attached, T_OBJECT)) 
+    else if (TYPE(attached) == T_OBJECT)
     {
         /* Make sure to get the super class so that we don't
            mistakenly grab a T_ICLASS which would lead to
@@ -328,13 +328,13 @@ figure_singleton_name(VALUE klass)
         rb_str_append(result, rb_inspect(super));
         rb_str_cat2(result, ">#");
     }
+    
+    /* Ok, this could be other things like an array made put onto
+       a singleton object (yeah, it happens, see the singleton
+       objects test case). */
     else
     {
-        /* Should never happen. */
-        result = rb_str_new2("<Unknown:");
-        rb_str_append(result, rb_inspect(klass));
-        rb_str_cat2(result, ">#");
-        rb_raise(rb_eRuntimeError, "Unknown singleton class: %i", result);
+        result = rb_inspect(klass);
     }
 
     return result;
@@ -1131,6 +1131,13 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     thread_data_t* thread_data;
     prof_data_t *data;
     
+    /* Note the souce code line and return. */
+    if(event == RUBY_EVENT_LINE)
+    {
+	    source_line = nd_line(node);
+	    return;
+    }
+    
     /* Are we processing a method.  If so return, otherwise we get
        infinite recursion if we call other Ruby methods like rb_String.
        This ain't thread safe though! */
@@ -1149,7 +1156,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
        results for that module. */
     klass = (BUILTIN_TYPE(klass) == T_ICLASS ? RBASIC(klass)->klass : klass);
       
-    /* Debug Code
+    /* Debug Code 
     {
         VALUE class_name = rb_String(klass);
         char* c_class_name = StringValuePtr(class_name);
@@ -1159,13 +1166,6 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         printf("Event: %2d, Method: %s#%s\n", event, c_class_name, c_method_name);
     }*/
 
-    /* Note the souce code line and return. */
-    if(event == RUBY_EVENT_LINE)
-    {
-	    source_line = nd_line(node);
-	    return;
-    }
-    
     /* Get the thread and thread data. */
     thread = rb_thread_current();
     thread_data = threads_table_lookup(threads_tbl, thread);
