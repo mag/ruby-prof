@@ -49,8 +49,8 @@ EOF
   spec.test_files = Dir["test/test_*.rb"]
   
 
-  spec.required_ruby_version = '>= 1.8.2'
-	spec.date = DateTime.now
+  spec.required_ruby_version = '>= 1.8.4'
+  spec.date = DateTime.now
   spec.rubyforge_project = 'ruby-prof'
   
   # rdoc
@@ -62,11 +62,11 @@ EOF
   spec.rdoc_options << '--main' << 'README'
   spec.extra_rdoc_files = ['bin/ruby-prof',
                            'examples/flat.txt',
-  											   'examples/graph.txt',
-  											   'examples/graph.html',
-    											 'ext/ruby_prof.c',
-    											 'README',
-    											 'LICENSE']
+                           'examples/graph.txt',
+                           'examples/graph.html',
+                           'ext/ruby_prof.c',
+                           'README',
+                           'LICENSE']
 
 end
 
@@ -89,19 +89,19 @@ win_spec.files += ["lib/#{SO_NAME}"]
 
 desc "Create Windows Gem"
 task :create_win32_gem do
-  # Copy the win32 extension the top level directory
+  # Copy the win32 extension to the top level directory
   current_dir = File.expand_path(File.dirname(__FILE__))
-  source = File.join(current_dir, "ext", "win32", SO_NAME)
+  source = File.join(current_dir, "vc", "release", SO_NAME)
   target = File.join(current_dir, "lib", SO_NAME)
   cp(source, target)
 
   # Create the gem, then move it to pkg
-	Gem::Builder.new(win_spec).build
-	gem_file = "#{win_spec.name}-#{win_spec.version}-#{win_spec.platform}.gem"
+  Gem::Builder.new(win_spec).build
+  gem_file = "#{win_spec.name}-#{win_spec.version}-#{win_spec.platform}.gem"
   mv(gem_file, "pkg/#{gem_file}")
 
-  # Remove win extension fro top level directory	
-	rm(target)
+  # Remove win extension fro top level directory  
+  rm(target)
 end
 
 task :package => :create_win32_gem
@@ -116,14 +116,14 @@ Rake::RDocTask.new("rdoc") do |rdoc|
   # Make the readme file the start page for the generated html
   rdoc.options << '--main' << 'README'
   rdoc.rdoc_files.include('bin/**/*',
-  											  'doc/*.rdoc',
-  											  'examples/flat.txt',
-  											  'examples/graph.txt',
-  											  'examples/graph.html',
+                          'doc/*.rdoc',
+                          'examples/flat.txt',
+                          'examples/graph.txt',
+                          'examples/graph.html',
                           'lib/**/*.rb',
-    											'ext/**/ruby_prof.c',
-    											'README',
-    											'LICENSE')
+                          'ext/**/ruby_prof.c',
+                          'README',
+                          'LICENSE')
 end
 
 
@@ -131,11 +131,11 @@ end
 # ---------  Publish to RubyForge  ----------------
 desc "Publish ruby-prof to RubyForge."
 task :publish do 
-	require 'rake/contrib/sshpublisher'
-	
-	# Get ruby-prof path
-	ruby_prof_path = File.expand_path(File.dirname(__FILE__))
+  require 'rake/contrib/sshpublisher'
+  
+  # Get ruby-prof path
+  ruby_prof_path = File.expand_path(File.dirname(__FILE__))
 
-	publisher = Rake::SshDirPublisher.new("cfis@rubyforge.org",
-				"/var/www/gforge-projects/ruby-prof", ruby_prof_path)
+  publisher = Rake::SshDirPublisher.new("cfis@rubyforge.org",
+        "/var/www/gforge-projects/ruby-prof", ruby_prof_path)
 end
