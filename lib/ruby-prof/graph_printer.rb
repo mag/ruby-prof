@@ -2,7 +2,7 @@ module RubyProf
   # Generates graph[link:files/examples/graph_txt.html] profile reports as text. 
   # To use the graph printer:
   #
-	# 	result = RubyProf.profile do
+  # 	result = RubyProf.profile do
   #			[code to profile]
   #		end
   #
@@ -18,47 +18,47 @@ module RubyProf
   # that are not important to the overall profiling results.
 
   class GraphPrinter
-	  PERCENTAGE_WIDTH = 8
-	  TIME_WIDTH = 10
-	  CALL_WIDTH = 20
-	
-  	# Create a GraphPrinter.  Result is a RubyProf::Result	
-  	# object generated from a profiling run.
+    PERCENTAGE_WIDTH = 8
+    TIME_WIDTH = 10
+    CALL_WIDTH = 20
+  
+    # Create a GraphPrinter.  Result is a RubyProf::Result	
+    # object generated from a profiling run.
     def initialize(result, min_percent = 0)
-  	  @result = result
-  	  @min_percent = min_percent
- 	  end
+      @result = result
+      @min_percent = min_percent
+    end
 
-  	# Print a graph report to the provided output.
-  	# 
-  	# output - Any IO oject, including STDOUT or a file. 
-  	# The default value is STDOUT.
-  	# 
-  	# min_percent - The minimum %total (the methods 
-  	# total time divided by the overall total time) that
-  	# a method must take for it to be printed out in 
-  	# the report. Default value is 0.
- 	  def print(output = STDOUT, min_percent = 0)
+    # Print a graph report to the provided output.
+    # 
+    # output - Any IO oject, including STDOUT or a file. 
+    # The default value is STDOUT.
+    # 
+    # min_percent - The minimum %total (the methods 
+    # total time divided by the overall total time) that
+    # a method must take for it to be printed out in 
+    # the report. Default value is 0.
+    def print(output = STDOUT, min_percent = 0)
       @output = output
       @min_percent = min_percent
 
-      	print_threads
+        print_threads
     end
 
     private 
- 	  def print_threads
+    def print_threads
       # sort assumes that spawned threads have higher object_ids
-			@result.threads.sort.each do |thread_id, methods|
-				print_methods(thread_id, methods)
-				@output << "\n" * 2
-			end
+      @result.threads.sort.each do |thread_id, methods|
+        print_methods(thread_id, methods)
+        @output << "\n" * 2
+      end
     end
     
     def print_methods(thread_id, methods)
-	    toplevel = @result.toplevel(thread_id)
-	    total_time = toplevel.total_time
+      toplevel = @result.toplevel(thread_id)
+      total_time = toplevel.total_time
       if total_time == 0
-    	  total_time = 0.01
+        total_time = 0.01
       end
       
       print_heading(thread_id)
@@ -79,7 +79,7 @@ module RubyProf
         # 1 is for % sign
         @output << sprintf("%#{PERCENTAGE_WIDTH-1}.2f\%", total_percentage)
         @output << sprintf("%#{PERCENTAGE_WIDTH-1}.2f\%", self_percentage)
-    	  @output << sprintf("%#{TIME_WIDTH}.2f", method.total_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", method.total_time)
         @output << sprintf("%#{TIME_WIDTH}.2f", method.self_time)
         @output << sprintf("%#{TIME_WIDTH}.2f", method.children_time)
         @output << sprintf("%#{CALL_WIDTH}i", method.called)
@@ -87,54 +87,54 @@ module RubyProf
         @output << "\n"
     
         print_children(thread_id, method)
-  	  end
-	  end
+      end
+    end
   
-	  def print_heading(thread_id)
+    def print_heading(thread_id)
       @output << "Thread ID: #{thread_id}\n"
-			# 1 is for % sign
-			@output << sprintf("%#{PERCENTAGE_WIDTH}s", "%total")
-			@output << sprintf("%#{PERCENTAGE_WIDTH}s", "%self")
-			@output << sprintf("%#{TIME_WIDTH}s", "total")
-			@output << sprintf("%#{TIME_WIDTH}s", "self")
-			@output << sprintf("%#{TIME_WIDTH+2}s", "children")
-			@output << sprintf("%#{CALL_WIDTH-2}s", "calls")
-			@output << "   Name"
-			@output << "\n"
+      # 1 is for % sign
+      @output << sprintf("%#{PERCENTAGE_WIDTH}s", "%total")
+      @output << sprintf("%#{PERCENTAGE_WIDTH}s", "%self")
+      @output << sprintf("%#{TIME_WIDTH}s", "total")
+      @output << sprintf("%#{TIME_WIDTH}s", "self")
+      @output << sprintf("%#{TIME_WIDTH+2}s", "children")
+      @output << sprintf("%#{CALL_WIDTH-2}s", "calls")
+      @output << "   Name"
+      @output << "\n"
     end
     
     def print_parents(thread_id, method)
-		  method.parents.each do |name, call_info|
-	      @output << " " * 2 * PERCENTAGE_WIDTH
-    	  @output << sprintf("%#{TIME_WIDTH}.2f", call_info.total_time)
-    	  @output << sprintf("%#{TIME_WIDTH}.2f", call_info.self_time)
-  	    @output << sprintf("%#{TIME_WIDTH}.2f", call_info.children_time)
-	  
-  	    call_called = "#{call_info.called}/#{method.called}"
-  	    @output << sprintf("%#{CALL_WIDTH}s", call_called)
-	      @output << sprintf("     %s", name)
-	      @output << "\n"
-   	  end
+      method.parents.each do |name, call_info|
+        @output << " " * 2 * PERCENTAGE_WIDTH
+        @output << sprintf("%#{TIME_WIDTH}.2f", call_info.total_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", call_info.self_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", call_info.children_time)
+    
+        call_called = "#{call_info.called}/#{method.called}"
+        @output << sprintf("%#{CALL_WIDTH}s", call_called)
+        @output << sprintf("     %s", name)
+        @output << "\n"
+      end
     end
   
     def print_children(thread_id, method)
       a = method.children
-		  method.children.each do |name, call_info|
+      method.children.each do |name, call_info|
         # Get children method
         methods = @result.threads[thread_id]
         children = methods[name]
         
-	      @output << " " * 2 * PERCENTAGE_WIDTH
-	      
-    	  @output << sprintf("%#{TIME_WIDTH}.2f", call_info.total_time)
-    	  @output << sprintf("%#{TIME_WIDTH}.2f", call_info.self_time)
-  	    @output << sprintf("%#{TIME_WIDTH}.2f", call_info.children_time)
+        @output << " " * 2 * PERCENTAGE_WIDTH
+        
+        @output << sprintf("%#{TIME_WIDTH}.2f", call_info.total_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", call_info.self_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", call_info.children_time)
 
-  	    call_called = "#{call_info.called}/#{children.called}"
-  	    @output << sprintf("%#{CALL_WIDTH}s", call_called)
-	      @output << sprintf("     %s", name)
-	      @output << "\n"
-   	  end
+        call_called = "#{call_info.called}/#{children.called}"
+        @output << sprintf("%#{CALL_WIDTH}s", call_called)
+        @output << sprintf("     %s", name)
+        @output << "\n"
+      end
     end
   end
 end	

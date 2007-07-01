@@ -85,51 +85,51 @@ module RubyProf
       desc "Profile" + (@name==:profile ? "" : " for #{@name}")
       
       task @name do
-	 			@ruby_opts.unshift( "-I#{lib_path}" )
-	 			@ruby_opts.unshift( "-w" ) if @warning
-				@ruby_opts.push("-S ruby-prof")
-				@ruby_opts.push("--printer #{@printer}")
-				@ruby_opts.push("--min_percent #{@min_percent}")
+        @ruby_opts.unshift( "-I#{lib_path}" )
+        @ruby_opts.unshift( "-w" ) if @warning
+        @ruby_opts.push("-S ruby-prof")
+        @ruby_opts.push("--printer #{@printer}")
+        @ruby_opts.push("--min_percent #{@min_percent}")
 
         file_list.each do |file_path|	 
           run_script(file_path)
         end
-    	end
+      end
       self
     end
     
     # Run script
     def run_script(script_path)
-			run_code = ''
-			RakeFileUtils.verbose(@verbose) do
-				file_name = File.basename(script_path, File.extname(script_path))
-				case @printer
-					when :flat, :graph
-						file_name += ".txt"
-					when :graph_html
-						file_name += ".html"
-					else
-						file_name += ".txt"
-				end
-	  			
-				output_file_path = File.join(output_directory, file_name)
-					
-				command_line = @ruby_opts.join(" ") + 
-				              " --file=" + output_file_path +
-				              " " + script_path
+      run_code = ''
+      RakeFileUtils.verbose(@verbose) do
+        file_name = File.basename(script_path, File.extname(script_path))
+        case @printer
+          when :flat, :graph
+            file_name += ".txt"
+          when :graph_html
+            file_name += ".html"
+          else
+            file_name += ".txt"
+        end
+          
+        output_file_path = File.join(output_directory, file_name)
+          
+        command_line = @ruby_opts.join(" ") + 
+                      " --file=" + output_file_path +
+                      " " + script_path
 
-				puts "ruby " + command_line	
-				# We have to catch the exeption to continue on.  However,
-				# the error message will have been output to STDERR
-				# already by the time we get here so we don't have to
-				# do that again
-				begin
-					ruby command_line
-       	rescue
+        puts "ruby " + command_line	
+        # We have to catch the exeption to continue on.  However,
+        # the error message will have been output to STDERR
+        # already by the time we get here so we don't have to
+        # do that again
+        begin
+          ruby command_line
+        rescue
         end
         puts ""
         puts ""
-			end
+      end
     end
 
     def output_directory
@@ -138,7 +138,7 @@ module RubyProf
     
     def create_output_directory
       if not File.exist?(output_directory)
-      	Dir.mkdir(output_directory)
+        Dir.mkdir(output_directory)
       end
     end
 
