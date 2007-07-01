@@ -1156,7 +1156,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
        results for that module. */
     klass = (BUILTIN_TYPE(klass) == T_ICLASS ? RBASIC(klass)->klass : klass);
       
-    /* Debug Code 
+    /* Debug Code  */
     {
         VALUE class_name = rb_String(klass);
         char* c_class_name = StringValuePtr(class_name);
@@ -1164,7 +1164,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         VALUE generated_name = method_name(klass, mid);
         char* c_generated_name = StringValuePtr(generated_name);
         printf("Event: %2d, Method: %s#%s\n", event, c_class_name, c_method_name);
-    }*/
+    }
 
     /* Get the thread and thread data. */
     thread = rb_thread_current();
@@ -1208,50 +1208,45 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         /* Pop data for this method off the stack. */
 	      data = stack_pop(thread_data->stack);
 
-        if (data == NULL)
+        /* Data can be null.  This can happen if RubProf.start is called from
+           a method that exits.  And it can happen if an exception is raised
+           in code that is being profiled and the stack unwinds (RubProf is
+           not notified of that by the ruby runtime. */
+        if (data != NULL)
         {
-            /* Can happen on exceptions.  The stack gets unwound without RubyProf.stop
-               being called. */
-            VALUE name = method_name(klass, mid);
-            VALUE message = rb_str_new2("ruby-prof: An error occured when leaving the method %s.\n");
-            rb_str_cat2(message, "   Perhaps an exception occured in the code being profiled?\n" );
-            rb_warn(StringValuePtr(message), StringValuePtr(name));
-                    
-            return;
-        }
+          /* Update timing information. */
+          total_time = now - data->start_time;
+          self_time = total_time - data->child_cost;
 
-        /* Update timing information. */
-        total_time = now - data->start_time;
-        self_time = total_time - data->child_cost;
+          /* Okay, get the method that called this method (ie, parent) */
+          caller = stack_peek(thread_data->stack);
 
-        /* Okay, get the method that called this method (ie, parent) */
-        caller = stack_peek(thread_data->stack);
+	        if (caller == NULL)
+          {
+              /* We are at the top of the stack, so grab the toplevel method */
+              parent = method_info_table_lookup(thread_data->method_info_table, toplevel_key);
+          }
+          else
+          {
+              caller->child_cost += total_time;
+    	        parent = caller->method_info;
+          }
+          
+          /* Decrement count of number of times this child has been called on
+             the current stack. */
+          child = data->method_info;
+          child->stack_count--;
 
-	      if (caller == NULL)
-        {
-            /* We are at the top of the stack, so grab the toplevel method */
-            parent = method_info_table_lookup(thread_data->method_info_table, toplevel_key);
-        }
-        else
-        {
-            caller->child_cost += total_time;
-    	      parent = caller->method_info;
-        }
-        
-        /* Decrement count of number of times this child has been called on
-           the current stack. */
-        child = data->method_info;
-        child->stack_count--;
+          /* If the stack count is greater than zero, then this
+             method has been called recursively.  In that case set the total
+             time to zero because it will be correctly set when we unwind
+             the stack up.  If we don't do this, then the total time for the 
+             method will be double counted per recursive call. */
+          if (child->stack_count != 0)
+              total_time = 0;
 
-        /* If the stack count is greater than zero, then this
-           method has been called recursively.  In that case set the total
-           time to zero because it will be correctly set when we unwind
-           the stack up.  If we don't do this, then the total time for the 
-           method will be double counted per recursive call. */
-        if (child->stack_count != 0)
-            total_time = 0;
-
-        update_result(parent, child, total_time, self_time, node);
+          update_result(parent, child, total_time, self_time, node);
+        }          
 	      break;
 	    }
     }
