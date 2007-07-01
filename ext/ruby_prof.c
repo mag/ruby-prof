@@ -25,6 +25,16 @@
  * SUCH DAMAGE.
  */
 
+/* ruby-prof tracks the time spent executing every method in ruby programming.
+   The main players are:
+
+   prof_result_t     - Its one field, values,  contains the overall results
+   thread_data_t     - Stores data about a single thread.  
+   prof_stack_t      - The method call stack in a particular thread
+   prof_method_t     - Profiling information for each method
+   prof_call_info_t  - Keeps track a method's callers and callees. */
+
+
 #include <stdio.h>
 #include <time.h>
 #ifdef HAVE_SYS_TIMES_H
@@ -35,7 +45,10 @@
 #include <node.h>
 #include <st.h>
 
-#define PROF_VERSION "0.4.1"
+#define PROF_VERSION "0.4.2"
+
+
+/* ================  DataTypes  =================*/
 
 static VALUE mProf;
 static VALUE cResult;
@@ -48,6 +61,7 @@ typedef LONG_LONG prof_clock_t;
 typedef unsigned long prof_clock_t;
 #endif
 
+/* Callers and callee information for a method. */
 typedef struct {
     VALUE klass;
     ID mid;
@@ -56,22 +70,23 @@ typedef struct {
     prof_clock_t total_time;
 } prof_call_info_t;
 
+
+/* Profiling information for each method. */
 typedef struct {
-    /* Cache hash value for speed reasons. */
-    st_data_t key;
-    VALUE klass;
-    ID mid;
-    unsigned long thread_id;
-    int called;
-    int line_no;
-    int called_line_no; // the line this method was called from
-    const char* sourcefile;
-    prof_clock_t self_time;
-    prof_clock_t total_time;
-    st_table *parents;
-    st_table *children;
+    st_data_t key;           /* Cache hash value for speed reasons. */
+    VALUE klass;             /* The method's class. */
+    ID mid;                  /* The method id. */
+    unsigned long thread_id; /* The id of the thread that called this method. */
+    int called;              /* Number of times called */
+    int line_no;             /* The method's line number. */
+    int called_line_no;      /* The line this method was called from. */
+    const char* sourcefile;  /* The method's source file */
+    prof_clock_t self_time;  /* Total time spent in this method. */
+    prof_clock_t total_time; /* Total time spent in this method and children. */
+    st_table *parents;       /* The method's callers (prof_call_info_t). */
+    st_table *children;      /* The method's callees (prof_call_info_t). */
     /* Hack - piggyback a field to keep track of the
-        of times the method appears in the current 
+       of times the method appears in the current 
        stack.  Used to detect recursive cycles.  This
        works because there is an instance of this struct
        per method per thread.  Could have a separate
@@ -80,24 +95,29 @@ typedef struct {
     int stack_count;
 } prof_method_t;
 
+
+/* Temporary object that maintains profiling information
+   for active methods - there is one per method.*/
 typedef struct {
-    /* Cache prof_method_t values to significantly 
-       increase speed. */
+    /* Caching prof_method_t values significantly
+       increases performance. */
     prof_method_t *method_info;
     prof_clock_t start_time;
     prof_clock_t child_cost;
 } prof_data_t;
 
+/* Current stack of active methods.*/
 typedef struct {
     prof_data_t *start;
     prof_data_t *end;
     prof_data_t *ptr;
 } prof_stack_t;
 
+/* Profiling information for a thread. */
 typedef struct {
-    prof_stack_t* stack;
-    st_table* minfo_table;
-    unsigned long thread_id;
+    prof_stack_t* stack;             /* Active methods */
+    st_table* method_info_table;     /* All called methods */
+    unsigned long thread_id;         /* Thread id */
 } thread_data_t;
 
 typedef struct {
@@ -109,6 +129,9 @@ static st_data_t toplevel_key;
 static int clock_mode;
 static st_table *threads_tbl = NULL;
 static VALUE class_tbl = Qnil;
+
+
+/* ================  Various Timing Strategies  =================*/
 
 #define CLOCK_MODE_PROCESS 0
 #define CLOCK_MODE_WALL 1
@@ -228,6 +251,9 @@ cpu_clock2sec(prof_clock_t c)
     return (double) c / cpu_frequency;
 }
 
+
+/* ================  Public API  =================*/
+
 /* call-seq:
    cpu_frequency -> int
 
@@ -264,6 +290,8 @@ get_thread_id(VALUE thread)
     return NUM2LONG(rb_obj_id(thread));
 }
 
+
+/* ================  Method Names  =================*/
 static VALUE
 figure_singleton_name(VALUE klass)
 {
@@ -272,7 +300,6 @@ figure_singleton_name(VALUE klass)
     /* We have come across a singleton object. First
        figure out what it is attached to.*/
     VALUE attached = rb_iv_get(klass, "__attached__");
-
 
     /* Is this a singleton class acting as a metaclass? */
     if (TYPE(attached) == T_CLASS)
@@ -363,15 +390,16 @@ method_key(VALUE klass, ID mid)
 }
 
 
-/* -- Stack to track methods call sequence and times ---- */
+/* ================  Stack Handling   =================*/
+
+/* Creates a stack of prof_data_t to keep track
+   of timings for active methods. */
 static prof_stack_t *
 stack_create()
 {
     prof_stack_t *stack;
-
     stack = ALLOC(prof_stack_t);
-    stack->start = stack->ptr =
-	ALLOC_N(prof_data_t, INITIAL_STACK_SIZE);
+    stack->start = stack->ptr =	ALLOC_N(prof_data_t, INITIAL_STACK_SIZE);
     stack->end = stack->start + INITIAL_STACK_SIZE;
     return stack;
 }
@@ -386,15 +414,19 @@ stack_free(prof_stack_t *stack)
 static inline prof_data_t *
 stack_push(prof_stack_t *stack)
 {
-    if (stack->ptr == stack->end) {
-	int len, new_capa;
-	len = stack->ptr - stack->start;
-	new_capa = (stack->end - stack->start) * 2;
-	REALLOC_N(stack->start, prof_data_t, new_capa);
-	stack->ptr = stack->start + len;
-	stack->end = stack->start + new_capa;
-    }
-    return stack->ptr++;
+  /* Is there space on the stack?  If not, double
+     its size. */
+  if (stack->ptr == stack->end)
+  {
+  	int len;
+  	int new_capacity;
+	  len = stack->ptr - stack->start;
+	  new_capacity = (stack->end - stack->start) * 2;
+	  REALLOC_N(stack->start, prof_data_t, new_capacity);
+	  stack->ptr = stack->start + len;
+	  stack->end = stack->start + new_capacity;
+  }
+  return stack->ptr++;
 }
 
 static inline prof_data_t *
@@ -416,38 +448,43 @@ stack_peek(prof_stack_t *stack)
 }
 
 
+/* ================  Method Info Handling   =================*/
  
 /* --- Keeps track of the methods the current method calls */
 static st_table *
-minfo_table_create()
+method_info_table_create()
 {
     return st_init_numtable();
 }
 
 static inline int
-minfo_table_insert(st_table *table, st_data_t key, prof_method_t *val)
+method_info_table_insert(st_table *table, st_data_t key, prof_method_t *val)
 {
     return st_insert(table, key, (st_data_t) val);
 }
 
 static inline prof_method_t *
-minfo_table_lookup(st_table *table, st_data_t key)
+method_info_table_lookup(st_table *table, st_data_t key)
 {
     st_data_t val;
-    if (st_lookup(table, key, &val)) {
+    if (st_lookup(table, key, &val))
+    {
 	    return (prof_method_t *) val;
     }
-    else {
+    else 
+    {
 	    return NULL;
     }
 }
 
 static void
-minfo_table_free(st_table *table)
+method_info_table_free(st_table *table)
 {
     st_free_table(table);
 }
 
+
+/* ================  Call Info Handling   =================*/
 
 /* ---- Hash, keyed on class/method_id, that holds
         child call_info objects ---- */
@@ -467,10 +504,12 @@ static inline prof_call_info_t *
 child_table_lookup(st_table *table, st_data_t key)
 {
     st_data_t val;
-    if (st_lookup(table, key, &val)) {
+    if (st_lookup(table, key, &val))
+    {
 	    return (prof_call_info_t *) val;
     }
-    else {
+    else
+    {
 	    return NULL;
     }
 }
@@ -519,7 +558,7 @@ static VALUE
 call_info_new(prof_call_info_t *result)
 {
     /* We don't want Ruby freeing the underlying C structures, that
-       is when the prof_method_t is freed. */
+       is done when the prof_method_t is freed. */
     return Data_Wrap_Struct(cCallInfo, NULL, NULL, result);
 }
 
@@ -533,6 +572,7 @@ get_call_info_result(VALUE obj)
     }
     return (prof_call_info_t *) DATA_PTR(obj);
 }
+
 
 /* call-seq:
    called -> int
@@ -609,21 +649,24 @@ prof_method_create(VALUE klass, ID mid, VALUE thread,NODE* node,int called_from_
     result->klass = klass;
     result->mid = mid;
     result->thread_id = get_thread_id(thread);
-    result->parents = minfo_table_create();
+    result->parents = method_info_table_create();
     result->children = child_table_create();
     result->stack_count = 0;
     result->line_no = node != NULL ? nd_line(node) : 0;
     result->called_line_no = called_from_line;
-    if(node != NULL) {
-	// set the sourcefile.  the source file, while not referenced
-	// as a const variable appears safe to keep a pointer to
-	// and reference later in the report generation because ruby
-	// internally keeps a static table of source files.  for more information
-	// see gc.c:rb_source_filename
-	result->sourcefile = node->nd_file;
+    
+    if(node != NULL)
+    {
+	    /* Set the sourcefile.  The source file, while not referenced
+	       as a const variable appears safe to keep a pointer to
+	       and reference later in the report generation because ruby
+	       internally keeps a static table of source files.  For more
+	       information see gc.c:rb_source_filename. */
+	    result->sourcefile = node->nd_file;
     }
-    else {
-	result->sourcefile = 0;
+    else
+    {
+	    result->sourcefile = 0;
     }
     return result;
 }
@@ -638,7 +681,7 @@ static void
 prof_method_free(prof_method_t *data)
 {
     st_foreach(data->children, free_call_infos, 0);
-    minfo_table_free(data->parents);
+    method_info_table_free(data->parents);
     child_table_free(data->children);
     xfree(data);
 }
@@ -646,8 +689,7 @@ prof_method_free(prof_method_t *data)
 static VALUE
 prof_method_new(prof_method_t *result)
 {
-    return Data_Wrap_Struct(cMethodInfo, prof_method_mark, prof_method_free,
-			    result);
+    return Data_Wrap_Struct(cMethodInfo, prof_method_mark, prof_method_free, result);
 }
 
 static prof_method_t *
@@ -942,13 +984,15 @@ collect_methods(st_data_t key, st_data_t value, st_data_t result)
 }
 
 
+/* ================  Thread Handling   =================*/
+
 /* ---- Keeps track of thread's stack and methods ---- */
 static thread_data_t*
 thread_data_create()
 {
     thread_data_t* result = ALLOC(thread_data_t);
     result->stack = stack_create();
-    result->minfo_table = minfo_table_create();
+    result->method_info_table = method_info_table_create();
     return result;
 }
 
@@ -956,7 +1000,7 @@ static void
 thread_data_free(thread_data_t* thread_data)
 {
     stack_free(thread_data->stack);
-    minfo_table_free(thread_data->minfo_table);
+    method_info_table_free(thread_data->method_info_table);
     xfree(thread_data);
 }
 
@@ -1000,7 +1044,7 @@ threads_table_lookup(st_table *table, VALUE thread)
         toplevel->called = 1;
         toplevel->total_time = 0;
         toplevel->self_time = 0;
-        minfo_table_insert(result->minfo_table, toplevel->key, toplevel);
+        method_info_table_insert(result->method_info_table, toplevel->key, toplevel);
 
         /* Insert the table */
         threads_table_insert(threads_tbl, thread, result);
@@ -1036,16 +1080,19 @@ collect_threads(st_data_t key, st_data_t value, st_data_t result)
        as an int. */
     thread_data_t* thread_data = (thread_data_t*) value;
     VALUE threads_hash = (VALUE) result;
-    VALUE minfo_hash = rb_hash_new();
-    st_foreach(thread_data->minfo_table, collect_methods, minfo_hash);
-    rb_hash_aset(threads_hash, INT2NUM(thread_data->thread_id), minfo_hash);
+    VALUE method_info_hash = rb_hash_new();
+    st_foreach(thread_data->method_info_table, collect_methods, method_info_hash);
+    rb_hash_aset(threads_hash, INT2NUM(thread_data->thread_id), method_info_hash);
 
     return ST_CONTINUE;
 }
 
+
+/* ================  Profiling    =================*/
+
 static void
 update_result(prof_method_t * parent, prof_method_t *child,
-              prof_clock_t total_time, prof_clock_t self_time,NODE* node)
+              prof_clock_t total_time, prof_clock_t self_time, NODE* node)
 {
     /* Update child information on parent (ie, the method that
        called the current method) */
@@ -1071,43 +1118,38 @@ update_result(prof_method_t * parent, prof_method_t *child,
     child->self_time += self_time;
 
     /* Store pointer to parent */
-    if (minfo_table_lookup(child->parents, parent->key) == NULL)
-        minfo_table_insert(child->parents, parent->key, parent);
+    if (method_info_table_lookup(child->parents, parent->key) == NULL)
+        method_info_table_insert(child->parents, parent->key, parent);
 }
 
 static void
 prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
 {
-    static int profiling = 0;
+    static int in_hook = 0;
     static int source_line = 0;
     VALUE thread;
     thread_data_t* thread_data;
     prof_data_t *data;
-
-    if(event == RUBY_EVENT_LINE) {
-	// keep the last source line around
-	source_line = nd_line(node);
-	return;
-    }
-
     
-    if (profiling) return;
-
+    /* Are we processing a method.  If so return, otherwise we get
+       infinite recursion if we call other Ruby methods like rb_String.
+       This ain't thread safe though! */
+    if (in_hook) return;
+    
     /* Special case - skip any methods from the mProf 
        module, such as Prof.stop, since they clutter
        the results but are not important to the results. */
     if (self == mProf) return;
 
     /* Set flag showing we have started profiling */
-    profiling++;
+    in_hook++;
 
     /* Is this an include for a module?  If so get the actual
        module class since we want to combine all profiling
        results for that module. */
-    if (BUILTIN_TYPE(klass) == T_ICLASS)
-        klass = RBASIC(klass)->klass;
+    klass = (BUILTIN_TYPE(klass) == T_ICLASS ? RBASIC(klass)->klass : klass);
       
-    /* // Debug Code
+    /* Debug Code
     {
         VALUE class_name = rb_String(klass);
         char* c_class_name = StringValuePtr(class_name);
@@ -1117,6 +1159,14 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         printf("Event: %2d, Method: %s#%s\n", event, c_class_name, c_method_name);
     }*/
 
+    /* Note the souce code line and return. */
+    if(event == RUBY_EVENT_LINE)
+    {
+	    source_line = nd_line(node);
+	    return;
+    }
+    
+    /* Get the thread and thread data. */
     thread = rb_thread_current();
     thread_data = threads_table_lookup(threads_tbl, thread);
   
@@ -1126,37 +1176,37 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     {
         //printf("called line #: %d\n",nd_line(node)); 
         st_data_t key = method_key(klass, mid);
-        prof_method_t *child = minfo_table_lookup(thread_data->minfo_table, key);
+        prof_method_t *child = method_info_table_lookup(thread_data->method_info_table, key);
 
-	    if (child == NULL) {
-		child = prof_method_create(klass, mid, thread,node,source_line);
-		minfo_table_insert(thread_data->minfo_table, key, child);
-	    }
+        if (child == NULL)
+        {
+		      child = prof_method_create(klass, mid, thread,node,source_line);
+		      method_info_table_insert(thread_data->method_info_table, key, child);
+	      }
 
         /* Increment count of number of times this child has been called on
            the current stack. */
         child->stack_count++;
     
-        /* Push the data for this method onto our stack */
+        /* Push the data for this method onto the stack */
         data = stack_push(thread_data->stack);
         data->method_info = child;
-	    data->start_time = get_clock();
-	    data->child_cost = 0;
+  	    data->start_time = get_clock();
+	      data->child_cost = 0;
 
-	    break;
+	      break;
     }
     case RUBY_EVENT_RETURN:
     case RUBY_EVENT_C_RETURN:
-	{
+	  {
         prof_data_t* caller;
-	    prof_method_t *parent;
-	    prof_method_t *child;
+	      prof_method_t *parent;
+	      prof_method_t *child;
         prof_clock_t now = get_clock();
-	    prof_clock_t total_time, self_time;
+	      prof_clock_t total_time, self_time;
 
         /* Pop data for this method off the stack. */
-	    data = stack_pop(thread_data->stack);
-
+	      data = stack_pop(thread_data->stack);
 
         if (data == NULL)
         {
@@ -1177,15 +1227,15 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         /* Okay, get the method that called this method (ie, parent) */
         caller = stack_peek(thread_data->stack);
 
-	    if (caller == NULL)
+	      if (caller == NULL)
         {
             /* We are at the top of the stack, so grab the toplevel method */
-            parent = minfo_table_lookup(thread_data->minfo_table, toplevel_key);
+            parent = method_info_table_lookup(thread_data->method_info_table, toplevel_key);
         }
         else
         {
             caller->child_cost += total_time;
-    	    parent = caller->method_info;
+    	      parent = caller->method_info;
         }
         
         /* Decrement count of number of times this child has been called on
@@ -1201,11 +1251,11 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         if (child->stack_count != 0)
             total_time = 0;
 
-        update_result(parent, child, total_time, self_time,node);
-	    break;
-	}
+        update_result(parent, child, total_time, self_time, node);
+	      break;
+	    }
     }
-    profiling--;
+    in_hook--;
 }
 
 
