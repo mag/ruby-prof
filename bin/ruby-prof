@@ -86,7 +86,7 @@ opts = OptionParser.new do |opts|
 			'  cpu - Use the CPU clock counter',
 			'        (only supported on Pentium and PowerPCs).') do |clock_mode|
 			
-			case
+			case clock_mode
 			when :process
 				options.clock_mode = RubyProf::PROCESS_TIME			
 			when :wall
