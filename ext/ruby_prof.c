@@ -58,7 +58,7 @@
 #include <node.h>
 #include <st.h>
 
-#define PROF_VERSION "0.4.2"
+#define PROF_VERSION "0.5.0"
 
 
 /* ================  DataTypes  =================*/
