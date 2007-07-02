@@ -51,15 +51,19 @@ module RubyProf
   #
   # Examples:
   #
-  #   rake test                           # run tests normally
-  #   rake test TEST=just_one_file.rb     # run just one test file.
-  #   rake test TESTOPTS="-v"             # run in verbose mode
-  #   rake test TESTOPTS="--runner=fox"   # use the fox test runner
+  #   rake profile                           # run tests normally
+  #   rake profile TEST=just_one_file.rb     # run just one test file.
+  #   rake profile TESTOPTS="-v"             # run in verbose mode
+  #   rake profile TESTOPTS="--runner=fox"   # use the fox test runner
   
   class ProfileTask < Rake::TestTask
     attr_accessor :output_dir 
     attr_accessor :min_percent 
     attr_accessor :printer
+    
+    def initialize(name = :profile)
+      super(name)
+    end
     
     # Create the tasks defined by this task lib.
     def define
