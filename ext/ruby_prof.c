@@ -657,7 +657,7 @@ the RubyProf::Result object.
 
 /* :nodoc: */
 static prof_method_t *
-prof_method_create(VALUE klass, ID mid, VALUE thread,NODE* node,int called_from_line)
+prof_method_create(VALUE klass, ID mid, VALUE thread, NODE* node, int called_from_line)
 {
     prof_method_t *result;
 
@@ -695,12 +695,6 @@ prof_method_create(VALUE klass, ID mid, VALUE thread,NODE* node,int called_from_
 }
 
 static void
-prof_method_mark(prof_method_t *data)
-{
-    rb_gc_mark(data->klass);
-}
-
-static void
 prof_method_free(prof_method_t *data)
 {
     st_foreach(data->parents, free_call_infos, 0);
@@ -715,7 +709,7 @@ prof_method_free(prof_method_t *data)
 static VALUE
 prof_method_new(prof_method_t *result)
 {
-    return Data_Wrap_Struct(cMethodInfo, prof_method_mark, prof_method_free, result);
+    return Data_Wrap_Struct(cMethodInfo, NULL, prof_method_free, result);
 }
 
 static prof_method_t *
@@ -1019,12 +1013,6 @@ threads_table_lookup(st_table *table, VALUE thread)
     return result;
 }
 
-static void
-threads_table_free(st_table *table)
-{
-    st_free_table(table);
-}
-
 static int
 free_thread_data(st_data_t key, st_data_t value, st_data_t dummy)
 {
@@ -1032,11 +1020,14 @@ free_thread_data(st_data_t key, st_data_t value, st_data_t dummy)
     return ST_CONTINUE;
 }
 
+
 static void
-free_threads(st_table* thread_table)
+threads_table_free(st_table *table)
 {
-    st_foreach(thread_table, free_thread_data, 0);
+    st_foreach(table, free_thread_data, 0);
+    st_free_table(table);
 }
+
 
 static int
 collect_threads(st_data_t key, st_data_t value, st_data_t result)
@@ -1455,7 +1446,6 @@ prof_stop(VALUE self)
     result = prof_result_new();
 
     /* Free threads table */
-    free_threads(threads_tbl);
     threads_table_free(threads_tbl);
     threads_tbl = NULL;
 
