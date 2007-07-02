@@ -15,11 +15,13 @@
 #                                        graph_html - Prints a graph profile as html.
 #                                        call_tree - format for KCacheGrind
 #     -f, --file=path                  Output results to a file instead of standard out.
-#     -c, --clock-mode=clock_mode      Select a clock mode:
+#     -c, --measure-mode=measure_mode  Select a measurement mode:
 #                                        process - Use process time (default).
 #                                        wall - Use wall time.
 #                                        cpu - Use the CPU clock counter
 #                                              (only supported on Pentium and PowerPCs).
+#                                        allocations - Tracks object allocations
+#                                              (requires a patched Ruby interpreter).
 #         --replace-progname           Replace $0 when loading the .rb files.
 #     -h, --help                       Show help message
 #         --version                    Show version
@@ -28,13 +30,12 @@
 # See also: {flat profiles}[link:files/examples/flat_txt.html], {graph profiles}[link:files/examples/graph_txt.html], {html graph profiles}[link:files/examples/graph_html.html]
 #
 
-
 require 'ostruct'
 require 'optparse'
 require 'ruby-prof'
 
 options = OpenStruct.new
-options.clock_mode = RubyProf::PROCESS_TIME
+options.measure_mode = RubyProf::PROCESS_TIME
 options.printer = RubyProf::FlatPrinter
 options.min_percent = 0
 options.file = nil
@@ -78,21 +79,24 @@ opts = OptionParser.new do |opts|
     options.file = file
   end
     
-  opts.on('-c clock_mode', '--clock-mode=clock_mode',
-      [:process, :wall, :cpu],
-      'Select a clock mode:',
-      '  process - Use process time (default).',
-      '  wall - Use wall time.',
-      '  cpu - Use the CPU clock counter',
-      '        (only supported on Pentium and PowerPCs).') do |clock_mode|
+  opts.on('-m measure_mode', '--measure-mode=measure_mode',
+      [:process, :wall, :cpu, :allocations],
+      'Select what ruby-prof should measure:',
+      '  process - Process time (default).',
+      '  wall - Wall time.',
+      '  cpu - CPU time',
+      '        (only supported on Pentium and PowerPCs).',
+      '  allocations - O3bject allocations (required patched Ruby interpreter).') do |measure_mode|
       
-      case clock_mode
+      case measure_mode
       when :process
-        options.clock_mode = RubyProf::PROCESS_TIME     
+        options.measure_mode = RubyProf::PROCESS_TIME     
       when :wall
-        options.clock_mode = RubyProf::WALL_TIME      
+        options.measure_mode = RubyProf::WALL_TIME      
       when :cpu
-        options.clock_mode = RubyProf::CPU_TIME
+        options.measure_mode = RubyProf::CPU_TIME
+      when :allocations
+        options.measure_mode = RubyProf::ALLOCATIONS
       end
   end
         
@@ -151,8 +155,8 @@ at_exit {
   end
 }
 
-# Now set clock mode
-RubyProf.clock_mode = options.clock_mode
+# Now set measure mode
+RubyProf.measure_mode = options.measure_mode
 
 # Get the script we will execute
 script = ARGV.shift

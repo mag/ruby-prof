@@ -129,10 +129,11 @@ the minimum percentage a method must take to be printed.  For more
 information please see the documentation for the different printers.
 
 
-== Timing Data
+== Measurement Data
 
-Depending on the mode and platform, ruby-prof can measure time in 
-three ways - process time, wall time and cpu time.
+Depending on the mode and platform, ruby-prof can measure various
+aspects of a Ruby project.  Current, the following measurements
+are supported - process time, wall time, cpu time and object allocations.
 
 Process time measures the time used by a process between any two moments.
 It is unaffected by other processes concurrently running 
@@ -148,21 +149,28 @@ CPU time uses the CPU clock counter to measure time.  The returned
 values are dependent on the correctly setting the CPU's frequency.
 This mode is only supported on Pentium or PowerPC platforms.
 
-To set the clock_mode:
+Object allocations report which methods allocate objects in a running
+program.  This mode requires a patched Ruby interpreter.  For more
+information, see:
+http://rubyforge.org/tracker/index.php?func=detail&aid=11497&group_id=426&atid=1700
 
-	RubyProf.clock_mode = RubyProf::PROCESS_TIME
-	RubyProf.clock_mode = RubyProf::WALL_TIME
-	RubyProf.clock_mode = RubyProf::CPU_TIME
+To set the measurement:
 
-This default value is PROCESS_TIME.
+	RubyProf.measure_mode = RubyProf::PROCESS_TIME
+	RubyProf.measure_mode = RubyProf::WALL_TIME
+	RubyProf.measure_mode = RubyProf::CPU_TIME
+	RubyProf.measure_mode = RubyProf::ALLOCATIONS
 
-You may also specify the clock_mode by using the RUBY_PROF_CLOCK_MODE
+The default value is PROCESS_TIME.
+
+You may also specify the clock_mode by using the RUBY_PROF_MEASURE_MODE
 environment variable:
 
-	export RUBY_PROF_CLOCK_MODE=process
-	export RUBY_PROF_CLOCK_MODE=wall
-	export RUBY_PROF_CLOCK_MODE=cpu
-	
+	export RUBY_PROF_MEASURE_MODE=process
+	export RUBY_PROF_MEASURE_MODE=wall
+	export RUBY_PROF_MEASURE_MODE=cpu
+  export RUBY_PROF_MEASURE_MODE=allocations
+  
 Note that these values have changed since ruby-prof-0.3.0.	
 
 On Linux, process time is measured using the clock method provided 

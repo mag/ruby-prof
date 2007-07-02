@@ -49,30 +49,37 @@
 
 
 #include <stdio.h>
-#include <time.h>
-#ifdef HAVE_SYS_TIMES_H
-#include <sys/times.h>
-#endif
 
 #include <ruby.h>
 #include <node.h>
 #include <st.h>
 
+
+/* ================  Constants  =================*/
+#define INITIAL_STACK_SIZE 8
 #define PROF_VERSION "0.5.0"
 
 
-/* ================  DataTypes  =================*/
+/* ================  Measurement  =================*/
+#ifdef HAVE_LONG_LONG
+typedef LONG_LONG prof_measure_t;
+#else
+typedef unsigned long prof_measure_t;
+#endif
 
+#include "measure_process_time.c"
+#include "measure_wall_time.c"
+//#include "measure_cpu_time.c"
+#include "measure_allocations.c"
+
+static prof_measure_t (*get_measurement)() = measure_process_time;
+static double (*convert_measurement)(prof_measure_t) = convert_process_time;
+
+/* ================  DataTypes  =================*/
 static VALUE mProf;
 static VALUE cResult;
 static VALUE cMethodInfo;
 static VALUE cCallInfo;
-
-#ifdef HAVE_LONG_LONG
-typedef LONG_LONG prof_clock_t;
-#else
-typedef unsigned long prof_clock_t;
-#endif
 
 /* Profiling information for each method. */
 typedef struct {
@@ -84,8 +91,8 @@ typedef struct {
     int line_no;             /* The method's line number. */
     int called_line_no;      /* The line this method was called from. */
     const char* sourcefile;  /* The method's source file */
-    prof_clock_t self_time;  /* Total time spent in this method. */
-    prof_clock_t total_time; /* Total time spent in this method and children. */
+    prof_measure_t self_time;  /* Total time spent in this method. */
+    prof_measure_t total_time; /* Total time spent in this method and children. */
     st_table *parents;       /* The method's callers (prof_call_info_t). */
     st_table *children;      /* The method's callees (prof_call_info_t). */
     /* Hack - piggyback a field to keep track of the
@@ -103,8 +110,8 @@ typedef struct {
 typedef struct {
     prof_method_t *target;
     int called;
-    prof_clock_t self_time;
-    prof_clock_t total_time;
+    prof_measure_t self_time;
+    prof_measure_t total_time;
 } prof_call_info_t;
 
 
@@ -114,8 +121,8 @@ typedef struct {
     /* Caching prof_method_t values significantly
        increases performance. */
     prof_method_t *method_info;
-    prof_clock_t start_time;
-    prof_clock_t child_cost;
+    prof_measure_t start_time;
+    prof_measure_t child_cost;
 } prof_data_t;
 
 /* Current stack of active methods.*/
@@ -136,163 +143,17 @@ typedef struct {
     VALUE threads;
 } prof_result_t;
 
+
+/* ================  Variables  =================*/
 static ID toplevel_id;
 static st_data_t toplevel_key;
-static int clock_mode;
+static int measure_mode;
 static st_table *threads_tbl = NULL;
 static VALUE class_tbl = Qnil;
 
 
-/* ================  Various Timing Strategies  =================*/
 
-#define CLOCK_MODE_PROCESS 0
-#define CLOCK_MODE_WALL 1
-#if defined(_WIN32) || (defined(__GNUC__) && (defined(__i386__) || defined(__powerpc__) || defined(__ppc__)))
-#define CLOCK_MODE_CPU 2
-static double cpu_frequency;
-#endif
-
-#define INITIAL_STACK_SIZE 8
-
-static prof_clock_t
-clock_get_clock()
-{
-    return clock();
-}
-
-static double
-clock_clock2sec(prof_clock_t c)
-{
-    return (double) c / CLOCKS_PER_SEC;
-}
-
-static prof_clock_t
-gettimeofday_get_clock()
-{
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return tv.tv_sec * 1000000 + tv.tv_usec;
-}
-
-static double
-gettimeofday_clock2sec(prof_clock_t c)
-{
-    return (double) c / 1000000;
-}
-
-#ifdef CLOCK_MODE_CPU
-
-
-#if defined(__GNUC__)
-
-static prof_clock_t
-cpu_get_clock()
-{
-#if defined(__i386__)
-    unsigned long long x;
-    __asm__ __volatile__ ("rdtsc" : "=A" (x));
-    return x;
-#elif defined(__powerpc__) || defined(__ppc__)
-    unsigned long long x, y;
-
-    __asm__ __volatile__ ("\n\
-1:	mftbu   %1\n\
-	mftb    %L0\n\
-	mftbu   %0\n\
-	cmpw    %0,%1\n\
-	bne-    1b"
-	: "=r" (x), "=r" (y));
-    return x;
-#endif
-}
-
-#elif defined(_WIN32)
-
-static prof_clock_t
-cpu_get_clock()
-{
-    prof_clock_t cycles = 0;
-
-    __asm
-    {
-        rdtsc
-        mov DWORD PTR cycles, eax
-        mov DWORD PTR [cycles + 4], edx
-    }
-    return cycles;
-}
-
-#endif
-
-
-/* The _WIN32 check is needed for msys (and maybe cygwin?) */
-#if defined(__GNUC__) && !defined(_WIN32)
-
-double get_cpu_frequency()
-{
-    unsigned long long x, y;
-
-    struct timespec ts;
-    ts.tv_sec = 0;
-    ts.tv_nsec = 500000000;
-    x = cpu_get_clock();
-    nanosleep(&ts, NULL);
-    y = cpu_get_clock();
-    return (y - x) * 2;
-}
-
-#elif defined(_WIN32)
-
-double get_cpu_frequency()
-{
-    unsigned long long x, y;
-    double frequency;
-    x = cpu_get_clock();
-
-    /* Use the windows sleep function, not Ruby's */
-    Sleep(500);
-    y = cpu_get_clock();
-    frequency = 2*(y-x);
-    return frequency;
-}
-#endif
-
-static double
-cpu_clock2sec(prof_clock_t c)
-{
-    return (double) c / cpu_frequency;
-}
-
-
-/* call-seq:
-   cpu_frequency -> int
-
-Returns the cpu's frequency.  This value is needed when using the 
-cpu RubyProf::clock_mode. */
-static VALUE
-prof_get_cpu_frequency(VALUE self)
-{
-    return rb_float_new(cpu_frequency);
-}
-
-/* call-seq:
-   cpu_frequency=value -> void
-
-Sets the cpu's frequency.  This value is needed when using the 
-cpu RubyProf::clock_mode. */
-static VALUE
-prof_set_cpu_freqeuncy(VALUE self, VALUE val)
-{
-    cpu_frequency = NUM2DBL(val);
-    return val;
-}
-
-#endif
-
-static prof_clock_t (*get_clock)() = clock_get_clock;
-static double (*clock2sec)(prof_clock_t) = clock_clock2sec;
-
-
+/* ================  Helper Functions  =================*/
 /* Helper method to get the id of a Ruby thread. */
 static inline unsigned long
 get_thread_id(VALUE thread)
@@ -300,8 +161,6 @@ get_thread_id(VALUE thread)
     return NUM2LONG(rb_obj_id(thread));
 }
 
-
-/* ================  Method Names  =================*/
 static VALUE
 figure_singleton_name(VALUE klass)
 {
@@ -618,7 +477,7 @@ call_info_total_time(VALUE self)
 {
     prof_call_info_t *result = get_call_info_result(self);
 
-    return rb_float_new(clock2sec(result->total_time));
+    return rb_float_new(convert_measurement(result->total_time));
 }
 
 /* call-seq:
@@ -630,7 +489,7 @@ call_info_self_time(VALUE self)
 {
     prof_call_info_t *result = get_call_info_result(self);
 
-    return rb_float_new(clock2sec(result->self_time));
+    return rb_float_new(convert_measurement(result->self_time));
 }
 
 /* call-seq:
@@ -641,8 +500,8 @@ static VALUE
 call_info_children_time(VALUE self)
 {
     prof_call_info_t *result = get_call_info_result(self);
-    prof_clock_t children_time = result->total_time - result->self_time;
-    return rb_float_new(clock2sec(children_time));
+    prof_measure_t children_time = result->total_time - result->self_time;
+    return rb_float_new(convert_measurement(children_time));
 }
 
 
@@ -746,7 +605,7 @@ prof_method_total_time(VALUE self)
 {
     prof_method_t *result = get_prof_method(self);
 
-    return rb_float_new(clock2sec(result->total_time));
+    return rb_float_new(convert_measurement(result->total_time));
 }
 
 /* call-seq:
@@ -758,7 +617,7 @@ prof_method_self_time(VALUE self)
 {
     prof_method_t *result = get_prof_method(self);
 
-    return rb_float_new(clock2sec(result->self_time));
+    return rb_float_new(convert_measurement(result->self_time));
 }
 
 /* call-seq:
@@ -790,8 +649,8 @@ static VALUE
 prof_method_children_time(VALUE self)
 {
     prof_method_t *result = get_prof_method(self);
-    prof_clock_t children_time = result->total_time - result->self_time;
-    return rb_float_new(clock2sec(children_time));
+    prof_measure_t children_time = result->total_time - result->self_time;
+    return rb_float_new(convert_measurement(children_time));
 }
 
 /* call-seq:
@@ -1056,7 +915,7 @@ collect_threads(st_data_t key, st_data_t value, st_data_t result)
 
 static void
 update_result(prof_method_t * parent, prof_method_t *child,
-              prof_clock_t total_time, prof_clock_t self_time)
+              prof_measure_t total_time, prof_measure_t self_time)
 {
     prof_call_info_t *parent_call_info = NULL;
     prof_call_info_t *child_call_info = NULL;
@@ -1168,7 +1027,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         /* Push the data for this method onto the stack */
         data = stack_push(thread_data->stack);
         data->method_info = child;
-  	    data->start_time = get_clock();
+  	    data->start_time = get_measurement();
 	      data->child_cost = 0;
 
 	      break;
@@ -1179,8 +1038,8 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         prof_data_t* caller;
 	      prof_method_t *parent;
 	      prof_method_t *child;
-        prof_clock_t now = get_clock();
-	      prof_clock_t total_time, self_time;
+        prof_measure_t now = get_measurement();
+	      prof_measure_t total_time, self_time;
 
         /* Pop data for this method off the stack. */
 	      data = stack_pop(thread_data->stack);
@@ -1328,57 +1187,72 @@ prof_result_toplevel(VALUE self, VALUE thread_id)
 
 
 /* call-seq:
-   clock_mode -> clock_mode
+   measure_mode -> measure_mode
    
-   Returns the current clock mode.  Valid values include:
-   *RubyProf::PROCESS_TIME - Measure process time.  This is default.  It is implemented using the clock function in the C Runtime library.
+   Returns what ruby-prof is measuring.  Valid values include:
+   
+   *RubyProf::PROCESS_TIME - Measure process time.  This is default.  It is implemented using the clock functions in the C Runtime library.
    *RubyProf::WALL_TIME - Measure wall time using gettimeofday on Linx and GetLocalTime on Windows
-   *RubyProf::CPU_TIME - Measure time using the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms. */
+   *RubyProf::CPU_TIME - Measure time using the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms. 
+   *RubyProf::ALLOCATIONS - Measure object allocations.  This requires a patched Ruby interpreter.*/
 static VALUE
-prof_get_clock_mode(VALUE self)
+prof_get_measure_mode(VALUE self)
 {
-    return INT2NUM(clock_mode);
+    return INT2NUM(measure_mode);
 }
 
 /* call-seq:
-   clock_mode=value -> void
+   measure_mode=value -> void
    
-   Specifies the method ruby-prof uses to measure time.  Valid values include:
-   *RubyProf::PROCESS_TIME - Measure process time.  This is default.  It is implemented using the clock function in the C Runtime library.
+   Specifies what ruby-prof should measure.  Valid values include:
+   
+   *RubyProf::PROCESS_TIME - Measure process time.  This is default.  It is implemented using the clock functions in the C Runtime library.
    *RubyProf::WALL_TIME - Measure wall time using gettimeofday on Linx and GetLocalTime on Windows
-   *RubyProf::CPU_TIME - Measure time using the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms. */
+   *RubyProf::CPU_TIME - Measure time using the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms. 
+   *RubyProf::ALLOCATIONS - Measure object allocations.  This requires a patched Ruby interpreter.*/
 static VALUE
-prof_set_clock_mode(VALUE self, VALUE val)
+prof_set_measure_mode(VALUE self, VALUE val)
 {
     long mode = NUM2LONG(val);
 
     if (threads_tbl)
     {
-	    rb_raise(rb_eRuntimeError, "can't set clock_mode while profiling");
+	    rb_raise(rb_eRuntimeError, "can't set measure_mode while profiling");
     }
 
     switch (mode) {
-    case CLOCK_MODE_PROCESS:
-    	get_clock = clock_get_clock;
-	    clock2sec = clock_clock2sec;
-    	break;
-    case CLOCK_MODE_WALL:
-	    get_clock = gettimeofday_get_clock;
-	    clock2sec = gettimeofday_clock2sec;
-	    break;
-#ifdef CLOCK_MODE_CPU
-    case CLOCK_MODE_CPU:
-	    if (cpu_frequency == 0)
-	        cpu_frequency = get_cpu_frequency();
-	        get_clock = cpu_get_clock;
-	        clock2sec = cpu_clock2sec;
-	    break;
-#endif
-    default:
-	    rb_raise(rb_eArgError, "invalid mode: %d", mode);
-	break;
+      case MEASURE_PROCESS_TIME:
+    	  get_measurement = measure_process_time;
+	      convert_measurement = convert_process_time;
+    	  break;
+    	  
+      case MEASURE_WALL_TIME:
+	      get_measurement = measure_wall_time;
+	      convert_measurement = convert_wall_time;
+	      break;
+	      
+      #if defined(MEASURE_CPU_TIME)
+      case MEASURE_CPU_TIME:
+	      if (cpu_frequency == 0)
+	          cpu_frequency = measure_cpu_time();
+        get_measurement = measure_cpu_time;
+        convert_measurement = convert_cpu_time;
+	      break;
+      #endif
+      	      
+      #if defined(MEASURE_ALLOCATIONS)
+      case MEASURE_ALLOCATIONS:
+        get_measurement = measure_allocations;
+        convert_measurement = convert_allocations;
+	      break;
+	    #endif
+	      
+      default:
+	      rb_raise(rb_eArgError, "invalid mode: %d", mode);
+	      break;
     }
-    clock_mode = mode;
+    
+    measure_mode = mode;
     return val;
 }
 
@@ -1488,18 +1362,23 @@ Init_ruby_prof()
     rb_define_module_function(mProf, "stop", prof_stop, 0);
     rb_define_module_function(mProf, "running?", prof_running, 0);
     rb_define_module_function(mProf, "profile", prof_profile, 0);
-    rb_define_singleton_method(mProf, "clock_mode", prof_get_clock_mode, 0);
-    rb_define_singleton_method(mProf, "clock_mode=", prof_set_clock_mode, 1);
-    rb_define_const(mProf, "PROCESS_TIME", INT2NUM(CLOCK_MODE_PROCESS));
-    rb_define_const(mProf, "WALL_TIME", INT2NUM(CLOCK_MODE_WALL));
-#ifdef CLOCK_MODE_CPU
-    rb_define_const(mProf, "CPU_TIME", INT2NUM(CLOCK_MODE_CPU));
-    rb_define_singleton_method(mProf, "cpu_frequency",
-			       prof_get_cpu_frequency, 0);
-    rb_define_singleton_method(mProf, "cpu_frequency=",
-			       prof_set_cpu_freqeuncy, 1);
-#endif
+    
+    rb_define_singleton_method(mProf, "measure_mode", prof_get_measure_mode, 0);
+    rb_define_singleton_method(mProf, "measure_mode=", prof_set_measure_mode, 1);
 
+    rb_define_const(mProf, "PROCESS_TIME", INT2NUM(MEASURE_PROCESS_TIME));
+    rb_define_const(mProf, "WALL_TIME", INT2NUM(MEASURE_WALL_TIME));
+
+    #if defined(MEASURE_CPU_TIME)
+    rb_define_const(mProf, "CPU_TIME", INT2NUM(MEASURE_CPU_TIME));
+    rb_define_singleton_method(mProf, "cpu_frequency", prof_get_cpu_frequency, 0);
+    rb_define_singleton_method(mProf, "cpu_frequency=", prof_set_cpu_freqeuncy, 1);
+    #endif
+        
+    #if defined(MEASURE_ALLOCATIONS)
+    rb_define_const(mProf, "ALLOCATED_OBJECTS", INT2NUM(MEASURE_ALLOCATIONS));
+    #endif
+    
     cResult = rb_define_class_under(mProf, "Result", rb_cObject);
     rb_undef_method(CLASS_OF(cMethodInfo), "new");
     rb_define_method(cResult, "threads", prof_result_threads, 0);

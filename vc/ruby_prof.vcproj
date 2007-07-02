@@ -63,7 +63,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="msvcrt-ruby18.lib"
-				OutputFile="$(OutDir)\$(ProjectName).so"
+				OutputFile="C:\Development\ruby\lib\ruby\gems\1.8\gems\ruby-prof-0.5.0-mswin32\lib\$(ProjectName).so"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="C:\Development\ruby\lib"
 				GenerateDebugInformation="true"

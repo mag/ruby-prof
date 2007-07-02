@@ -17,7 +17,7 @@ CLOBBER.include('ruby_prof.so')
 
 task :default => "ruby_prof"
 
-SRC = FileList['../ext/*.c']
+SRC = FileList['../ext/ruby_prof.c']
 OBJ = SRC.collect do |file_name|
   File.basename(file_name).ext('o')
 end
