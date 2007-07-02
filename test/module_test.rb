@@ -38,10 +38,10 @@ class ModuleTest < Test::Unit::TestCase
     assert_equal('#toplevel', method.name)
     
     method = methods[1]
-    assert_equal('Bar#hello', method.name)
+    assert_equal('<Module::Bar>#hello', method.name)
     
     method = methods[2]
-    assert_equal('<Module::Bar>#hello', method.name)
+    assert_equal('Bar#hello', method.name)
     
     method = methods[3]
     assert_equal('<Module::Foo>#hello', method.name)
