@@ -89,9 +89,10 @@ win_spec.files += ["lib/#{SO_NAME}"]
 
 desc "Create Windows Gem"
 task :create_win32_gem do
-  # Copy the win32 extension to the top level directory
+  # Copy the win32 extension built by MingW - easier to install
+  # since there are no dependencies of msvcr80.dll
   current_dir = File.expand_path(File.dirname(__FILE__))
-  source = File.join(current_dir, "vc", "release", SO_NAME)
+  source = File.join(current_dir, "mingw", SO_NAME)
   target = File.join(current_dir, "lib", SO_NAME)
   cp(source, target)
 
