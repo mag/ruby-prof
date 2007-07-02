@@ -927,7 +927,8 @@ prof_method_cmp(VALUE self, VALUE other)
     else if (x->total_time < y->total_time)
     	return INT2FIX(-1);
     else if (x->total_time == y->total_time)
-    	return INT2FIX(0);
+      // Times are the same - so use the name as a 2nd order sort
+      return rb_str_cmp(method_name(x->klass, x->mid), method_name(y->klass, y->mid));
     else
 		  return INT2FIX(1);
 }
