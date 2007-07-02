@@ -24,18 +24,18 @@ end
 
 # --  Tests ----
 class RecursiveTest < Test::Unit::TestCase
-	def test_recursive
+  def test_recursive
     result = RubyProf.profile do
-  		simple(3)
+      simple(3)
     end
    
     result.threads.values.each do |methods|
-			methods.values.each do |method|
-    		check_parent_times(method)
-    		check_parent_calls(method)
-    		check_child_times(method)		
-			end
-  	end
+      methods.each do |method|
+        check_parent_times(method)
+        check_parent_calls(method)
+        check_child_times(method)   
+      end
+    end
   end
   
   def test_factorial
@@ -45,11 +45,11 @@ class RecursiveTest < Test::Unit::TestCase
     end
    
     result.threads.values.each do |methods|
-			methods.values.each do |method|
-    		check_parent_times(method)
-    		check_parent_calls(method)
-    		check_child_times(method)		
-			end
-  	end
-  end  	
+      methods.each do |method|
+        check_parent_times(method)
+        check_parent_calls(method)
+        check_child_times(method)   
+      end
+    end
+  end   
 end

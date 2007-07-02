@@ -22,24 +22,28 @@ end
 
 include Bar
 
-class BasicTest < Test::Unit::TestCase
+class ModuleTest < Test::Unit::TestCase
   def test_nested_modules
-		result = RubyProf.profile do
-			hello
-		end
+    result = RubyProf.profile do
+      hello
+    end
 
-		methods = result.threads.values.first
-	    
-  	# Length should be 4s
-  	assert_equal(4, methods.length)
+    methods = result.threads.values.first
+    methods = methods.sort.reverse
+      
+    # Length should be 4
+    assert_equal(4, methods.length)
     
-  	method1 = methods['Bar#hello']
-  	assert_not_nil(method1)
-  	
-  	method1 = methods['<Module::Bar>#hello']
-  	assert_not_nil(method1)
-  	
-  	method1 = methods['<Module::Foo>#hello']
-  	assert_not_nil(method1)
-	end	
+    method = methods[0]
+    assert_equal('#toplevel', method.name)
+    
+    method = methods[1]
+    assert_equal('Bar#hello', method.name)
+    
+    method = methods[2]
+    assert_equal('<Module::Bar>#hello', method.name)
+    
+    method = methods[3]
+    assert_equal('<Module::Foo>#hello', method.name)
+  end 
 end

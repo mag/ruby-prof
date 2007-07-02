@@ -6,14 +6,17 @@ require 'test_helper'
 
 class C1
   def C1.hello
+    sleep(0.1)
   end
   
   def hello
+    sleep(0.2)
   end
 end
 
 module M1
   def hello
+    sleep(0.3)
   end
 end
 
@@ -24,11 +27,13 @@ end
 
 class C3
   def hello
+    sleep(0.4)
   end
 end
 
 module M4
   def hello
+    sleep(0.5)
   end
 end
 
@@ -58,7 +63,7 @@ class BasicTest < Test::Unit::TestCase
   def test_double_profile
     RubyProf.start
     assert_raise(RuntimeError) do
-    	RubyProf.start
+      RubyProf.start
     end
     
     assert_raise(RuntimeError) do
@@ -71,68 +76,78 @@ class BasicTest < Test::Unit::TestCase
   
   def test_no_block
     assert_raise(ArgumentError) do
-			RubyProf.profile
-  	end
+      RubyProf.profile
+    end
   end
   
   def test_class_and_instance_methods
     result = RubyProf.profile do
-	    C1.hello
-	    C1.new.hello
+      C1.hello
+      C1.new.hello
     end
   
     methods = result.threads.values.first
     
     # Length should be 6:
-    # 	1 top level,
-    # 	1 Class.new
-    #		1 Class:Object allocate
+    #   1 top level,
+    #   1 Class.new
+    #   1 Class:Object allocate
     #   1 for Object.initialize
     #   1 for Class hello
     #   1 for Object hello
-    assert_equal(6, methods.length)
+    #   1 sleep
+    assert_equal(7, methods.length)
     
-    # Check class method
-    method1 = methods['<Class::C1>#hello']
-    assert_not_nil(method1)
+    # Check the names
+    methods = methods.sort.reverse
     
-    # Check instance method
-    method1 = methods['C1#hello']
-    assert_not_nil(method1)
+    assert_equal('#toplevel', methods[0].name)
+    assert_equal('Kernel#sleep', methods[1].name)
+    assert_equal('C1#hello', methods[2].name)
+    assert_equal('<Class::C1>#hello', methods[3].name)
+    assert_equal('Object#initialize', methods[4].name)
+    assert_equal('Class#new', methods[5].name)
+    assert_equal('<Class::Object>#allocate', methods[6].name)
   end
   
   def test_module_methods
     result = RubyProf.profile do
-	  	C2.hello
-	    C2.new.hello
+      C2.hello
+      C2.new.hello
     end
   
     methods = result.threads.values.first
    
     # Length should be 5:
-    # 	1 top level,
-    # 	1 Class.new
-    #		1 Class:Object allocate
+    #   1 top level,
+    #   1 Class.new
+    #   1 Class:Object allocate
     #   1 for Object.initialize
     #   1 for hello
-    assert_equal(5, methods.length)
+    assert_equal(6, methods.length)
     
-    # Check class method
-    method1 = methods['M1#hello']
-    assert_not_nil(method1)
-    assert_equal(2, method1.called)
+
+    # Check the names
+    methods = methods.sort.reverse
+    
+    assert_equal('#toplevel', methods[0].name)
+    assert_equal('M1#hello', methods[1].name)
+    assert_equal('Kernel#sleep', methods[2].name)
+    assert_equal('Object#initialize', methods[3].name)
+    assert_equal('Class#new', methods[4].name)
+    assert_equal('<Class::Object>#allocate', methods[5].name)
   end
   
   def test_singleton
     c3 = C3.new
     
     class << c3
-    	def hello
-    	end
-  	end
+      def hello
+      end
+    end
   
     result = RubyProf.profile do
-	  	c3.hello
+      c3.hello
     end
   
     methods = result.threads.values.first
@@ -142,7 +157,9 @@ class BasicTest < Test::Unit::TestCase
     assert_equal(2, methods.length)
     
     # Check singleton method
-    method1 = methods['<Object::C3>#hello']
-    assert_not_nil(method1)
+    methods = methods.sort.reverse
+    
+    assert_equal('#toplevel', methods[0].name)
+    assert_equal('<Object::C3>#hello', methods[1].name)
   end
 end

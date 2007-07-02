@@ -36,7 +36,7 @@ class ThreadTest < Test::Unit::TestCase
     result = RubyProf.stop
     
     result.threads.values.each do |methods|
-      methods.values.each do |method|
+      methods.each do |method|
         check_parent_times(method)
         check_parent_calls(method)
         check_child_times(method)   

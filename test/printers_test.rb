@@ -1,11 +1,6 @@
 #!/usr/bin/env ruby
 require 'test/unit'
-#require 'ruby-prof'
-require 'C:/Development/msys/src/ruby-prof/vc/Debug/ruby_prof.so'
-require 'C:/Development/msys/src/ruby-prof/lib/ruby-prof/graph_printer.rb'
-require 'C:/Development/msys/src/ruby-prof/lib/ruby-prof/graph_html_printer.rb'
-require 'C:/Development/msys/src/ruby-prof/lib/ruby-prof/flat_printer.rb'
-require 'C:/Development/msys/src/ruby-prof/lib/ruby-prof/call_tree_printer.rb'
+require 'ruby-prof'
 require 'prime'
 require 'test_helper'
 
