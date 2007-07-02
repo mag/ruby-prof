@@ -28,6 +28,8 @@ module RubyProf
     # object generated from a profiling run.
     def initialize(result)
       @result = result
+      @thread_times = Hash.new
+      calculate_thread_times
     end
 
     # Print a graph html report to the provided output.
@@ -51,22 +53,30 @@ module RubyProf
     # These methods should be private but then ERB doesn't
     # work.  Turn off RDOC though 
     #--
-    def total_time(thread_id)
-      # Sort methods from longest to shortest total time
-      methods = @result.threads[thread_id]
-      top = methods.sort.reverse.first
-      total_time = top.total_time
-      total_time = 0.01 if total_time == 0
-      return total_time
+    def calculate_thread_times
+      # Cache thread times since this is an expensive
+      # operation with the required sorting      
+      @result.threads.each do |thread_id, methods|
+        top = methods.sort.last
+        
+        thread_time = 0.01
+        thread_time = top.total_time if top.total_time > 0
+
+        @thread_times[thread_id] = thread_time 
+      end
+    end
+    
+    def thread_time(thread_id)
+      @thread_times[thread_id]
     end
    
     def total_percent(method)
-      overall_time = self.total_time(method.thread_id)
+      overall_time = self.thread_time(method.thread_id)
       (method.total_time/overall_time) * 100
     end
     
     def self_percent(method)
-      overall_time = self.total_time(method.thread_id)
+      overall_time = self.thread_time(method.thread_id)
       (method.self_time/overall_time) * 100
     end
 
@@ -147,13 +157,14 @@ module RubyProf
       <% for thread_id, methods in @result.threads %>
       <tr>
         <td><a href="#<%= thread_id %>"><%= thread_id %></a></td>
-        <td><%= total_time(thread_id) %></td>
+        <td><%= thread_time(thread_id) %></td>
       </tr>
       <% end %>
     </table>
 
     <!-- Methods Tables -->
-    <% for thread_id, methods in @result.threads %>
+    <% for thread_id, methods in @result.threads
+         total_time = thread_time(thread_id) %>
       <h2><a name="<%= thread_id %>">Thread <%= thread_id %></a></h2>
 
       <table>
@@ -167,10 +178,10 @@ module RubyProf
           <th>Name</th>
         </tr>
 
-        <% methods.sort.reverse.each do |method| %>
-          <% method_total_percent = self.total_percent(method) %>
-          <% next if method_total_percent < @min_percent %>
-          <% method_self_percent = self.self_percent(method) %>
+        <% methods.sort.reverse_each do |method|
+            total_percentage = (method.total_time/total_time) * 100
+            next if total_percentage < @min_percent
+            self_percentage = (method.self_time/total_time) * 100 %>
           
             <!-- Parents -->
             <% for caller in method.parents %> 
@@ -187,8 +198,8 @@ module RubyProf
             <% end %>
 
             <tr class="method">
-              <td><%= sprintf("%#{PERCENTAGE_WIDTH-1}.2f\%", method_total_percent) %></td>
-              <td><%= sprintf("%#{PERCENTAGE_WIDTH-1}.2f\%", method_self_percent) %></td>
+              <td><%= sprintf("%#{PERCENTAGE_WIDTH-1}.2f\%", total_percentage) %></td>
+              <td><%= sprintf("%#{PERCENTAGE_WIDTH-1}.2f\%", self_percentage) %></td>
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.total_time) %></td>
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.self_time) %></td>
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.children_time) %></td>

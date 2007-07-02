@@ -22,14 +22,14 @@ module RubyProf
     end
 
     def print_threads
-      @result.threads.sort.each do |thread_id, methods|
+      @result.threads.each do |thread_id, methods|
         print_methods(thread_id ,methods)
       end
     end
 
     def print_methods(thread_id ,methods)
       last_sourcefile = nil
-      methods.each do |method| 
+      methods.reverse_each do |method| 
         # iterate through each method and print out the timings.
         sf = method.source_file
         if last_sourcefile == nil || (last_sourcefile != sf && sf != "toplevel")

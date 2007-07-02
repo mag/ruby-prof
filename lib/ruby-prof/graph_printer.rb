@@ -41,8 +41,7 @@ module RubyProf
     def print(output = STDOUT, min_percent = 0)
       @output = output
       @min_percent = min_percent
-
-        print_threads
+      print_threads
     end
 
     private 
@@ -56,9 +55,9 @@ module RubyProf
     
     def print_methods(thread_id, methods)
       # Sort methods from longest to shortest total time
-      methods = methods.sort.reverse
+      methods = methods.sort
       
-      toplevel = methods.first
+      toplevel = methods.last
       total_time = toplevel.total_time
       if total_time == 0
         total_time = 0.01
@@ -67,7 +66,7 @@ module RubyProf
       print_heading(thread_id)
     
       # Print each method in total time order
-      methods.each do |method|
+      methods.reverse_each do |method|
         total_percentage = (method.total_time/total_time) * 100
         self_percentage = (method.self_time/total_time) * 100
         

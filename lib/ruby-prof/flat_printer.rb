@@ -34,8 +34,7 @@ module RubyProf
     private 
     
     def print_threads
-      # sort assumes that spawned threads have higher object_ids
-      @result.threads.sort.each do |thread_id, methods|
+      @result.threads.each do |thread_id, methods|
         print_methods(thread_id, methods)
         @output << "\n" * 2
       end
@@ -43,7 +42,7 @@ module RubyProf
     
     def print_methods(thread_id, methods)
       # Get total time
-      toplevel = methods.sort.reverse.first
+      toplevel = methods.sort.last
       total_time = toplevel.total_time
       if total_time == 0
         total_time = 0.01
