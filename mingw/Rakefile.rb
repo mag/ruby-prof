@@ -25,12 +25,10 @@ end
 SRC.each do |srcfile|
   objfile = File.basename(srcfile).ext('o')
   file objfile => srcfile do
-    puts "gcc -c -fPIC -o #{objfile} #{srcfile} -I#{RUBY_INCLUDE_DIR}" 
     sh   "gcc -c -o #{objfile} #{srcfile} -I#{RUBY_INCLUDE_DIR}" 
   end
 end
 
 file "ruby_prof" => OBJ do
-  puts "gcc -shared -o ruby_prof.so #{OBJ} #{RUBY_BIN_DIR}/#{RUBY_SHARED_DLL}" 
   sh "gcc -shared -o ruby_prof.so #{OBJ} #{RUBY_BIN_DIR}/#{RUBY_SHARED_DLL}" 
 end
