@@ -2,12 +2,12 @@ module RubyProf
   # Generates graph[link:files/examples/graph_txt.html] profile reports as text. 
   # To use the graph printer:
   #
-  # 	result = RubyProf.profile do
-  #			[code to profile]
-  #		end
+  #   result = RubyProf.profile do
+  #     [code to profile]
+  #   end
   #
-  # 	printer = RubyProf::GraphPrinter.new(result, 5)
-  # 	printer.print(STDOUT, 0)
+  #   printer = RubyProf::GraphPrinter.new(result, 5)
+  #   printer.print(STDOUT, 0)
   #
   # The constructor takes two arguments.  The first is
   # a RubyProf::Result object generated from a profiling
@@ -22,7 +22,7 @@ module RubyProf
     TIME_WIDTH = 10
     CALL_WIDTH = 20
   
-    # Create a GraphPrinter.  Result is a RubyProf::Result	
+    # Create a GraphPrinter.  Result is a RubyProf::Result  
     # object generated from a profiling run.
     def initialize(result, min_percent = 0)
       @result = result
@@ -55,7 +55,10 @@ module RubyProf
     end
     
     def print_methods(thread_id, methods)
-      toplevel = @result.toplevel(thread_id)
+      # Sort methods from longest to shortest total time
+      methods = methods.sort.reverse
+      
+      toplevel = methods.first
       total_time = toplevel.total_time
       if total_time == 0
         total_time = 0.01
@@ -63,10 +66,8 @@ module RubyProf
       
       print_heading(thread_id)
     
-      # Print each method
-      methods.sort.reverse.each do |pair|
-        name = pair[0]
-        method = pair[1]
+      # Print each method in total time order
+      methods.each do |method|
         total_percentage = (method.total_time/total_time) * 100
         self_percentage = (method.self_time/total_time) * 100
         
@@ -83,10 +84,10 @@ module RubyProf
         @output << sprintf("%#{TIME_WIDTH}.2f", method.self_time)
         @output << sprintf("%#{TIME_WIDTH}.2f", method.children_time)
         @output << sprintf("%#{CALL_WIDTH}i", method.called)
-        @output << sprintf("     %s", name)
+        @output << sprintf("     %s", method.name)
         @output << "\n"
     
-        print_children(thread_id, method)
+        print_children(method)
       end
     end
   
@@ -104,38 +105,35 @@ module RubyProf
     end
     
     def print_parents(thread_id, method)
-      method.parents.each do |name, call_info|
+      method.parents.each do |caller|
         @output << " " * 2 * PERCENTAGE_WIDTH
-        @output << sprintf("%#{TIME_WIDTH}.2f", call_info.total_time)
-        @output << sprintf("%#{TIME_WIDTH}.2f", call_info.self_time)
-        @output << sprintf("%#{TIME_WIDTH}.2f", call_info.children_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", caller.total_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", caller.self_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", caller.children_time)
     
-        call_called = "#{call_info.called}/#{method.called}"
+        call_called = "#{caller.called}/#{method.called}"
         @output << sprintf("%#{CALL_WIDTH}s", call_called)
-        @output << sprintf("     %s", name)
+        @output << sprintf("     %s", caller.target.name)
         @output << "\n"
       end
     end
   
-    def print_children(thread_id, method)
-      a = method.children
-      method.children.each do |name, call_info|
+    def print_children(method)
+      method.children.each do |child|
         # Get children method
-        methods = @result.threads[thread_id]
-        children = methods[name]
         
         @output << " " * 2 * PERCENTAGE_WIDTH
         
-        @output << sprintf("%#{TIME_WIDTH}.2f", call_info.total_time)
-        @output << sprintf("%#{TIME_WIDTH}.2f", call_info.self_time)
-        @output << sprintf("%#{TIME_WIDTH}.2f", call_info.children_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", child.total_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", child.self_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", child.children_time)
 
-        call_called = "#{call_info.called}/#{children.called}"
+        call_called = "#{child.called}/#{child.target.called}"
         @output << sprintf("%#{CALL_WIDTH}s", call_called)
-        @output << sprintf("     %s", name)
+        @output << sprintf("     %s", child.target.name)
         @output << "\n"
       end
     end
   end
-end	
+end 
 

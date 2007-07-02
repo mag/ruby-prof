@@ -2,15 +2,15 @@ module RubyProf
   # Generates flat[link:files/examples/flat_txt.html] profile reports as text. 
   # To use the flat printer:
   #
-  # 	result = RubyProf.profile do
-  #			[code to profile]
-  #		end
+  #   result = RubyProf.profile do
+  #     [code to profile]
+  #   end
   #
-  # 	printer = RubyProf::FlatPrinter.new(result)
-  # 	printer.print(STDOUT, 0)
+  #   printer = RubyProf::FlatPrinter.new(result)
+  #   printer.print(STDOUT, 0)
   #
   class FlatPrinter
-    # Create a FlatPrinter.  Result is a RubyProf::Result	
+    # Create a FlatPrinter.  Result is a RubyProf::Result 
     # object generated from a profiling run.
     def initialize(result)
       @result = result
@@ -42,18 +42,25 @@ module RubyProf
     end
     
     def print_methods(thread_id, methods)
-      toplevel = @result.toplevel(thread_id)
+      # Get total time
+      toplevel = methods.sort.reverse.first
       total_time = toplevel.total_time
-
+      if total_time == 0
+        total_time = 0.01
+      end
       
-      sum = 0
+      # Now sort methods by largest self time,
+      # not total time like in other printouts
+      methods = methods.sort do |m1, m2|
+        m1.self_time <=> m2.self_time
+      end.reverse
+      
       @output << "Thread ID: " << thread_id << "\n"
+      @output << "Total: " << total_time << "\n"
       @output << " %self  cumulative  total     self   children  calls self/call total/call  name\n"
-    
-      methods.sort.reverse.each do |pair|
-        method_name = pair[0]
-        method = pair[1]
 
+      sum = 0    
+      methods.each do |method|
         self_percent = (method.self_time / total_time) * 100
         next if self_percent < @min_percent
         
@@ -67,9 +74,9 @@ module RubyProf
                       method.called,                       # calls
                       method.self_time  / method.called,   # self/call
                       method.total_time  / method.called,  # total/call
-                      method_name)                         # name
+                      method.name)                         # name
       end
     end
   end
-end	
+end 
 
