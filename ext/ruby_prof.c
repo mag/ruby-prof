@@ -1372,7 +1372,7 @@ Init_ruby_prof()
     #if defined(MEASURE_CPU_TIME)
     rb_define_const(mProf, "CPU_TIME", INT2NUM(MEASURE_CPU_TIME));
     rb_define_singleton_method(mProf, "cpu_frequency", prof_get_cpu_frequency, 0); /* in measure_cpu_time.h */
-    rb_define_singleton_method(mProf, "cpu_frequency=", prof_set_cpu_freqeuncy, 1); /* in measure_cpu_time.h */
+    rb_define_singleton_method(mProf, "cpu_frequency=", prof_set_cpu_frequency, 1); /* in measure_cpu_time.h */
     #endif
         
     #if defined(MEASURE_ALLOCATIONS)
