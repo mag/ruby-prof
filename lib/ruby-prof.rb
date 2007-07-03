@@ -8,10 +8,10 @@ require "ruby-prof/call_tree_printer"
 module RubyProf
   # See if the user specified the clock mode via 
   # the RUBY_PROF_MEASURE_MODE environment variable
-  def self.figure_clock_mode
+  def self.figure_measure_mode
     case ENV["RUBY_PROF_MEASURE_MODE"]
     when "wall" || "wall_time"
-      RubyProf.clock_mode = RubyProf::WALL_TIME
+      RubyProf.measure_mode = RubyProf::WALL_TIME
     when "cpu" || "cpu_time"
       if ENV.key?("RUBY_PROF_CPU_FREQUENCY")
         RubyProf.cpu_frequency = ENV["RUBY_PROF_CPU_FREQUENCY"].to_f
@@ -29,13 +29,13 @@ module RubyProf
         rescue Errno::ENOENT
         end
       end
-      RubyProf.clock_mode = RubyProf::CPU_TIME
+      RubyProf.measure_mode = RubyProf::CPU_TIME
     when "allocations"
-      RubyProf.clock_mode = RubyProf::ALLOCATIONS
+      RubyProf.measure_mode = RubyProf::ALLOCATIONS
     else
-      RubyProf.clock_mode = RubyProf::PROCESS_TIME
+      RubyProf.measure_mode = RubyProf::PROCESS_TIME
     end
   end
 end
 
-RubyProf::figure_clock_mode
+RubyProf::figure_measure_mode

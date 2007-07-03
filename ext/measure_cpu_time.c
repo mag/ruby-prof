@@ -114,8 +114,8 @@ convert_cpu_time(prof_measure_t c)
 /* call-seq:
    cpu_frequency -> int
 
-Returns the cpu's frequency.  This value is needed when using the 
-cpu RubyProf::clock_mode. */
+Returns the cpu's frequency.  This value is needed when 
+RubyProf::measure_mode is set to CPU_TIME. */
 static VALUE
 prof_get_cpu_frequency(VALUE self)
 {
@@ -125,8 +125,8 @@ prof_get_cpu_frequency(VALUE self)
 /* call-seq:
    cpu_frequency=value -> void
 
-Sets the cpu's frequency.  This value is needed when using the 
-cpu RubyProf::clock_mode. */
+Sets the cpu's frequency.   This value is needed when 
+RubyProf::measure_mode is set to CPU_TIME. */
 static VALUE
 prof_set_cpu_freqeuncy(VALUE self, VALUE val)
 {

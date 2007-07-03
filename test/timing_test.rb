@@ -20,7 +20,7 @@ def method3
 end
 
 # Need to use wall time for this test due to the sleep calls
-RubyProf::clock_mode = RubyProf::WALL_TIME
+RubyProf::measure_mode = RubyProf::WALL_TIME
 
 class TimingTest < Test::Unit::TestCase
 

@@ -163,7 +163,7 @@ To set the measurement:
 
 The default value is PROCESS_TIME.
 
-You may also specify the clock_mode by using the RUBY_PROF_MEASURE_MODE
+You may also specify the measure_mode by using the RUBY_PROF_MEASURE_MODE
 environment variable:
 
 	export RUBY_PROF_MEASURE_MODE=process
