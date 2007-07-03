@@ -106,6 +106,7 @@ task :create_win32_gem do
   rm(target)
 end
 
+
 task :package => :create_win32_gem
 
 # ---------  RDoc Documentation ------
@@ -117,15 +118,14 @@ Rake::RDocTask.new("rdoc") do |rdoc|
   rdoc.options << "--inline-source" << "--line-numbers"
   # Make the readme file the start page for the generated html
   rdoc.options << '--main' << 'README'
-  rdoc.rdoc_files.include('bin/**/*',
-                          'doc/*.rdoc',
-                          'examples/flat.txt',
-                          'examples/graph.txt',
-                          'examples/graph.html',
-                          'lib/**/*.rb',
-                          'ext/**/ruby_prof.c',
-                          'README',
-                          'LICENSE')
+  rdoc.rdoc_files.include('bin/ruby-prof',
+                           'ext/ruby_prof.c',
+                           'ext/measure_process_time.h',
+                           'ext/measure_wall_time.h',
+                           'ext/measure_cpu_time.h',
+                           'ext/measure_allocations.h',
+                           'README',
+                           'LICENSE')
 end
 
 
