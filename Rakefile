@@ -117,15 +117,16 @@ Rake::RDocTask.new("rdoc") do |rdoc|
   rdoc.options << "--inline-source" << "--line-numbers"
   # Make the readme file the start page for the generated html
   rdoc.options << '--main' << 'README'
-  rdoc.rdoc_files.include('bin/ruby-prof',
-                           'ext/ruby_prof.c',
-                           'examples/flat.txt',
-                           'examples/graph.txt',
-                           'examples/graph.html',
-                           'README',
-                           'LICENSE')
+  rdoc.rdoc_files.include('bin/**/*',
+                          'doc/*.rdoc',
+                          'examples/flat.txt',
+                          'examples/graph.txt',
+                          'examples/graph.html',
+                          'lib/**/*.rb',
+                          'ext/**/ruby_prof.c',
+                          'README',
+                          'LICENSE')
 end
-
 
 
 # ---------  Publish to RubyForge  ----------------
