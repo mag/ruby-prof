@@ -67,10 +67,10 @@ typedef LONG_LONG prof_measure_t;
 typedef unsigned long prof_measure_t;
 #endif
 
-#include "measure_process_time.c"
-#include "measure_wall_time.c"
-//#include "measure_cpu_time.c"
-#include "measure_allocations.c"
+#include "measure_process_time.h"
+#include "measure_wall_time.h"
+#include "measure_cpu_time.h"
+#include "measure_allocations.h"
 
 static prof_measure_t (*get_measurement)() = measure_process_time;
 static double (*convert_measurement)(prof_measure_t) = convert_process_time;
