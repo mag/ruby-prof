@@ -61,10 +61,11 @@ EOF
   # Make the readme file the start page for the generated html
   spec.rdoc_options << '--main' << 'README'
   spec.extra_rdoc_files = ['bin/ruby-prof',
-                           'examples/flat.txt',
-                           'examples/graph.txt',
-                           'examples/graph.html',
                            'ext/ruby_prof.c',
+                           'ext/measure_process_time.h',
+                           'ext/measure_wall_time.h',
+                           'ext/measure_cpu_time.h',
+                           'ext/measure_allocations.h',
                            'README',
                            'LICENSE']
 
