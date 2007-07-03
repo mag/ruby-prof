@@ -16,14 +16,10 @@ class PrintersTest < Test::Unit::TestCase
     printer.print(STDOUT)
     
     printer = RubyProf::GraphHtmlPrinter.new(result)
-    File.open('c:/temp/test.html', 'w') do |file|
-      printer.print(file)
-    end
+    printer.print
     
     printer = RubyProf::GraphPrinter.new(result)
-    File.open('c:/temp/test.txt', 'w') do |file|
-      printer.print(file)
-    end
+    printer.print
     
     printer = RubyProf::CallTreePrinter.new(result)
     printer.print(STDOUT)
