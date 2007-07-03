@@ -71,7 +71,7 @@ module Test
       end
 
       def file_extension
-        if printer == RubyProf::GraphHtmlPrinter
+        if printer == RubyProf::FlatPrinter
           '.html'
         else
           '.txt'
