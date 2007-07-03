@@ -1,6 +1,6 @@
-/*
- * $Id: prof.c 298 2005-05-11 08:33:37Z shugo $
- * Copyright (C) 2005  Shugo Maeda <shugo@ruby-lang.org>
+/* :stopdoc: 
+ * Copyright (C) 2007  Shugo Maeda <shugo@ruby-lang.org>
+ *                     Charlie Savage <cfis@savagexi.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,7 +23,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- */
+ :startdoc: */
 
 #include <time.h>
 

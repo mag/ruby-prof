@@ -1,6 +1,6 @@
 /*
- * $Id: prof.c 298 2005-05-11 08:33:37Z shugo $
- * Copyright (C) 2005  Shugo Maeda <shugo@ruby-lang.org>
+ * Copyright (C) 2007  Shugo Maeda <shugo@ruby-lang.org>
+ *                     Charlie Savage <cfis@savagexi.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -1371,8 +1371,8 @@ Init_ruby_prof()
 
     #if defined(MEASURE_CPU_TIME)
     rb_define_const(mProf, "CPU_TIME", INT2NUM(MEASURE_CPU_TIME));
-    rb_define_singleton_method(mProf, "cpu_frequency", prof_get_cpu_frequency, 0);
-    rb_define_singleton_method(mProf, "cpu_frequency=", prof_set_cpu_freqeuncy, 1);
+    rb_define_singleton_method(mProf, "cpu_frequency", prof_get_cpu_frequency, 0); /* in measure_cpu_time.h */
+    rb_define_singleton_method(mProf, "cpu_frequency=", prof_set_cpu_freqeuncy, 1); /* in measure_cpu_time.h */
     #endif
         
     #if defined(MEASURE_ALLOCATIONS)
