@@ -56,7 +56,7 @@ module Test
 
       # Add some additional methods
       def min_percent
-        10
+        1
       end
       
       def output_directory
