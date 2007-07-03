@@ -23,7 +23,8 @@ module Test
           create_output_directory
             
           # Get the result file name
-          file_name = name.gsub(/\(/, '_').gsub(/\)/, '').underscore
+          file_name = name.gsub(/\(/, '_').gsub(/\)/, '')
+          file_name = self.underscore(file_name)
           file_path = File.join(output_directory, file_name)
           file_path += file_extension
       
@@ -45,14 +46,22 @@ module Test
         self.run__profile__(result, &block)
       end
       
+      # Taken from rails
+      def underscore(camel_cased_word)
+        camel_cased_word.to_s.gsub(/::/, '/').
+          gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+          gsub(/([a-z\d])([A-Z])/,'\1_\2').
+          tr("-", "_").downcase
+      end
+
       # Add some additional methods
       def min_percent
         10
       end
       
       def output_directory
-        File.join(File.expand_path(RAILS_ROOT),
-                  'test', 'profile')
+        # Put results in subdirectory called profile
+        File.join(Dir.getwd, 'profile')
       end
     
       def create_output_directory
