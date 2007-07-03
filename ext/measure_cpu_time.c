@@ -45,11 +45,11 @@ measure_cpu_time()
 
     __asm__ __volatile__ ("\n\
 1:	mftbu   %1\n\
-	mftb    %L0\n\
-	mftbu   %0\n\
-	cmpw    %0,%1\n\
-	bne-    1b"
-	: "=r" (x), "=r" (y));
+  mftb    %L0\n\
+  mftbu   %0\n\
+  cmpw    %0,%1\n\
+  bne-    1b"
+  : "=r" (x), "=r" (y));
     return x;
 #endif
 }

@@ -287,13 +287,13 @@ stack_push(prof_stack_t *stack)
      its size. */
   if (stack->ptr == stack->end)
   {
-  	int len;
-  	int new_capacity;
-	  len = stack->ptr - stack->start;
-	  new_capacity = (stack->end - stack->start) * 2;
-	  REALLOC_N(stack->start, prof_data_t, new_capacity);
-	  stack->ptr = stack->start + len;
-	  stack->end = stack->start + new_capacity;
+    int len;
+    int new_capacity;
+    len = stack->ptr - stack->start;
+    new_capacity = (stack->end - stack->start) * 2;
+    REALLOC_N(stack->start, prof_data_t, new_capacity);
+    stack->ptr = stack->start + len;
+    stack->end = stack->start + new_capacity;
   }
   return stack->ptr++;
 }
@@ -302,18 +302,18 @@ static inline prof_data_t *
 stack_pop(prof_stack_t *stack)
 {
     if (stack->ptr == stack->start)
-	    return NULL;
+      return NULL;
     else
-	    return --stack->ptr;
+      return --stack->ptr;
 }
 
 static inline prof_data_t *
 stack_peek(prof_stack_t *stack)
 {
     if (stack->ptr == stack->start)
-	    return NULL;
+      return NULL;
     else
-	    return stack->ptr - 1;
+      return stack->ptr - 1;
 }
 
 
@@ -338,11 +338,11 @@ method_info_table_lookup(st_table *table, st_data_t key)
     st_data_t val;
     if (st_lookup(table, key, &val))
     {
-	    return (prof_method_t *) val;
+      return (prof_method_t *) val;
     }
     else 
     {
-	    return NULL;
+      return NULL;
     }
 }
 
@@ -374,11 +374,11 @@ caller_table_lookup(st_table *table, st_data_t key)
     st_data_t val;
     if (st_lookup(table, key, &val))
     {
-	    return (prof_call_info_t *) val;
+      return (prof_call_info_t *) val;
     }
     else
     {
-	    return NULL;
+      return NULL;
     }
 }
 
@@ -435,7 +435,7 @@ get_call_info_result(VALUE obj)
     if (TYPE(obj) != T_DATA)
     {
         /* Should never happen */
-	    rb_raise(rb_eTypeError, "Not a call info object");
+      rb_raise(rb_eTypeError, "Not a call info object");
     }
     return (prof_call_info_t *) DATA_PTR(obj);
 }
@@ -539,16 +539,16 @@ prof_method_create(VALUE klass, ID mid, VALUE thread, NODE* node, int called_fro
     
     if(node != NULL)
     {
-	    /* Set the sourcefile.  The source file, while not referenced
-	       as a const variable appears safe to keep a pointer to
-	       and reference later in the report generation because ruby
-	       internally keeps a static table of source files.  For more
-	       information see gc.c:rb_source_filename. */
-	    result->sourcefile = node->nd_file;
+      /* Set the sourcefile.  The source file, while not referenced
+         as a const variable appears safe to keep a pointer to
+         and reference later in the report generation because ruby
+         internally keeps a static table of source files.  For more
+         information see gc.c:rb_source_filename. */
+      result->sourcefile = node->nd_file;
     }
     else
     {
-	    result->sourcefile = 0;
+      result->sourcefile = 0;
     }
     return result;
 }
@@ -575,9 +575,9 @@ static prof_method_t *
 get_prof_method(VALUE obj)
 {
    /* if (TYPE(obj) != T_DATA ||
-	    RDATA(obj)->dfree != (RUBY_DATA_FUNC) prof_method_free)
+      RDATA(obj)->dfree != (RUBY_DATA_FUNC) prof_method_free)
     {*/
-	    /* Should never happen */
+      /* Should never happen */
    /*     rb_raise(rb_eTypeError, "wrong profile result");
     }*/
     return (prof_method_t *) DATA_PTR(obj);
@@ -663,7 +663,7 @@ static VALUE prof_method_sourcefile(VALUE self)
     const char* sf = get_prof_method(self)->sourcefile;
     if(!sf)
     {
-	    return Qnil;
+      return Qnil;
     }
     else
     {
@@ -780,16 +780,16 @@ prof_method_cmp(VALUE self, VALUE other)
 
     /* Want toplevel to always be first */
     if (x->klass == Qnil && x->mid == toplevel_id)
-    	return INT2FIX(1);
+      return INT2FIX(1);
     else if (y->klass == Qnil && y->mid == toplevel_id)
-    	return INT2FIX(-1);
+      return INT2FIX(-1);
     else if (x->total_time < y->total_time)
-    	return INT2FIX(-1);
+      return INT2FIX(-1);
     else if (x->total_time == y->total_time)
       // Times are the same - so use the name as a 2nd order sort
       return rb_str_cmp(method_name(x->klass, x->mid), method_name(y->klass, y->mid));
     else
-		  return INT2FIX(1);
+      return INT2FIX(1);
 }
 
 static int
@@ -851,7 +851,7 @@ threads_table_lookup(st_table *table, VALUE thread)
     /* Its too slow to key on the real thread id so just typecast thread instead. */
     if (st_lookup(table, (st_data_t) thread, &val))
     {
-	    result = (thread_data_t *) val;
+      result = (thread_data_t *) val;
     }
     else
     {
@@ -869,7 +869,7 @@ threads_table_lookup(st_table *table, VALUE thread)
 
         /* Insert the table */
         threads_table_insert(threads_tbl, thread, result);
-	}
+  }
     return result;
 }
 
@@ -970,8 +970,8 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     /* Note the souce code line and return. */
     if(event == RUBY_EVENT_LINE)
     {
-	    source_line = nd_line(node);
-	    return;
+      source_line = nd_line(node);
+      return;
     }
     
     /* Are we processing a method.  If so return, otherwise we get
@@ -1016,9 +1016,9 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
 
         if (child == NULL)
         {
-		      child = prof_method_create(klass, mid, thread,node,source_line);
-		      method_info_table_insert(thread_data->method_info_table, key, child);
-	      }
+          child = prof_method_create(klass, mid, thread,node,source_line);
+          method_info_table_insert(thread_data->method_info_table, key, child);
+        }
 
         /* Increment count of number of times this child has been called on
            the current stack. */
@@ -1027,22 +1027,22 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         /* Push the data for this method onto the stack */
         data = stack_push(thread_data->stack);
         data->method_info = child;
-  	    data->start_time = get_measurement();
-	      data->child_cost = 0;
+        data->start_time = get_measurement();
+        data->child_cost = 0;
 
-	      break;
+        break;
     }
     case RUBY_EVENT_RETURN:
     case RUBY_EVENT_C_RETURN:
-	  {
+    {
         prof_data_t* caller;
-	      prof_method_t *parent;
-	      prof_method_t *child;
+        prof_method_t *parent;
+        prof_method_t *child;
         prof_measure_t now = get_measurement();
-	      prof_measure_t total_time, self_time;
+        prof_measure_t total_time, self_time;
 
         /* Pop data for this method off the stack. */
-	      data = stack_pop(thread_data->stack);
+        data = stack_pop(thread_data->stack);
 
         /* Data can be null.  This can happen if RubProf.start is called from
            a method that exits.  And it can happen if an exception is raised
@@ -1057,7 +1057,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
           /* Okay, get the method that called this method (ie, parent) */
           caller = stack_peek(thread_data->stack);
 
-	        if (caller == NULL)
+          if (caller == NULL)
           {
               /* We are at the top of the stack, so grab the toplevel method */
               parent = method_info_table_lookup(thread_data->method_info_table, toplevel_key);
@@ -1065,7 +1065,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
           else
           {
               caller->child_cost += total_time;
-    	        parent = caller->method_info;
+              parent = caller->method_info;
           }
           
           /* Decrement count of number of times this child has been called on
@@ -1083,8 +1083,8 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
 
           update_result(parent, child, total_time, self_time);
         }          
-	      break;
-	    }
+        break;
+      }
     }
     in_hook--;
 }
@@ -1136,10 +1136,10 @@ static prof_result_t *
 get_prof_result(VALUE obj)
 {
     if (TYPE(obj) != T_DATA ||
-	    RDATA(obj)->dfree != (RUBY_DATA_FUNC) prof_result_free)
+      RDATA(obj)->dfree != (RUBY_DATA_FUNC) prof_result_free)
     {
         /* Should never happen */
-	    rb_raise(rb_eTypeError, "wrong result object");
+      rb_raise(rb_eTypeError, "wrong result object");
     }
     return (prof_result_t *) DATA_PTR(obj);
 }
@@ -1180,7 +1180,7 @@ prof_result_toplevel(VALUE self, VALUE thread_id)
     if (result == Qnil)
     {
         /* Should never happen */
-	    rb_raise(rb_eRuntimeError, "Could not find toplevel method information");
+      rb_raise(rb_eRuntimeError, "Could not find toplevel method information");
     }
     return result;
 }
@@ -1217,39 +1217,39 @@ prof_set_measure_mode(VALUE self, VALUE val)
 
     if (threads_tbl)
     {
-	    rb_raise(rb_eRuntimeError, "can't set measure_mode while profiling");
+      rb_raise(rb_eRuntimeError, "can't set measure_mode while profiling");
     }
 
     switch (mode) {
       case MEASURE_PROCESS_TIME:
-    	  get_measurement = measure_process_time;
-	      convert_measurement = convert_process_time;
-    	  break;
-    	  
+        get_measurement = measure_process_time;
+        convert_measurement = convert_process_time;
+        break;
+        
       case MEASURE_WALL_TIME:
-	      get_measurement = measure_wall_time;
-	      convert_measurement = convert_wall_time;
-	      break;
-	      
+        get_measurement = measure_wall_time;
+        convert_measurement = convert_wall_time;
+        break;
+        
       #if defined(MEASURE_CPU_TIME)
       case MEASURE_CPU_TIME:
-	      if (cpu_frequency == 0)
-	          cpu_frequency = measure_cpu_time();
+        if (cpu_frequency == 0)
+            cpu_frequency = measure_cpu_time();
         get_measurement = measure_cpu_time;
         convert_measurement = convert_cpu_time;
-	      break;
+        break;
       #endif
-      	      
+              
       #if defined(MEASURE_ALLOCATIONS)
       case MEASURE_ALLOCATIONS:
         get_measurement = measure_allocations;
         convert_measurement = convert_allocations;
-	      break;
-	    #endif
-	      
+        break;
+      #endif
+        
       default:
-	      rb_raise(rb_eArgError, "invalid mode: %d", mode);
-	      break;
+        rb_raise(rb_eArgError, "invalid mode: %d", mode);
+        break;
     }
     
     measure_mode = mode;
@@ -1292,9 +1292,9 @@ prof_start(VALUE self)
     threads_tbl = threads_table_create();
     
     rb_add_event_hook(prof_event_hook,
-		      RUBY_EVENT_CALL | RUBY_EVENT_RETURN |
-		      RUBY_EVENT_C_CALL | RUBY_EVENT_C_RETURN 
-		      | RUBY_EVENT_LINE);
+          RUBY_EVENT_CALL | RUBY_EVENT_RETURN |
+          RUBY_EVENT_C_CALL | RUBY_EVENT_C_RETURN 
+          | RUBY_EVENT_LINE);
 
     return Qnil;
 }
