@@ -1,4 +1,4 @@
-/* :stopdoc: 
+/* :nodoc: 
  * Copyright (C) 2007  Shugo Maeda <shugo@ruby-lang.org>
  *                     Charlie Savage <cfis@savagexi.com>
  * All rights reserved.
@@ -22,8 +22,7 @@
  * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
- * SUCH DAMAGE.
- :startdoc: */
+ * SUCH DAMAGE. */
 
 
 #if defined(_WIN32) || (defined(__GNUC__) && (defined(__i386__) || defined(__powerpc__) || defined(__ppc__)))
@@ -111,8 +110,9 @@ convert_cpu_time(prof_measure_t c)
     return (double) c / cpu_frequency;
 }
 
-/* call-seq:
-   cpu_frequency -> int
+/* Document-method: prof_get_cpu_frequency
+   call-seq:
+     cpu_frequency -> int
 
 Returns the cpu's frequency.  This value is needed when 
 RubyProf::measure_mode is set to CPU_TIME. */
@@ -122,8 +122,9 @@ prof_get_cpu_frequency(VALUE self)
     return rb_float_new(cpu_frequency);
 }
 
-/* call-seq:
-   cpu_frequency=value -> void
+/* Document-method: prof_set_cpu_frequency
+   call-seq:
+     cpu_frequency=value -> void
 
 Sets the cpu's frequency.   This value is needed when 
 RubyProf::measure_mode is set to CPU_TIME. */

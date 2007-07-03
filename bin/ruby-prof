@@ -15,7 +15,7 @@
 #                                        graph_html - Prints a graph profile as html.
 #                                        call_tree - format for KCacheGrind
 #     -f, --file=path                  Output results to a file instead of standard out.
-#     -c, --measure-mode=measure_mode  Select a measurement mode:
+#     -m, --measure-mode=measure_mode  Select a measurement mode:
 #                                        process - Use process time (default).
 #                                        wall - Use wall time.
 #                                        cpu - Use the CPU clock counter

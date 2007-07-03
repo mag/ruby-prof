@@ -62,10 +62,9 @@ EOF
   spec.rdoc_options << '--main' << 'README'
   spec.extra_rdoc_files = ['bin/ruby-prof',
                            'ext/ruby_prof.c',
-                           'ext/measure_process_time.h',
-                           'ext/measure_wall_time.h',
-                           'ext/measure_cpu_time.h',
-                           'ext/measure_allocations.h',
+                           'examples/flat.txt',
+                           'examples/graph.txt',
+                           'examples/graph.html',
                            'README',
                            'LICENSE']
 
@@ -120,10 +119,9 @@ Rake::RDocTask.new("rdoc") do |rdoc|
   rdoc.options << '--main' << 'README'
   rdoc.rdoc_files.include('bin/ruby-prof',
                            'ext/ruby_prof.c',
-                           'ext/measure_process_time.h',
-                           'ext/measure_wall_time.h',
-                           'ext/measure_cpu_time.h',
-                           'ext/measure_allocations.h',
+                           'examples/flat.txt',
+                           'examples/graph.txt',
+                           'examples/graph.html',
                            'README',
                            'LICENSE')
 end
