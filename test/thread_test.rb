@@ -13,34 +13,36 @@ class ThreadTest < Test::Unit::TestCase
     sleep(2)    
 
     thread = Thread.new do
+      sleep(0.5)
       sleep(2)
     end
     
     thread.join
     
     result = RubyProf.stop
+    RubyProf::FlatPrinter.new(result).print
   end
 
-  def test_thread
-    RubyProf.start
+  #def test_thread
+    #RubyProf.start
     
-    begin
-      status = Timeout::timeout(2) do
-        while true
-          next
-        end
-      end
-    rescue Timeout::Error
-    end
+    #begin
+      #status = Timeout::timeout(2) do
+        #while true
+          #next
+        #end
+      #end
+    #rescue Timeout::Error
+    #end
    
-    result = RubyProf.stop
+    #result = RubyProf.stop
     
-    result.threads.values.each do |methods|
-      methods.each do |method|
-        check_parent_times(method)
-        check_parent_calls(method)
-        check_child_times(method)   
-      end
-    end
-  end
+    #result.threads.values.each do |methods|
+      #methods.each do |method|
+        #check_parent_times(method)
+        #check_parent_calls(method)
+        #check_child_times(method)   
+      #end
+    #end
+  #end
 end

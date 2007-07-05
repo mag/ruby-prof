@@ -83,26 +83,17 @@ static VALUE cCallInfo;
 
 /* Profiling information for each method. */
 typedef struct {
-    st_data_t key;           /* Cache hash value for speed reasons. */
-    VALUE klass;             /* The method's class. */
-    ID mid;                  /* The method id. */
-    unsigned long thread_id; /* The id of the thread that called this method. */
-    int called;              /* Number of times called */
-    int line_no;             /* The method's line number. */
-    int called_line_no;      /* The line this method was called from. */
-    const char* sourcefile;  /* The method's source file */
-    prof_measure_t self_time;  /* Total time spent in this method. */
-    prof_measure_t total_time; /* Total time spent in this method and children. */
-    st_table *parents;       /* The method's callers (prof_call_info_t). */
-    st_table *children;      /* The method's callees (prof_call_info_t). */
-    /* Hack - piggyback a field to keep track of the
-       of times the method appears in the current 
-       stack.  Used to detect recursive cycles.  This
-       works because there is an instance of this struct
-       per method per thread.  Could have a separate
-       hash table...would be cleaner but adds a bit of
-       code and 1 extra lookup per event.*/
-    int stack_count;
+    st_data_t key;              /* Cache hash value for speed reasons. */
+    VALUE klass;                /* The method's class. */
+    ID mid;                     /* The method id. */
+    int called;                 /* Number of times called */
+    const char* source_file;    /* The method's source file */
+    int line;                   /* The method's line number. */
+    prof_measure_t total_time;  /* Total time spent in this method and children. */
+    prof_measure_t self_time;   /* Total time spent in this method. */
+    prof_measure_t wait_time;   /* Total time this method spent waiting for other threads. */
+    st_table *parents;          /* The method's callers (prof_call_info_t). */
+    st_table *children;         /* The method's callees (prof_call_info_t). */
 } prof_method_t;
 
 
@@ -110,8 +101,10 @@ typedef struct {
 typedef struct {
     prof_method_t *target;
     int called;
-    prof_measure_t self_time;
     prof_measure_t total_time;
+    prof_measure_t self_time;
+    prof_measure_t wait_time;
+    int line;  
 } prof_call_info_t;
 
 
@@ -122,21 +115,24 @@ typedef struct {
        increases performance. */
     prof_method_t *method_info;
     prof_measure_t start_time;
-    prof_measure_t child_cost;
-} prof_data_t;
+    prof_measure_t wait_time;
+    prof_measure_t child_time;
+    unsigned int line;
+} prof_frame_t;
 
 /* Current stack of active methods.*/
 typedef struct {
-    prof_data_t *start;
-    prof_data_t *end;
-    prof_data_t *ptr;
+    prof_frame_t *start;
+    prof_frame_t *end;
+    prof_frame_t *ptr;
 } prof_stack_t;
 
 /* Profiling information for a thread. */
 typedef struct {
-    prof_stack_t* stack;             /* Active methods */
-    st_table* method_info_table;     /* All called methods */
     unsigned long thread_id;         /* Thread id */
+    st_table* method_info_table;     /* All called methods */
+    prof_stack_t* stack;             /* Active methods */
+    prof_measure_t last_switch;      /* Point of last context switch */
 } thread_data_t;
 
 typedef struct {
@@ -145,8 +141,6 @@ typedef struct {
 
 
 /* ================  Variables  =================*/
-static ID toplevel_id;
-static st_data_t toplevel_key;
 static int measure_mode;
 static st_table *threads_tbl = NULL;
 static VALUE class_tbl = Qnil;
@@ -261,14 +255,14 @@ method_key(VALUE klass, ID mid)
 
 /* ================  Stack Handling   =================*/
 
-/* Creates a stack of prof_data_t to keep track
+/* Creates a stack of prof_frame_t to keep track
    of timings for active methods. */
 static prof_stack_t *
 stack_create()
 {
     prof_stack_t *stack;
     stack = ALLOC(prof_stack_t);
-    stack->start = stack->ptr =	ALLOC_N(prof_data_t, INITIAL_STACK_SIZE);
+    stack->start = stack->ptr =	ALLOC_N(prof_frame_t, INITIAL_STACK_SIZE);
     stack->end = stack->start + INITIAL_STACK_SIZE;
     return stack;
 }
@@ -280,7 +274,7 @@ stack_free(prof_stack_t *stack)
     xfree(stack);
 }
 
-static inline prof_data_t *
+static inline prof_frame_t *
 stack_push(prof_stack_t *stack)
 {
   /* Is there space on the stack?  If not, double
@@ -291,14 +285,14 @@ stack_push(prof_stack_t *stack)
     int new_capacity;
     len = stack->ptr - stack->start;
     new_capacity = (stack->end - stack->start) * 2;
-    REALLOC_N(stack->start, prof_data_t, new_capacity);
+    REALLOC_N(stack->start, prof_frame_t, new_capacity);
     stack->ptr = stack->start + len;
     stack->end = stack->start + new_capacity;
   }
   return stack->ptr++;
 }
 
-static inline prof_data_t *
+static inline prof_frame_t *
 stack_pop(prof_stack_t *stack)
 {
     if (stack->ptr == stack->start)
@@ -307,7 +301,7 @@ stack_pop(prof_stack_t *stack)
       return --stack->ptr;
 }
 
-static inline prof_data_t *
+static inline prof_frame_t *
 stack_peek(prof_stack_t *stack)
 {
     if (stack->ptr == stack->start)
@@ -316,6 +310,11 @@ stack_peek(prof_stack_t *stack)
       return stack->ptr - 1;
 }
 
+static inline int
+stack_size(prof_stack_t *stack)
+{
+    return stack->ptr - stack->start;
+}
 
 /* ================  Method Info Handling   =================*/
  
@@ -404,6 +403,7 @@ call_info_create(prof_method_t* method)
     result->called = 0;
     result->total_time = 0;
     result->self_time = 0;
+    result->wait_time = 0;
     return result;
 }
 
@@ -469,6 +469,16 @@ call_info_called(VALUE self)
 }
 
 /* call-seq:
+   line_no -> int
+
+   returns the line number of the method */
+static VALUE
+call_info_line(VALUE self)
+{
+    return rb_int_new(get_call_info_result(self)->line);
+}
+
+/* call-seq:
    total_time -> float
 
 Returns the total amount of time spent in this method and its children. */
@@ -493,6 +503,18 @@ call_info_self_time(VALUE self)
 }
 
 /* call-seq:
+   wait_time -> float
+
+Returns the total amount of time this method waited for other threads. */
+static VALUE
+call_info_wait_time(VALUE self)
+{
+    prof_call_info_t *result = get_call_info_result(self);
+
+    return rb_float_new(convert_measurement(result->wait_time));
+}
+
+/* call-seq:
    children_time -> float
 
 Returns the total amount of time spent in this method's children. */
@@ -500,7 +522,7 @@ static VALUE
 call_info_children_time(VALUE self)
 {
     prof_call_info_t *result = get_call_info_result(self);
-    prof_measure_t children_time = result->total_time - result->self_time;
+    prof_measure_t children_time = result->total_time - result->self_time - result->wait_time;
     return rb_float_new(convert_measurement(children_time));
 }
 
@@ -516,41 +538,30 @@ the RubyProf::Result object.
 
 /* :nodoc: */
 static prof_method_t *
-prof_method_create(VALUE klass, ID mid, VALUE thread, NODE* node, int called_from_line)
+prof_method_create(NODE *node, VALUE klass, ID mid)
 {
-    prof_method_t *result;
-
-    /* Store reference to klass so it is not garbage collected */
-    rb_hash_aset(class_tbl, klass, Qnil);
-
-    result = ALLOC(prof_method_t);
+    prof_method_t *result = ALLOC(prof_method_t);
+    
+    result->klass = klass;
+    result->mid = mid;
     result->key = method_key(klass, mid);
+    
     result->called = 0;
     result->total_time = 0;
     result->self_time = 0;
-    result->klass = klass;
-    result->mid = mid;
-    result->thread_id = get_thread_id(thread);
+    result->wait_time = 0;
     result->parents = caller_table_create();
     result->children = caller_table_create();
-    result->stack_count = 0;
-    result->line_no = node != NULL ? nd_line(node) : 0;
-    result->called_line_no = called_from_line;
     
-    if(node != NULL)
-    {
-      /* Set the sourcefile.  The source file, while not referenced
-         as a const variable appears safe to keep a pointer to
-         and reference later in the report generation because ruby
-         internally keeps a static table of source files.  For more
-         information see gc.c:rb_source_filename. */
-      result->sourcefile = node->nd_file;
-    }
-    else
-    {
-      result->sourcefile = 0;
-    }
+    result->source_file = (node != NULL ? node->nd_file : 0);
+    result->line =        (node != NULL ? nd_line(node) : 0);
     return result;
+}
+
+static void
+prof_method_mark(prof_method_t *data)
+{
+    rb_gc_mark(data->klass);
 }
 
 static void
@@ -568,7 +579,7 @@ prof_method_free(prof_method_t *data)
 static VALUE
 prof_method_new(prof_method_t *result)
 {
-    return Data_Wrap_Struct(cMethodInfo, NULL, prof_method_free, result);
+    return Data_Wrap_Struct(cMethodInfo, prof_method_mark, prof_method_free, result);
 }
 
 static prof_method_t *
@@ -621,24 +632,25 @@ prof_method_self_time(VALUE self)
 }
 
 /* call-seq:
+   wait_time -> float
+
+Returns the total amount of time this method waited for other threads. */
+static VALUE
+prof_method_wait_time(VALUE self)
+{
+    prof_method_t *result = get_prof_method(self);
+
+    return rb_float_new(convert_measurement(result->wait_time));
+}
+
+/* call-seq:
    line_no -> int
 
    returns the line number of the method */
 static VALUE
-prof_method_line_no(VALUE self)
+prof_method_line(VALUE self)
 {
-    return rb_int_new(get_prof_method(self)->line_no);
-}
-
-/* call-seq:
-   called_line_no -> int
-
-   returns the line number where this method was invoked 
-*/
-static VALUE
-prof_method_called_line_no(VALUE self)
-{
-    return rb_int_new(get_prof_method(self)->called_line_no);
+    return rb_int_new(get_prof_method(self)->line);
 }
 
 /* call-seq:
@@ -649,7 +661,7 @@ static VALUE
 prof_method_children_time(VALUE self)
 {
     prof_method_t *result = get_prof_method(self);
-    prof_measure_t children_time = result->total_time - result->self_time;
+    prof_measure_t children_time = result->total_time - result->self_time - result->wait_time;
     return rb_float_new(convert_measurement(children_time));
 }
 
@@ -658,9 +670,9 @@ prof_method_children_time(VALUE self)
 
 return the source file of the method 
 */
-static VALUE prof_method_sourcefile(VALUE self)
+static VALUE prof_method_source_file(VALUE self)
 {
-    const char* sf = get_prof_method(self)->sourcefile;
+    const char* sf = get_prof_method(self)->source_file;
     if(!sf)
     {
       return Qnil;
@@ -671,18 +683,6 @@ static VALUE prof_method_sourcefile(VALUE self)
     }
 }
 
-
-/* call-seq:
-   thread_id -> id
-
-Returns the id of the thread that executed this method.*/
-static VALUE
-prof_thread_id(VALUE self)
-{
-    prof_method_t *result = get_prof_method(self);
-
-    return LONG2NUM(result->thread_id);
-}
 
 /* call-seq:
    method_class -> klass
@@ -778,16 +778,14 @@ prof_method_cmp(VALUE self, VALUE other)
     prof_method_t *x = get_prof_method(self);
     prof_method_t *y = get_prof_method(other);
 
-    /* Want toplevel to always be first */
-    if (x->klass == Qnil && x->mid == toplevel_id)
+    if (x->called == 0)
       return INT2FIX(1);
-    else if (y->klass == Qnil && y->mid == toplevel_id)
+    else if (y->called == 0)
       return INT2FIX(-1);
     else if (x->total_time < y->total_time)
       return INT2FIX(-1);
     else if (x->total_time == y->total_time)
-      // Times are the same - so use the name as a 2nd order sort
-      return rb_str_cmp(method_name(x->klass, x->mid), method_name(y->klass, y->mid));
+      return INT2FIX(0);
     else
       return INT2FIX(1);
 }
@@ -814,6 +812,7 @@ thread_data_create()
     thread_data_t* result = ALLOC(thread_data_t);
     result->stack = stack_create();
     result->method_info_table = method_info_table_create();
+    result->last_switch = 0;
     return result;
 }
 
@@ -855,21 +854,14 @@ threads_table_lookup(st_table *table, VALUE thread)
     }
     else
     {
-        prof_method_t *toplevel;
         result = thread_data_create();
+
         /* Store the real thread id here so it can be shown in the results. */
         result->thread_id = get_thread_id(thread);
 
-        /* Add a toplevel method to the thread */
-        toplevel = prof_method_create(Qnil, toplevel_id, thread,NULL,0);
-        toplevel->called = 1;
-        toplevel->total_time = 0;
-        toplevel->self_time = 0;
-        method_info_table_insert(result->method_info_table, toplevel->key, toplevel);
-
         /* Insert the table */
         threads_table_insert(threads_tbl, thread, result);
-  }
+    }
     return result;
 }
 
@@ -912,21 +904,51 @@ collect_threads(st_data_t key, st_data_t value, st_data_t result)
 
 
 /* ================  Profiling    =================*/
+/* Copied from eval.c */
+static char *
+get_event_name(rb_event_t event)
+{
+  switch (event) {
+    case RUBY_EVENT_LINE:
+	return "line";
+    case RUBY_EVENT_CLASS:
+	return "class";
+    case RUBY_EVENT_END:
+	return "end";
+    case RUBY_EVENT_CALL:
+	return "call";
+    case RUBY_EVENT_RETURN:
+	return "return";
+    case RUBY_EVENT_C_CALL:
+	return "c-call";
+    case RUBY_EVENT_C_RETURN:
+	return "c-return";
+    case RUBY_EVENT_RAISE:
+	return "raise";
+    default:
+	return "unknown";
+    }
+}
 
 static void
-update_result(prof_method_t * parent, prof_method_t *child,
-              prof_measure_t total_time, prof_measure_t self_time)
+update_result(thread_data_t* thread_data,
+              prof_measure_t total_time,
+              prof_method_t *parent, prof_method_t *child,
+              prof_frame_t  *parent_frame, prof_frame_t *child_frame)
 {
     prof_call_info_t *parent_call_info = NULL;
     prof_call_info_t *child_call_info = NULL;
     
+    prof_measure_t wait_time = child_frame->wait_time;
+    prof_measure_t self_time = total_time - child_frame->child_time - wait_time;
+
     /* Update information about the child (ie, the current method) */
     child->called++;
     child->total_time += total_time;
     child->self_time += self_time;
+    child->wait_time += wait_time;
     
-    /* Update child information on parent (ie, the method that
-       called the current method) */
+    /* Update parent's child information */
     child_call_info = caller_table_lookup(parent->children, child->key);
     if (child_call_info == NULL)
     {
@@ -937,15 +959,10 @@ update_result(prof_method_t * parent, prof_method_t *child,
     child_call_info->called++;
     child_call_info->total_time += total_time;
     child_call_info->self_time += self_time;
-
-    /* Slight hack here - if the child is the top level method then we want
-       to update its total time */
-    if (parent->key == toplevel_key)
-        parent->total_time += total_time;
-
-
-    /* Update parent information on child (ie, the method that
-       called the current method) */
+    child_call_info->wait_time += wait_time;
+    child_call_info->line = (parent_frame ? parent_frame->line : 0);
+    
+    /* Update child's parent information  */
     parent_call_info = caller_table_lookup(child->parents, parent->key);
     if (parent_call_info == NULL)
     {
@@ -956,137 +973,163 @@ update_result(prof_method_t * parent, prof_method_t *child,
     parent_call_info->called++;
     parent_call_info->total_time += total_time;
     parent_call_info->self_time += self_time;
+    parent_call_info->wait_time += wait_time;
+    parent_call_info->line = (parent_frame ? parent_frame->line : 0);
+    
+    
+    /* If the caller is the top of the stack, the merge in
+       all the child results.  We have to do this because
+       the top method is never popped since sooner or later
+       the user has to call RubyProf::stop.*/
+      
+    if (parent && stack_size(thread_data->stack) == 1)
+    {
+      parent->total_time += total_time;
+      parent->wait_time += wait_time;
+    }
 }
+
 
 static void
 prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
 {
-    static int in_hook = 0;
-    static int source_line = 0;
+    static thread_data_t* last_thread_data = NULL;
+    
     VALUE thread;
-    thread_data_t* thread_data;
-    prof_data_t *data;
+    prof_measure_t now = 0;
+    thread_data_t* thread_data = NULL;
+    prof_frame_t *frame = NULL;
+    prof_method_t *method = NULL;
     
-    /* Note the souce code line and return. */
-    if(event == RUBY_EVENT_LINE)
+   #ifdef _DEBUG
     {
-      source_line = nd_line(node);
-      return;
-    }
-    
-    /* Are we processing a method.  If so return, otherwise we get
-       infinite recursion if we call other Ruby methods like rb_String.
-       This ain't thread safe though! */
-    if (in_hook) return;
+        static unsigned long last_thread_id = 0;
+
+        VALUE thread = rb_thread_current();
+        unsigned long thread_id = get_thread_id(thread);
+        char* class_name = rb_obj_classname(klass);
+        char* method_name = rb_id2name(mid);
+        char* source_file = node->nd_file;
+        unsigned int source_line = nd_line(node);
+        char* event_name = get_event_name(event);
+        
+        if (last_thread_id != thread_id)
+          printf("\n");
+          
+        printf("%2d: %-8s :%2d  %s#%s\n",
+               thread_id, event_name, source_line, class_name, method_name);
+        last_thread_id = thread_id;               
+    } 
+    #endif 
     
     /* Special case - skip any methods from the mProf 
        module, such as Prof.stop, since they clutter
-       the results but are not important to the results. */
+       the results but aren't important to them results. */
     if (self == mProf) return;
 
-    /* Set flag showing we have started profiling */
-    in_hook++;
-
-    /* Is this an include for a module?  If so get the actual
-       module class since we want to combine all profiling
-       results for that module. */
-    klass = (BUILTIN_TYPE(klass) == T_ICLASS ? RBASIC(klass)->klass : klass);
-      
-    /* Debug Code 
-    {
-        VALUE class_name = rb_String(klass);
-        char* c_class_name = StringValuePtr(class_name);
-        char* c_method_name = rb_id2name(mid);
-        VALUE generated_name = method_name(klass, mid);
-        char* c_generated_name = StringValuePtr(generated_name);
-        printf("Event: %2d, Method: %s#%s\n", event, c_class_name, c_method_name);
-    } */
-
-    /* Get the thread and thread data. */
+    /* Get current measurement*/
+    now = get_measurement();
+    
+    /* Get the current thread and thread data. */
     thread = rb_thread_current();
     thread_data = threads_table_lookup(threads_tbl, thread);
-  
+    
+    /* Get the frame at the top of the stack.  This may represent
+       the current method (EVENT_LINE, EVENT_RETURN)  or the
+       previous method (EVENT_CALL).*/
+    frame = stack_peek(thread_data->stack);
+    
+    /* Check for a context switch */
+    if (last_thread_data && last_thread_data != thread_data)
+    {
+      /* Note how long have we been waiting. */
+      prof_measure_t wait_time = now - thread_data->last_switch;
+      if (frame)
+        frame->wait_time += wait_time;
+        
+      /* Save on the last thread the time of the context switch
+         and reset this thread's last context switch to 0.*/
+      last_thread_data->last_switch = now;
+      thread_data->last_switch = 0;
+    }
+    last_thread_data = thread_data;
+    
     switch (event) {
+    case RUBY_EVENT_LINE:
+    {
+      /* Keep track of the current line number in this method.  When
+         a new method is called, we know what line number it was 
+         called from. */
+      if (frame)
+      {
+        frame->line = nd_line(node);
+        break;
+      }
+      /* If we get here there was no frame, which means this is 
+         the first method seen for this thread, so fall through
+         to below to create it. */
+    }
     case RUBY_EVENT_CALL:
     case RUBY_EVENT_C_CALL:
     {
-        //printf("called line #: %d\n",nd_line(node)); 
-        st_data_t key = method_key(klass, mid);
-        prof_method_t *child = method_info_table_lookup(thread_data->method_info_table, key);
+        st_data_t key = 0;
+        
+        /* Is this an include for a module?  If so get the actual
+           module class since we want to combine all profiling
+           results for that module. */
+        klass = (BUILTIN_TYPE(klass) == T_ICLASS ? RBASIC(klass)->klass : klass);
 
-        if (child == NULL)
+        /* Look up the current method - if it doesn't exist create 
+           a new prof_method_t for it.*/
+        key = method_key(klass, mid);
+        method = method_info_table_lookup(thread_data->method_info_table, key);
+
+        if (!method)
         {
-          child = prof_method_create(klass, mid, thread,node,source_line);
-          method_info_table_insert(thread_data->method_info_table, key, child);
+          method = prof_method_create(node, klass, mid);
+          method_info_table_insert(thread_data->method_info_table, key, method);
         }
-
-        /* Increment count of number of times this child has been called on
-           the current stack. */
-        child->stack_count++;
-    
-        /* Push the data for this method onto the stack */
-        data = stack_push(thread_data->stack);
-        data->method_info = child;
-        data->start_time = get_measurement();
-        data->child_cost = 0;
+      
+        /* Push a new frame onto the stack */
+        frame = stack_push(thread_data->stack);
+        frame->method_info = method;
+        frame->start_time = now;
+        frame->wait_time = 0;
+        frame->child_time = 0;
+        frame->line = nd_line(node);
 
         break;
     }
     case RUBY_EVENT_RETURN:
     case RUBY_EVENT_C_RETURN:
     {
-        prof_data_t* caller;
-        prof_method_t *parent;
-        prof_method_t *child;
-        prof_measure_t now = get_measurement();
-        prof_measure_t total_time, self_time;
-
-        /* Pop data for this method off the stack. */
-        data = stack_pop(thread_data->stack);
-
-        /* Data can be null.  This can happen if RubProf.start is called from
+        prof_frame_t* caller_frame = NULL;
+        prof_method_t *caller = NULL;
+        
+        prof_measure_t total_time;
+        
+        frame = stack_pop(thread_data->stack);
+        method = frame->method_info;
+          
+        /* Frame can be null.  This can happen if RubProf.start is called from
            a method that exits.  And it can happen if an exception is raised
            in code that is being profiled and the stack unwinds (RubProf is
            not notified of that by the ruby runtime. */
-        if (data != NULL)
+        if (frame == NULL) return;
+
+        total_time = now - frame->start_time;
+        caller_frame = stack_peek(thread_data->stack);
+
+        if (caller_frame)
         {
-          /* Update timing information. */
-          total_time = now - data->start_time;
-          self_time = total_time - data->child_cost;
-
-          /* Okay, get the method that called this method (ie, parent) */
-          caller = stack_peek(thread_data->stack);
-
-          if (caller == NULL)
-          {
-              /* We are at the top of the stack, so grab the toplevel method */
-              parent = method_info_table_lookup(thread_data->method_info_table, toplevel_key);
-          }
-          else
-          {
-              caller->child_cost += total_time;
-              parent = caller->method_info;
-          }
+            caller = caller_frame->method_info;
+            caller_frame->child_time += total_time;
+        }
           
-          /* Decrement count of number of times this child has been called on
-             the current stack. */
-          child = data->method_info;
-          child->stack_count--;
-
-          /* If the stack count is greater than zero, then this
-             method has been called recursively.  In that case set the total
-             time to zero because it will be correctly set when we unwind
-             the stack up.  If we don't do this, then the total time for the 
-             method will be double counted per recursive call. */
-          if (child->stack_count != 0)
-              total_time = 0;
-
-          update_result(parent, child, total_time, self_time);
-        }          
+        update_result(thread_data, total_time, caller, method, caller_frame, frame);
         break;
       }
     }
-    in_hook--;
 }
 
 
@@ -1159,31 +1202,6 @@ prof_result_threads(VALUE self)
     return prof_result->threads;
 }
 
-
-/* call-seq:
-   thread_id = int
-   toplevel(thread_id) -> RubyProf::MethodInfo
-
-Returns the RubyProf::MethodInfo object that represents the root
-calling method for this thread.  This method will always
-be named #toplevel and contains the total amount of time spent
-executing code in this thread. */
-static VALUE
-prof_result_toplevel(VALUE self, VALUE thread_id)
-{
-    prof_result_t *prof_result = get_prof_result(self);
-    
-    VALUE methods = rb_hash_aref(prof_result->threads, thread_id);
-    VALUE key = method_name(Qnil, toplevel_id);
-    VALUE result = rb_hash_aref(methods, key);
-
-    if (result == Qnil)
-    {
-        /* Should never happen */
-      rb_raise(rb_eRuntimeError, "Could not find toplevel method information");
-    }
-    return result;
-}
 
 
 /* call-seq:
@@ -1279,9 +1297,6 @@ prof_running(VALUE self)
 static VALUE
 prof_start(VALUE self)
 {
-    toplevel_id = rb_intern("toplevel");
-    toplevel_key = method_key(Qnil, toplevel_id);
-
     if (threads_tbl != NULL)
     {
         rb_raise(rb_eRuntimeError, "RubyProf.start was already called");
@@ -1386,20 +1401,19 @@ Init_ruby_prof()
     cMethodInfo = rb_define_class_under(mProf, "MethodInfo", rb_cObject);
     rb_include_module(cMethodInfo, rb_mComparable);
     rb_undef_method(CLASS_OF(cMethodInfo), "new");
-    rb_define_method(cMethodInfo, "called", prof_method_called, 0);
-    rb_define_method(cMethodInfo, "total_time", prof_method_total_time, 0);
-    rb_define_method(cMethodInfo, "self_time", prof_method_self_time, 0);
-    rb_define_method(cMethodInfo, "line_no", prof_method_line_no, 0);
-    rb_define_method(cMethodInfo, "called_line_no", prof_method_called_line_no, 0);
-    rb_define_method(cMethodInfo, "children_time", prof_method_children_time, 0);
     rb_define_method(cMethodInfo, "name", prof_method_name, 0);
     rb_define_method(cMethodInfo, "method_class", prof_method_class, 0);
     rb_define_method(cMethodInfo, "method_id", prof_method_id, 0);
-    rb_define_method(cMethodInfo, "thread_id", prof_thread_id, 0);
     rb_define_method(cMethodInfo, "parents", prof_method_parents, 0);
     rb_define_method(cMethodInfo, "children", prof_method_children, 0);
     rb_define_method(cMethodInfo, "<=>", prof_method_cmp, 1);
-    rb_define_method(cMethodInfo,"source_file",prof_method_sourcefile,0);
+    rb_define_method(cMethodInfo, "source_file", prof_method_source_file,0);
+    rb_define_method(cMethodInfo, "line", prof_method_line, 0);
+    rb_define_method(cMethodInfo, "called", prof_method_called, 0);
+    rb_define_method(cMethodInfo, "total_time", prof_method_total_time, 0);
+    rb_define_method(cMethodInfo, "self_time", prof_method_self_time, 0);
+    rb_define_method(cMethodInfo, "wait_time", prof_method_wait_time, 0);
+    rb_define_method(cMethodInfo, "children_time", prof_method_children_time, 0);
 
     cCallInfo = rb_define_class_under(mProf, "CallInfo", rb_cObject);
     rb_undef_method(CLASS_OF(cCallInfo), "new");
@@ -1407,6 +1421,8 @@ Init_ruby_prof()
     rb_define_method(cCallInfo, "called", call_info_called, 0);
     rb_define_method(cCallInfo, "total_time", call_info_total_time, 0);
     rb_define_method(cCallInfo, "self_time", call_info_self_time, 0);
+    rb_define_method(cCallInfo, "wait_time", call_info_wait_time, 0);
+    rb_define_method(cCallInfo, "line", call_info_line, 0);
     rb_define_method(cCallInfo, "children_time", call_info_children_time, 0);
 
     rb_global_variable(&class_tbl);

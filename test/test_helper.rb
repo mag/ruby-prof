@@ -12,12 +12,12 @@ def check_parent_times(method)
   return if method.parents.length == 0 
 
   parents_self_time = method.parents.inject(0) do |sum, call_info|
-    sum + call_info.self_time
+    sum + call_info.self_time + call_info.wait_time
   end
   assert_in_delta(method.self_time, parents_self_time, 0.01, method.name) 
     
   parents_children_time = method.parents.inject(0) do |sum, call_info|
-    sum + call_info.children_time
+    sum + call_info.children_time + call_info.wait_time
   end
   assert_in_delta(method.children_time, parents_children_time, 0.01, method.name)
 end
@@ -40,6 +40,3 @@ def check_child_times(method)
   
   assert_in_delta(method.children_time, children_total_time, 0.01, method.name)
 end
-  
-
-

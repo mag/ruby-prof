@@ -37,29 +37,33 @@ class TimingTest < Test::Unit::TestCase
     methods = methods.sort.reverse
     
     method = methods[0]
-    assert_equal('#toplevel', method.name)
+    assert_equal('TimingTest#test_basic', method.name)
     assert_in_delta(1, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
-    assert_in_delta(1, method.called, 0.02)
+    assert_in_delta(0, method.wait_time, 0.02)
+    assert_in_delta(1, method.children_time, 0.02)
+    assert_equal(0, method.called)
     assert_equal(0, method.parents.length)
     assert_equal(1, method.children.length)
-
-    method = methods[1]
-    assert_equal('Object#method1', method.name)
-    assert_in_delta(1, method.total_time, 0.02)
-    assert_in_delta(0, method.self_time, 0.02)
-    assert_equal(1, method.called)
-    assert_equal(1, method.parents.length)
-    assert_equal(1, method.children.length)
     
-    method = methods[2]
+    method = methods[1]
     assert_equal('Kernel#sleep', method.name)
     assert_in_delta(1, method.total_time, 0.02)
     assert_in_delta(1, method.self_time, 0.02)
+    assert_in_delta(0, method.wait_time, 0.02)
     assert_in_delta(0, method.children_time, 0.02)
     assert_equal(1, method.called)
     assert_equal(1, method.parents.length)
     assert_equal(0, method.children.length)
+    
+    method = methods[2]
+    assert_equal('Object#method1', method.name)
+    assert_in_delta(1, method.total_time, 0.02)
+    assert_in_delta(0, method.self_time, 0.02)
+    assert_in_delta(0, method.wait_time, 0.02)
+    assert_equal(1, method.called)
+    assert_equal(1, method.parents.length)
+    assert_equal(1, method.children.length)
   end
   
   def test_timings
@@ -74,36 +78,40 @@ class TimingTest < Test::Unit::TestCase
     methods = methods.sort.reverse
 
     method = methods[0]
-    assert_equal('#toplevel', method.name)
+    assert_equal('TimingTest#test_timings', method.name)
     assert_in_delta(7, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
+    assert_in_delta(0, method.wait_time, 0.02)
     assert_in_delta(7, method.children_time, 0.02)
-    assert_equal(1, method.called)
+    assert_equal(0, method.called)
     assert_equal(0, method.parents.length)
     assert_equal(1, method.children.length)
     
     method = methods[1]
-    assert_equal('Object#method3', method.name)
-    assert_in_delta(7, method.total_time, 0.02)
-    assert_in_delta(0, method.self_time, 0.02)
-    assert_in_delta(7, method.children_time, 0.02)
-    assert_equal(1, method.called)
-    assert_equal(1, method.parents.length)
-    assert_equal(3, method.children.length)
-    
-    method = methods[2]
     assert_equal('Kernel#sleep', method.name)
     assert_in_delta(7, method.total_time, 0.02)
     assert_in_delta(7, method.self_time, 0.02)
+    assert_in_delta(0, method.wait_time, 0.02)
     assert_in_delta(0, method.children_time, 0.02)
     assert_equal(4, method.called)
     assert_equal(3, method.parents.length)
     assert_equal(0, method.children.length)
     
+    method = methods[2]
+    assert_equal('Object#method3', method.name)
+    assert_in_delta(7, method.total_time, 0.02)
+    assert_in_delta(0, method.self_time, 0.02)
+    assert_in_delta(0, method.wait_time, 0.02)
+    assert_in_delta(7, method.children_time, 0.02)
+    assert_equal(1, method.called)
+    assert_equal(1, method.parents.length)
+    assert_equal(3, method.children.length)
+    
     method = methods[3]
     assert_equal('Object#method2', method.name)
     assert_in_delta(3, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
+    assert_in_delta(0, method.wait_time, 0.02)
     assert_in_delta(3, method.children_time, 0.02)
     assert_equal(1, method.called)
     assert_equal(1, method.parents.length)
@@ -113,6 +121,7 @@ class TimingTest < Test::Unit::TestCase
     assert_equal('Object#method1', method.name)
     assert_in_delta(2, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
+    assert_in_delta(0, method.wait_time, 0.02)
     assert_in_delta(2, method.children_time, 0.02)
     assert_equal(2, method.called)
     assert_equal(2, method.parents.length)

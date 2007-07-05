@@ -85,11 +85,11 @@ class BasicTest < Test::Unit::TestCase
       C1.hello
       C1.new.hello
     end
-  
+    print_results(result)  
     methods = result.threads.values.first
     
     # Length should be 6:
-    #   1 top level,
+    #   1 test_class_and_instance_methods (this method)
     #   1 Class.new
     #   1 Class:Object allocate
     #   1 for Object.initialize
@@ -101,7 +101,7 @@ class BasicTest < Test::Unit::TestCase
     # Check the names
     methods = methods.sort.reverse
     
-    assert_equal('#toplevel', methods[0].name)
+    assert_equal('BasicTest#test_class_and_instance_methods', methods[0].name)
     assert_equal('Kernel#sleep', methods[1].name)
     assert_equal('C1#hello', methods[2].name)
     assert_equal('<Class::C1>#hello', methods[3].name)
@@ -119,7 +119,7 @@ class BasicTest < Test::Unit::TestCase
     methods = result.threads.values.first
    
     # Length should be 5:
-    #   1 top level,
+    #   1 test_module_methods (this method)
     #   1 Class.new
     #   1 Class:Object allocate
     #   1 for Object.initialize
@@ -130,7 +130,7 @@ class BasicTest < Test::Unit::TestCase
     # Check the names
     methods = methods.sort.reverse
     
-    assert_equal('#toplevel', methods[0].name)
+    assert_equal('BasicTest#test_module_methods', methods[0].name)
     assert_equal('M1#hello', methods[1].name)
     assert_equal('Kernel#sleep', methods[2].name)
     assert_equal('Object#initialize', methods[3].name)
@@ -159,7 +159,7 @@ class BasicTest < Test::Unit::TestCase
     # Check singleton method
     methods = methods.sort.reverse
     
-    assert_equal('#toplevel', methods[0].name)
+    assert_equal('BasicTest#test_singleton', methods[0].name)
     assert_equal('<Object::C3>#hello', methods[1].name)
   end
 end

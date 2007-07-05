@@ -27,8 +27,23 @@ module RubyProf
     def initialize(result, min_percent = 0)
       @result = result
       @min_percent = min_percent
+      @thread_times = Hash.new
+      calculate_thread_times
     end
 
+    def calculate_thread_times
+      # Cache thread times since this is an expensive
+      # operation with the required sorting      
+      @result.threads.each do |thread_id, methods|
+        top = methods.sort.last
+        
+        thread_time = 0.01
+        thread_time = top.total_time if top.total_time > 0
+
+        @thread_times[thread_id] = thread_time 
+      end
+    end
+    
     # Print a graph report to the provided output.
     # 
     # output - Any IO oject, including STDOUT or a file. 
@@ -81,6 +96,7 @@ module RubyProf
         @output << sprintf("%#{PERCENTAGE_WIDTH-1}.2f\%", self_percentage)
         @output << sprintf("%#{TIME_WIDTH}.2f", method.total_time)
         @output << sprintf("%#{TIME_WIDTH}.2f", method.self_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", method.wait_time)
         @output << sprintf("%#{TIME_WIDTH}.2f", method.children_time)
         @output << sprintf("%#{CALL_WIDTH}i", method.called)
         @output << sprintf("     %s", method.name)
@@ -92,11 +108,15 @@ module RubyProf
   
     def print_heading(thread_id)
       @output << "Thread ID: #{thread_id}\n"
+      @output << "Total Time: #{@thread_times[thread_id]}\n"
+      @output << "\n"
+      
       # 1 is for % sign
       @output << sprintf("%#{PERCENTAGE_WIDTH}s", "%total")
       @output << sprintf("%#{PERCENTAGE_WIDTH}s", "%self")
       @output << sprintf("%#{TIME_WIDTH}s", "total")
       @output << sprintf("%#{TIME_WIDTH}s", "self")
+      @output << sprintf("%#{TIME_WIDTH}s", "wait")
       @output << sprintf("%#{TIME_WIDTH+2}s", "children")
       @output << sprintf("%#{CALL_WIDTH-2}s", "calls")
       @output << "   Name"
@@ -108,6 +128,7 @@ module RubyProf
         @output << " " * 2 * PERCENTAGE_WIDTH
         @output << sprintf("%#{TIME_WIDTH}.2f", caller.total_time)
         @output << sprintf("%#{TIME_WIDTH}.2f", caller.self_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", caller.wait_time)
         @output << sprintf("%#{TIME_WIDTH}.2f", caller.children_time)
     
         call_called = "#{caller.called}/#{method.called}"
@@ -125,6 +146,7 @@ module RubyProf
         
         @output << sprintf("%#{TIME_WIDTH}.2f", child.total_time)
         @output << sprintf("%#{TIME_WIDTH}.2f", child.self_time)
+        @output << sprintf("%#{TIME_WIDTH}.2f", child.wait_time)
         @output << sprintf("%#{TIME_WIDTH}.2f", child.children_time)
 
         call_called = "#{child.called}/#{child.target.called}"

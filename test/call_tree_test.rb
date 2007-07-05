@@ -8,7 +8,7 @@ def runtest
 
   printer = RubyProf::CallTreePrinter.new(result)
   f = open('run1.calltree','w')
-  printer.print(f)
+  #printer.print(f)
   f.close
 end
 

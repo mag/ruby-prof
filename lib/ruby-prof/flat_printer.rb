@@ -56,7 +56,8 @@ module RubyProf
       
       @output << "Thread ID: " << thread_id << "\n"
       @output << "Total: " << total_time << "\n"
-      @output << " %self  cumulative  total     self   children  calls self/call total/call  name\n"
+      @output << "\n"
+      @output << " %self  cumulative  total     self     wait children    calls self/call total/call  name\n"
 
       sum = 0    
       methods.each do |method|
@@ -64,15 +65,18 @@ module RubyProf
         next if self_percent < @min_percent
         
         sum += method.self_time
-        @output.printf("%6.2f %8.2f  %8.2f %8.2f %8.2f %8d %8.2f %8.2f     %s\n",
+        self_time_called = method.called > 0 ? method.self_time/method.called : 0
+        total_time_called = method.called > 0? method.total_time/method.called : 0
+        @output.printf("%6.2f %8.2f  %8.2f %8.2f %8.2f %8.2f %8d %8.2f %8.2f     %s\n",
                       method.self_time / total_time * 100, # %self
                       sum,                                 # cumulative
                       method.total_time,                   # total
                       method.self_time,                    # self
+                      method.wait_time,                    # wait
                       method.children_time,                # children
                       method.called,                       # calls
-                      method.self_time  / method.called,   # self/call
-                      method.total_time  / method.called,  # total/call
+                      self_time_called,                    # self/call
+                      total_time_called,                   # total/call
                       method.name)                         # name
       end
     end

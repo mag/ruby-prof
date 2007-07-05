@@ -38,13 +38,13 @@ class ModuleTest < Test::Unit::TestCase
     assert_equal(5, methods.length)
     
     method = methods[0]
-    assert_equal('#toplevel', method.name)
+    assert_equal('ModuleTest#test_nested_modules', method.name)
     
     method = methods[1]
-    assert_equal('Kernel#sleep', method.name)
+    assert_equal('Bar#hello', method.name)
     
     method = methods[2]
-    assert_equal('Bar#hello', method.name)
+    assert_equal('Kernel#sleep', method.name)
     
     method = methods[3]
     assert_equal('<Module::Bar>#hello', method.name)
