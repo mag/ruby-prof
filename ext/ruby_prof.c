@@ -1037,7 +1037,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         if (klass != 0)
           klass = (BUILTIN_TYPE(klass) == T_ICLASS ? RBASIC(klass)->klass : klass);
         key = method_key(klass, mid, 0);          
-        printf("%2d: %-8s :%2d  %s#%s (%u)\n",
+        printf("%2u: %-8s :%2d  %s#%s (%u)\n",
                thread_id, event_name, source_line, class_name, method_name, key);
         last_thread_id = thread_id;               
     } 
@@ -1153,15 +1153,20 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         prof_measure_t total_time;
 
         frame = stack_pop(thread_data->stack);
+        caller_frame = stack_peek(thread_data->stack);
           
         /* Frame can be null.  This can happen if RubProf.start is called from
            a method that exits.  And it can happen if an exception is raised
            in code that is being profiled and the stack unwinds (RubProf is
            not notified of that by the ruby runtime. */
-        if (frame == NULL) return;
+        if (frame == NULL || caller_frame == NULL)
+        {
+          prof_stop();
+          return;
+        }
 
         total_time = now - frame->start_time;
-        caller_frame = stack_peek(thread_data->stack);
+        
 
         if (caller_frame)
         {
