@@ -169,5 +169,7 @@ class BasicTest < Test::Unit::TestCase
     assert_raise(NoMethodError) do
       RubyProf.xxx
     end
+    
+    RubyProf.stop
   end   
 end
