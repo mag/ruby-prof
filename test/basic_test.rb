@@ -163,4 +163,11 @@ class BasicTest < Test::Unit::TestCase
     assert_equal('BasicTest#test_singleton', methods[0].name)
     assert_equal('<Object::C3>#hello', methods[1].name)
   end
+  
+  def test_traceback
+    RubyProf.start
+    assert_raise(NoMethodError) do
+      RubyProf.xxx
+    end
+  end   
 end
