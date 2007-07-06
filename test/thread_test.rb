@@ -21,8 +21,6 @@ class ThreadTest < Test::Unit::TestCase
     
     result = RubyProf.stop
 
-    print_results(result)
-    
     values = result.threads.values.sort do |value1, value2|
       value1.length <=> value2.length
     end
@@ -119,8 +117,6 @@ class ThreadTest < Test::Unit::TestCase
       rescue Timeout::Error
       end
     end
-    
-    print_results(result)
     
     result.threads.values.each do |methods|
       methods.each do |method|

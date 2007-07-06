@@ -24,7 +24,6 @@ class DuplicateNames < Test::Unit::TestCase
     # There should be 3 foo methods
     methods = result.threads.values.first
     
-    
     methods = methods.select do |method|
       method.name == 'DuplicateNames::Foo::Bar#foo'
     end

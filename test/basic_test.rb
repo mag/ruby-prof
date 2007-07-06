@@ -85,7 +85,7 @@ class BasicTest < Test::Unit::TestCase
       C1.hello
       C1.new.hello
     end
-    print_results(result)  
+ 
     methods = result.threads.values.first
     
     # Length should be 6:
@@ -116,8 +116,6 @@ class BasicTest < Test::Unit::TestCase
       C2.new.hello
     end
   
-    print_results(result)
-    
     methods = result.threads.values.first
    
     # Length should be 6:

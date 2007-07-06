@@ -16,8 +16,6 @@ class MeasureModeTest < Test::Unit::TestCase
       run_primes
     end
     
-    print_results(result)
-    
     result.threads.each do |thread_id, methods|
       methods.each do |method|
         check_parent_times(method)
@@ -33,8 +31,6 @@ class MeasureModeTest < Test::Unit::TestCase
     result = RubyProf.profile do
       run_primes
     end
-    
-    print_results(result)
     
     result.threads.values.each do |methods|
       methods.each do |method|
@@ -53,8 +49,6 @@ class MeasureModeTest < Test::Unit::TestCase
     result = RubyProf.profile do
       run_primes
     end
-    
-    print_results(result)
     
     result.threads.values.each do |methods|
       methods.each do |method|
@@ -75,7 +69,6 @@ class MeasureModeTest < Test::Unit::TestCase
     result = RubyProf.profile do
       Array.new
     end
-    print_results(result)
   end
   
   def test_invalid
