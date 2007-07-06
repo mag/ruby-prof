@@ -1023,7 +1023,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     thread_data_t* thread_data = NULL;
     prof_frame_t *frame = NULL;
     
-   #ifdef _DEBUG
+    /*
     {
         st_data_t key = 0;
         static unsigned long last_thread_id = 0;
@@ -1045,8 +1045,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         printf("%2u: %-8s :%2d  %s#%s (%u)\n",
                thread_id, event_name, source_line, class_name, method_name, key);
         last_thread_id = thread_id;               
-    } 
-    #endif 
+    } */
     
     /* Special case - skip any methods from the mProf 
        module, such as Prof.stop, since they clutter
@@ -1164,11 +1163,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
            a method that exits.  And it can happen if an exception is raised
            in code that is being profiled and the stack unwinds (RubProf is
            not notified of that by the ruby runtime. */
-        if (frame == NULL)
-        {
-          prof_stop();
-          return;
-        }
+        if (frame == NULL) return;
 
         total_time = now - frame->start_time;
         
