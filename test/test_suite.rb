@@ -5,6 +5,7 @@ require 'call_tree_test'
 require 'duplicate_names_test'
 require 'measure_mode_test'
 require 'module_test'
+require 'no_method_class_test'
 require 'prime_test'
 require 'printers_test'
 require 'recursive_test'
@@ -14,5 +15,5 @@ require 'timing_test'
 
 # Can't use this one here cause it breaks
 # the rest of the unit tets (Ruby Prof gets
-# starte twice).
+# started twice).
 #require 'profile_unit_test'

@@ -28,7 +28,6 @@ class TimingTest < Test::Unit::TestCase
     result = RubyProf.profile do
       method1
     end
-    
     assert_equal(1, result.threads.length)
 
     methods = result.threads.values.first
@@ -46,6 +45,15 @@ class TimingTest < Test::Unit::TestCase
     assert_equal(0, method.parents.length)
     assert_equal(1, method.children.length)
     
+    method = methods[2]
+    assert_equal('Object#method1', method.name)
+    assert_in_delta(1, method.total_time, 0.02)
+    assert_in_delta(0, method.self_time, 0.02)
+    assert_in_delta(0, method.wait_time, 0.02)
+    assert_equal(1, method.called)
+    assert_equal(1, method.parents.length)
+    assert_equal(1, method.children.length)
+    
     method = methods[1]
     assert_equal('Kernel#sleep', method.name)
     assert_in_delta(1, method.total_time, 0.02)
@@ -55,15 +63,6 @@ class TimingTest < Test::Unit::TestCase
     assert_equal(1, method.called)
     assert_equal(1, method.parents.length)
     assert_equal(0, method.children.length)
-    
-    method = methods[2]
-    assert_equal('Object#method1', method.name)
-    assert_in_delta(1, method.total_time, 0.02)
-    assert_in_delta(0, method.self_time, 0.02)
-    assert_in_delta(0, method.wait_time, 0.02)
-    assert_equal(1, method.called)
-    assert_equal(1, method.parents.length)
-    assert_equal(1, method.children.length)
   end
   
   def test_timings

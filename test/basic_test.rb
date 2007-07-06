@@ -105,9 +105,9 @@ class BasicTest < Test::Unit::TestCase
     assert_equal('Kernel#sleep', methods[1].name)
     assert_equal('C1#hello', methods[2].name)
     assert_equal('<Class::C1>#hello', methods[3].name)
-    assert_equal('Object#initialize', methods[4].name)
+    assert_equal('<Class::Object>#allocate', methods[4].name)
     assert_equal('Class#new', methods[5].name)
-    assert_equal('<Class::Object>#allocate', methods[6].name)
+    assert_equal('Object#initialize', methods[6].name)
   end
   
   def test_module_methods
@@ -116,26 +116,29 @@ class BasicTest < Test::Unit::TestCase
       C2.new.hello
     end
   
+    print_results(result)
+    
     methods = result.threads.values.first
    
-    # Length should be 5:
-    #   1 test_module_methods (this method)
-    #   1 Class.new
-    #   1 Class:Object allocate
-    #   1 for Object.initialize
-    #   1 for hello
-    assert_equal(6, methods.length)
+    # Length should be 6:
+    #   1 BasicTest#test_module_methods (this method)
+    #   1 Class#new
+    #   1 <Class::Object>#allocate
+    #   1 Object#initialize
+    #   1 M1#hello
+    #   1 Kernel#sleep
     
+    assert_equal(6, methods.length)
 
     # Check the names
     methods = methods.sort.reverse
     
     assert_equal('BasicTest#test_module_methods', methods[0].name)
-    assert_equal('M1#hello', methods[1].name)
-    assert_equal('Kernel#sleep', methods[2].name)
-    assert_equal('Object#initialize', methods[3].name)
+    assert_equal('Kernel#sleep', methods[1].name)
+    assert_equal('M1#hello', methods[2].name)
+    assert_equal('<Class::Object>#allocate', methods[3].name)
     assert_equal('Class#new', methods[4].name)
-    assert_equal('<Class::Object>#allocate', methods[5].name)
+    assert_equal('Object#initialize', methods[5].name)
   end
   
   def test_singleton

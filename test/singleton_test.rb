@@ -3,7 +3,6 @@
 require 'test/unit'
 require 'ruby-prof'
 require 'timeout'
-require 'test_helper'
 
 # --  Test for bug [#5657]
 # http://rubyforge.org/tracker/index.php?func=detail&aid=5657&group_id=1814&atid=7060

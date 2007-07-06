@@ -14,6 +14,7 @@ def check_parent_times(method)
   parents_self_time = method.parents.inject(0) do |sum, call_info|
     sum + call_info.self_time + call_info.wait_time
   end
+  puts method.name
   assert_in_delta(method.self_time, parents_self_time, 0.01, method.name) 
     
   parents_children_time = method.parents.inject(0) do |sum, call_info|

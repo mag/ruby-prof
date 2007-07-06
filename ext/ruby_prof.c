@@ -84,8 +84,10 @@ static VALUE cCallInfo;
 /* Profiling information for each method. */
 typedef struct {
     st_data_t key;              /* Cache hash value for speed reasons. */
+    VALUE name;                 /* Name of the method. */
     VALUE klass;                /* The method's class. */
     ID mid;                     /* The method id. */
+    int depth;                  /* The recursive depth this method was called at.*/
     int called;                 /* Number of times called */
     const char* source_file;    /* The method's source file */
     int line;                   /* The method's line number. */
@@ -94,6 +96,9 @@ typedef struct {
     prof_measure_t wait_time;   /* Total time this method spent waiting for other threads. */
     st_table *parents;          /* The method's callers (prof_call_info_t). */
     st_table *children;         /* The method's callees (prof_call_info_t). */
+    int active_frame;           /* # of active frames for this method.  Used to detect
+                                   recursion.  Stashed here to avoid extra lookups in 
+                                   the hook method - so a bit hackey. */
 } prof_method_t;
 
 
@@ -113,7 +118,8 @@ typedef struct {
 typedef struct {
     /* Caching prof_method_t values significantly
        increases performance. */
-    prof_method_t *method_info;
+    prof_method_t *method;
+    prof_method_t *base_method;  /* For recursion - this is the parent method */
     prof_measure_t start_time;
     prof_measure_t wait_time;
     prof_measure_t child_time;
@@ -165,7 +171,7 @@ figure_singleton_name(VALUE klass)
     VALUE attached = rb_iv_get(klass, "__attached__");
 
     /* Is this a singleton class acting as a metaclass? */
-    if (TYPE(attached) == T_CLASS)
+    if (BUILTIN_TYPE(attached) == T_CLASS)
     {
         result = rb_str_new2("<Class::");
         rb_str_append(result, rb_inspect(attached));
@@ -173,15 +179,15 @@ figure_singleton_name(VALUE klass)
     }
 
     /* Is this for singleton methods on a module? */
-    else if (TYPE(attached) == T_MODULE)
+    else if (BUILTIN_TYPE(attached) == T_MODULE)
     {
         result = rb_str_new2("<Module::");
         rb_str_append(result, rb_inspect(attached));
         rb_str_cat2(result, ">#");
     }
 
-    /* Is it a regular singleton class for an object? */
-    else if (TYPE(attached) == T_OBJECT)
+    /* Is this for singleton methods on an object? */
+    else if (BUILTIN_TYPE(attached) == T_OBJECT)
     {
         /* Make sure to get the super class so that we don't
            mistakenly grab a T_ICLASS which would lead to
@@ -204,19 +210,30 @@ figure_singleton_name(VALUE klass)
 }
 
 static VALUE
-method_name(VALUE klass, ID mid)
+method_name(VALUE klass, ID mid, int depth)
 {
     VALUE result;
     VALUE method_name;
 
     if (mid == ID_ALLOCATOR) 
         method_name = rb_str_new2("allocate");
+    else if (mid == 0)
+        method_name = rb_str_new2("[No method]");
     else
         method_name = rb_String(ID2SYM(mid));
     
+    if (depth > 0)
+    {
+      char buffer[65];
+      _itoa(depth, buffer, 10);
+      rb_str_cat2(method_name, "-");
+      rb_str_cat2(method_name, buffer);
+    }
 
-    if (klass == Qnil)
+    if (klass == NULL || klass == Qnil)
+    {
         result = rb_str_new2("#");
+    }
     else if (TYPE(klass) == T_MODULE)
     {
         result = rb_inspect(klass);
@@ -247,11 +264,16 @@ method_name(VALUE klass, ID mid)
 }
 
 static inline st_data_t
-method_key(VALUE klass, ID mid)
+method_key(VALUE klass, ID mid, int depth)
 {
-    return klass ^ mid;
+  /* No idea if this is a unique key or not.  Would be
+     best to use the method name, but we can't, since
+     that calls internal ruby functions which would
+     cause the hook method to recursively call itself.
+     And that is too much of a bother to deal with.
+     Plus of course, this is faster. */
+  return (klass * 100) + (mid * 10) + depth;
 }
-
 
 /* ================  Stack Handling   =================*/
 
@@ -344,6 +366,7 @@ method_info_table_lookup(st_table *table, st_data_t key)
       return NULL;
     }
 }
+
 
 static void
 method_info_table_free(st_table *table)
@@ -538,21 +561,23 @@ the RubyProf::Result object.
 
 /* :nodoc: */
 static prof_method_t *
-prof_method_create(NODE *node, VALUE klass, ID mid)
+prof_method_create(NODE *node, st_data_t key, VALUE klass, ID mid, int depth)
 {
     prof_method_t *result = ALLOC(prof_method_t);
     
     result->klass = klass;
     result->mid = mid;
-    result->key = method_key(klass, mid);
-    
+    result->key = key;
+    result->depth = depth;
+
     result->called = 0;
     result->total_time = 0;
     result->self_time = 0;
     result->wait_time = 0;
     result->parents = caller_table_create();
     result->children = caller_table_create();
-    
+    result->active_frame = 0;
+        
     result->source_file = (node != NULL ? node->nd_file : 0);
     result->line =        (node != NULL ? nd_line(node) : 0);
     return result;
@@ -718,7 +743,7 @@ static VALUE
 prof_method_name(VALUE self)
 {
     prof_method_t *method = get_prof_method(self);
-    return method_name(method->klass, method->mid);
+    return method_name(method->klass, method->mid, method->depth);
 }
 
 static int
@@ -933,9 +958,10 @@ get_event_name(rb_event_t event)
 static void
 update_result(thread_data_t* thread_data,
               prof_measure_t total_time,
-              prof_method_t *parent, prof_method_t *child,
               prof_frame_t  *parent_frame, prof_frame_t *child_frame)
 {
+    prof_method_t *parent = parent_frame->method;
+    prof_method_t *child = child_frame->method;
     prof_call_info_t *parent_call_info = NULL;
     prof_call_info_t *child_call_info = NULL;
     
@@ -999,9 +1025,8 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     prof_measure_t now = 0;
     thread_data_t* thread_data = NULL;
     prof_frame_t *frame = NULL;
-    prof_method_t *method = NULL;
     
-   #ifdef _DEBUG
+   /*#ifdef _DEBUG
     {
         static unsigned long last_thread_id = 0;
 
@@ -1020,7 +1045,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
                thread_id, event_name, source_line, class_name, method_name);
         last_thread_id = thread_id;               
     } 
-    #endif 
+    #endif */
     
     /* Special case - skip any methods from the mProf 
        module, such as Prof.stop, since they clutter
@@ -1072,27 +1097,51 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     case RUBY_EVENT_CALL:
     case RUBY_EVENT_C_CALL:
     {
+        int depth = 0;
         st_data_t key = 0;
+        prof_method_t *method = NULL;
+        prof_method_t *base_method = NULL;
         
         /* Is this an include for a module?  If so get the actual
            module class since we want to combine all profiling
            results for that module. */
-        klass = (BUILTIN_TYPE(klass) == T_ICLASS ? RBASIC(klass)->klass : klass);
-
-        /* Look up the current method - if it doesn't exist create 
-           a new prof_method_t for it.*/
-        key = method_key(klass, mid);
-        method = method_info_table_lookup(thread_data->method_info_table, key);
-
-        if (!method)
+        
+        if (klass != NULL)
+          klass = (BUILTIN_TYPE(klass) == T_ICLASS ? RBASIC(klass)->klass : klass);
+          
+        key = method_key(klass, mid, 0);
+   
+        base_method = method_info_table_lookup(thread_data->method_info_table, key);
+        
+        if (!base_method)
         {
-          method = prof_method_create(node, klass, mid);
-          method_info_table_insert(thread_data->method_info_table, key, method);
+          base_method = prof_method_create(node, key, klass, mid, depth);
+          method_info_table_insert(thread_data->method_info_table, key, base_method);
         }
-      
+        
+        depth = base_method->active_frame;
+        base_method->active_frame++;                  
+        
+        if (depth == 0)
+        {
+          method = base_method;
+        }
+        else
+        {
+          key = method_key(klass, mid, depth);
+          method = method_info_table_lookup(thread_data->method_info_table, key);
+          
+          if (!method)
+          {
+            method = prof_method_create(node, key, klass, mid, depth);
+            method_info_table_insert(thread_data->method_info_table, key, method);
+          }
+        }
+
         /* Push a new frame onto the stack */
         frame = stack_push(thread_data->stack);
-        frame->method_info = method;
+        frame->method = method;
+        frame->base_method = base_method;
         frame->start_time = now;
         frame->wait_time = 0;
         frame->child_time = 0;
@@ -1103,13 +1152,13 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     case RUBY_EVENT_RETURN:
     case RUBY_EVENT_C_RETURN:
     {
+        st_data_t key = method_key(klass, mid, 0);
         prof_frame_t* caller_frame = NULL;
         prof_method_t *caller = NULL;
-        
+
         prof_measure_t total_time;
-        
+
         frame = stack_pop(thread_data->stack);
-        method = frame->method_info;
           
         /* Frame can be null.  This can happen if RubProf.start is called from
            a method that exits.  And it can happen if an exception is raised
@@ -1122,11 +1171,12 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
 
         if (caller_frame)
         {
-            caller = caller_frame->method_info;
             caller_frame->child_time += total_time;
         }
           
-        update_result(thread_data, total_time, caller, method, caller_frame, frame);
+        frame->base_method->active_frame--;
+        
+        update_result(thread_data, total_time, caller_frame, frame);
         break;
       }
     }

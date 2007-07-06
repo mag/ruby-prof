@@ -2,7 +2,6 @@
 
 require 'test/unit'
 require 'ruby-prof'
-require 'timeout'
 require 'test_helper'
 require 'ruby-prof/profile_test_case'
 
