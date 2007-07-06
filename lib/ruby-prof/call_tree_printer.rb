@@ -39,7 +39,7 @@ module RubyProf
 
         @output << "fn=#{method.name}\n"
         # line number and the converted timings
-        @output << "#{method.line_no} #{(method.self_time * @@conv_factor).to_int}\n"
+        @output << "#{method.line} #{(method.self_time * @@conv_factor).to_int}\n"
         # output children timings
         method.children.each do |callee|
           # only output the foreign file name if it is different than
@@ -49,9 +49,9 @@ module RubyProf
           end
           
           @output << "cfn=#{callee.target.name}\n"
-          @output << "calls=#{callee.target.called} #{callee.target.called_line_no}\n"
+          @output << "calls=#{callee.target.called} #{callee.line}\n"
           # timings: note total time in child
-          @output << "#{callee.target.line_no} #{(callee.target.total_time * @@conv_factor).to_int}\n"
+          @output << "#{callee.line} #{(callee.target.total_time * @@conv_factor).to_int}\n"
         end
       end
     end #end print_methods

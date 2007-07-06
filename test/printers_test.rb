@@ -7,7 +7,7 @@ require 'test_helper'
 
 # --  Tests ----
 class PrintersTest < Test::Unit::TestCase
-  def test_printer
+  def test_printers
     result = RubyProf.profile do
       run_primes
     end

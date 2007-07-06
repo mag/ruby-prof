@@ -70,8 +70,8 @@ module RubyProf
       @thread_times[thread_id]
     end
    
-    def total_percent(method)
-      overall_time = self.thread_time(method.thread_id)
+    def total_percent(thread_id, method)
+      overall_time = self.thread_time(thread_id)
       (method.total_time/overall_time) * 100
     end
     
@@ -84,18 +84,18 @@ module RubyProf
     # links to methods which are under the min_perecent 
     # specified by the user, since they will not be
     # printed out.
-    def create_link(method)
-      if self.total_percent(method) < @min_percent
+    def create_link(thread_id, method)
+      if self.total_percent(thread_id, method) < @min_percent
         # Just return name
         method.name
       else
-        href = '#' + link_href(method)
+        href = '#' + link_href(thread_id, method)
         "<a href=\"#{href}\">#{method.name}</a>" 
       end
     end
     
-    def link_href(method)
-      method.name.gsub(/[><#\.\?=:]/,"_") + "_" + method.thread_id.to_s
+    def link_href(thread_id, method)
+      method.name.gsub(/[><#\.\?=:]/,"_") + "_" + thread_id.to_s
     end
     
     def template
@@ -193,7 +193,7 @@ module RubyProf
                 <td><%= sprintf("%#{TIME_WIDTH}.2f", caller.children_time) %></td>
                 <% called = "#{caller.called}/#{method.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
-                <td><%= create_link(caller.target) %></td>
+                <td><%= create_link(thread_id, caller.target) %></td>
               </tr>
             <% end %>
 
@@ -204,7 +204,7 @@ module RubyProf
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.self_time) %></td>
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.children_time) %></td>
               <td><%= sprintf("%#{CALL_WIDTH}i", method.called) %></td>
-              <td><a name="<%= link_href(method) %>"><%= method.name %></a></td>
+              <td><a name="<%= link_href(thread_id, method) %>"><%= method.name %></a></td>
             </tr>
 
             <!-- Children -->
@@ -217,7 +217,7 @@ module RubyProf
                 <td><%= sprintf("%#{TIME_WIDTH}.2f", callee.children_time) %></td>
                 <% called = "#{callee.called}/#{callee.target.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
-                <td><%= create_link(callee.target) %></td>
+                <td><%= create_link(thread_id, callee.target) %></td>
               </tr>
             <% end %>
             <!-- Create divider row -->
