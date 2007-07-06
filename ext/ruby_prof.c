@@ -1148,9 +1148,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     case RUBY_EVENT_RETURN:
     case RUBY_EVENT_C_RETURN:
     {
-        st_data_t key = method_key(klass, mid, 0);
         prof_frame_t* caller_frame = NULL;
-        prof_method_t *caller = NULL;
 
         prof_measure_t total_time;
 
