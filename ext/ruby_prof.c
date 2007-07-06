@@ -225,7 +225,7 @@ method_name(VALUE klass, ID mid, int depth)
     if (depth > 0)
     {
       char buffer[65];
-      sprintf(buffer, "%s", depth);
+      sprintf(buffer, "%i", depth);
       rb_str_cat2(method_name, "-");
       rb_str_cat2(method_name, buffer);
     }
