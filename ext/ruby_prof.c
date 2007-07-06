@@ -922,234 +922,6 @@ collect_threads(st_data_t key, st_data_t value, st_data_t result)
     return ST_CONTINUE;
 }
 
-/* ========  ProfResult ============== */
-
-/* Document-class: RubyProf::Result
-The RubyProf::Result class is used to store the results of a 
-profiling run.  And instace of the class is returned from
-the methods RubyProf#stop and RubyProf#profile.
-
-RubyProf::Result has one field, called threads, which is a hash
-table keyed on thread ID.  For each thread id, the hash table
-stores another hash table that contains profiling information
-for each method called during the threads execution.  That
-hash table is keyed on method name and contains
-RubyProf::MethodInfo objects. */
-
-
-static void
-prof_result_mark(prof_result_t *prof_result)
-{
-    VALUE threads = prof_result->threads;
-    rb_gc_mark(threads);
-}
-
-static void
-prof_result_free(prof_result_t *prof_result)
-{
-    prof_result->threads = Qnil;
-    xfree(prof_result);
-}
-
-static VALUE
-prof_result_new()
-{
-    prof_result_t *prof_result = ALLOC(prof_result_t);
-
-    /* Wrap threads in Ruby regular Ruby hash table. */
-    prof_result->threads = rb_hash_new();
-    st_foreach(threads_tbl, collect_threads, prof_result->threads);
-
-    return Data_Wrap_Struct(cResult, prof_result_mark, prof_result_free, prof_result);
-}
-
-
-static prof_result_t *
-get_prof_result(VALUE obj)
-{
-    if (BUILTIN_TYPE(obj) != T_DATA ||
-      RDATA(obj)->dfree != (RUBY_DATA_FUNC) prof_result_free)
-    {
-        /* Should never happen */
-      rb_raise(rb_eTypeError, "wrong result object");
-    }
-    return (prof_result_t *) DATA_PTR(obj);
-}
-
-/* call-seq:
-   threads -> Hash
-
-Returns a hash table keyed on thread ID.  For each thread id,
-the hash table stores another hash table that contains profiling
-information for each method called during the threads execution.
-That hash table is keyed on method name and contains 
-RubyProf::MethodInfo objects. */
-static VALUE
-prof_result_threads(VALUE self)
-{
-    prof_result_t *prof_result = get_prof_result(self);
-    return prof_result->threads;
-}
-
-
-
-/* call-seq:
-   measure_mode -> measure_mode
-   
-   Returns what ruby-prof is measuring.  Valid values include:
-   
-   *RubyProf::PROCESS_TIME - Measure process time.  This is default.  It is implemented using the clock functions in the C Runtime library.
-   *RubyProf::WALL_TIME - Measure wall time using gettimeofday on Linx and GetLocalTime on Windows
-   *RubyProf::CPU_TIME - Measure time using the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms. 
-   *RubyProf::ALLOCATIONS - Measure object allocations.  This requires a patched Ruby interpreter.*/
-static VALUE
-prof_get_measure_mode(VALUE self)
-{
-    return INT2NUM(measure_mode);
-}
-
-/* call-seq:
-   measure_mode=value -> void
-   
-   Specifies what ruby-prof should measure.  Valid values include:
-   
-   *RubyProf::PROCESS_TIME - Measure process time.  This is default.  It is implemented using the clock functions in the C Runtime library.
-   *RubyProf::WALL_TIME - Measure wall time using gettimeofday on Linx and GetLocalTime on Windows
-   *RubyProf::CPU_TIME - Measure time using the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms. 
-   *RubyProf::ALLOCATIONS - Measure object allocations.  This requires a patched Ruby interpreter.*/
-static VALUE
-prof_set_measure_mode(VALUE self, VALUE val)
-{
-    long mode = NUM2LONG(val);
-
-    if (threads_tbl)
-    {
-      rb_raise(rb_eRuntimeError, "can't set measure_mode while profiling");
-    }
-
-    switch (mode) {
-      case MEASURE_PROCESS_TIME:
-        get_measurement = measure_process_time;
-        convert_measurement = convert_process_time;
-        break;
-        
-      case MEASURE_WALL_TIME:
-        get_measurement = measure_wall_time;
-        convert_measurement = convert_wall_time;
-        break;
-        
-      #if defined(MEASURE_CPU_TIME)
-      case MEASURE_CPU_TIME:
-        if (cpu_frequency == 0)
-            cpu_frequency = measure_cpu_time();
-        get_measurement = measure_cpu_time;
-        convert_measurement = convert_cpu_time;
-        break;
-      #endif
-              
-      #if defined(MEASURE_ALLOCATIONS)
-      case MEASURE_ALLOCATIONS:
-        get_measurement = measure_allocations;
-        convert_measurement = convert_allocations;
-        break;
-      #endif
-        
-      default:
-        rb_raise(rb_eArgError, "invalid mode: %d", mode);
-        break;
-    }
-    
-    measure_mode = mode;
-    return val;
-}
-
-/* =========  Profiling ============= */
-
-
-/* call-seq:
-   running? -> boolean
-   
-   Returns whether a profile is currently running.*/
-static VALUE
-prof_running(VALUE self)
-{
-    if (threads_tbl != NULL)
-        return Qtrue;
-    else
-        return Qfalse;
-}
-
-/* call-seq:
-   start -> void
-   
-   Starts recording profile data.*/
-static VALUE
-prof_start(VALUE self)
-{
-    if (threads_tbl != NULL)
-    {
-        rb_raise(rb_eRuntimeError, "RubyProf.start was already called");
-    }
-
-    /* Setup globals */
-    last_thread_data = NULL;
-    threads_tbl = threads_table_create();
-    
-    rb_add_event_hook(prof_event_hook,
-          RUBY_EVENT_CALL | RUBY_EVENT_RETURN |
-          RUBY_EVENT_C_CALL | RUBY_EVENT_C_RETURN 
-          | RUBY_EVENT_LINE);
-
-    return Qnil;
-}
-
-
-/* call-seq:
-   stop -> RubyProf::Result
-
-   Stops collecting profile data and returns a RubyProf::Result object. */
-static VALUE
-prof_stop(VALUE self)
-{
-    VALUE result = Qnil;
-
-    if (threads_tbl == NULL)
-    {
-        rb_raise(rb_eRuntimeError, "RubyProf is not running.");
-    }
-
-    /* Now unregister from event   */
-    rb_remove_event_hook(prof_event_hook);
-
-    /* Create the result */
-    result = prof_result_new();
-
-    /* Unset the last_thread_data (very important!) 
-       and the threads table */
-    last_thread_data = NULL;
-    threads_table_free(threads_tbl);
-    threads_tbl = NULL;
-
-    return result;
-}
-
-
-/* call-seq:
-   profile {block} -> RubyProf::Result
-
-Profiles the specified block and returns a RubyProf::Result object. */
-static VALUE
-prof_profile(VALUE self)
-{
-    if (!rb_block_given_p())
-    {
-        rb_raise(rb_eArgError, "A block must be provided to the profile method.");
-    }
-
-    prof_start(self);
-    rb_yield(Qnil);
-    return prof_stop(self);
-}
 
 /* ================  Profiling    =================*/
 /* Copied from eval.c */
@@ -1413,6 +1185,237 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
       }
     }
 }
+
+
+/* ========  ProfResult ============== */
+
+/* Document-class: RubyProf::Result
+The RubyProf::Result class is used to store the results of a 
+profiling run.  And instace of the class is returned from
+the methods RubyProf#stop and RubyProf#profile.
+
+RubyProf::Result has one field, called threads, which is a hash
+table keyed on thread ID.  For each thread id, the hash table
+stores another hash table that contains profiling information
+for each method called during the threads execution.  That
+hash table is keyed on method name and contains
+RubyProf::MethodInfo objects. */
+
+
+static void
+prof_result_mark(prof_result_t *prof_result)
+{
+    VALUE threads = prof_result->threads;
+    rb_gc_mark(threads);
+}
+
+static void
+prof_result_free(prof_result_t *prof_result)
+{
+    prof_result->threads = Qnil;
+    xfree(prof_result);
+}
+
+static VALUE
+prof_result_new()
+{
+    prof_result_t *prof_result = ALLOC(prof_result_t);
+
+    /* Wrap threads in Ruby regular Ruby hash table. */
+    prof_result->threads = rb_hash_new();
+    st_foreach(threads_tbl, collect_threads, prof_result->threads);
+
+    return Data_Wrap_Struct(cResult, prof_result_mark, prof_result_free, prof_result);
+}
+
+
+static prof_result_t *
+get_prof_result(VALUE obj)
+{
+    if (BUILTIN_TYPE(obj) != T_DATA ||
+      RDATA(obj)->dfree != (RUBY_DATA_FUNC) prof_result_free)
+    {
+        /* Should never happen */
+      rb_raise(rb_eTypeError, "wrong result object");
+    }
+    return (prof_result_t *) DATA_PTR(obj);
+}
+
+/* call-seq:
+   threads -> Hash
+
+Returns a hash table keyed on thread ID.  For each thread id,
+the hash table stores another hash table that contains profiling
+information for each method called during the threads execution.
+That hash table is keyed on method name and contains 
+RubyProf::MethodInfo objects. */
+static VALUE
+prof_result_threads(VALUE self)
+{
+    prof_result_t *prof_result = get_prof_result(self);
+    return prof_result->threads;
+}
+
+
+
+/* call-seq:
+   measure_mode -> measure_mode
+   
+   Returns what ruby-prof is measuring.  Valid values include:
+   
+   *RubyProf::PROCESS_TIME - Measure process time.  This is default.  It is implemented using the clock functions in the C Runtime library.
+   *RubyProf::WALL_TIME - Measure wall time using gettimeofday on Linx and GetLocalTime on Windows
+   *RubyProf::CPU_TIME - Measure time using the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms. 
+   *RubyProf::ALLOCATIONS - Measure object allocations.  This requires a patched Ruby interpreter.*/
+static VALUE
+prof_get_measure_mode(VALUE self)
+{
+    return INT2NUM(measure_mode);
+}
+
+/* call-seq:
+   measure_mode=value -> void
+   
+   Specifies what ruby-prof should measure.  Valid values include:
+   
+   *RubyProf::PROCESS_TIME - Measure process time.  This is default.  It is implemented using the clock functions in the C Runtime library.
+   *RubyProf::WALL_TIME - Measure wall time using gettimeofday on Linx and GetLocalTime on Windows
+   *RubyProf::CPU_TIME - Measure time using the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms. 
+   *RubyProf::ALLOCATIONS - Measure object allocations.  This requires a patched Ruby interpreter.*/
+static VALUE
+prof_set_measure_mode(VALUE self, VALUE val)
+{
+    long mode = NUM2LONG(val);
+
+    if (threads_tbl)
+    {
+      rb_raise(rb_eRuntimeError, "can't set measure_mode while profiling");
+    }
+
+    switch (mode) {
+      case MEASURE_PROCESS_TIME:
+        get_measurement = measure_process_time;
+        convert_measurement = convert_process_time;
+        break;
+        
+      case MEASURE_WALL_TIME:
+        get_measurement = measure_wall_time;
+        convert_measurement = convert_wall_time;
+        break;
+        
+      #if defined(MEASURE_CPU_TIME)
+      case MEASURE_CPU_TIME:
+        if (cpu_frequency == 0)
+            cpu_frequency = measure_cpu_time();
+        get_measurement = measure_cpu_time;
+        convert_measurement = convert_cpu_time;
+        break;
+      #endif
+              
+      #if defined(MEASURE_ALLOCATIONS)
+      case MEASURE_ALLOCATIONS:
+        get_measurement = measure_allocations;
+        convert_measurement = convert_allocations;
+        break;
+      #endif
+        
+      default:
+        rb_raise(rb_eArgError, "invalid mode: %d", mode);
+        break;
+    }
+    
+    measure_mode = mode;
+    return val;
+}
+
+/* =========  Profiling ============= */
+
+
+/* call-seq:
+   running? -> boolean
+   
+   Returns whether a profile is currently running.*/
+static VALUE
+prof_running(VALUE self)
+{
+    if (threads_tbl != NULL)
+        return Qtrue;
+    else
+        return Qfalse;
+}
+
+/* call-seq:
+   start -> void
+   
+   Starts recording profile data.*/
+static VALUE
+prof_start(VALUE self)
+{
+    if (threads_tbl != NULL)
+    {
+        rb_raise(rb_eRuntimeError, "RubyProf.start was already called");
+    }
+
+    /* Setup globals */
+    last_thread_data = NULL;
+    threads_tbl = threads_table_create();
+    
+    rb_add_event_hook(prof_event_hook,
+          RUBY_EVENT_CALL | RUBY_EVENT_RETURN |
+          RUBY_EVENT_C_CALL | RUBY_EVENT_C_RETURN 
+          | RUBY_EVENT_LINE);
+
+    return Qnil;
+}
+
+
+/* call-seq:
+   stop -> RubyProf::Result
+
+   Stops collecting profile data and returns a RubyProf::Result object. */
+static VALUE
+prof_stop(VALUE self)
+{
+    VALUE result = Qnil;
+
+    if (threads_tbl == NULL)
+    {
+        rb_raise(rb_eRuntimeError, "RubyProf is not running.");
+    }
+
+    /* Now unregister from event   */
+    rb_remove_event_hook(prof_event_hook);
+
+    /* Create the result */
+    result = prof_result_new();
+
+    /* Unset the last_thread_data (very important!) 
+       and the threads table */
+    last_thread_data = NULL;
+    threads_table_free(threads_tbl);
+    threads_tbl = NULL;
+
+    return result;
+}
+
+
+/* call-seq:
+   profile {block} -> RubyProf::Result
+
+Profiles the specified block and returns a RubyProf::Result object. */
+static VALUE
+prof_profile(VALUE self)
+{
+    if (!rb_block_given_p())
+    {
+        rb_raise(rb_eArgError, "A block must be provided to the profile method.");
+    }
+
+    prof_start(self);
+    rb_yield(Qnil);
+    return prof_stop(self);
+}
+
 
 #if defined(_WIN32)
 __declspec(dllexport) 
