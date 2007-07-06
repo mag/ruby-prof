@@ -57,7 +57,7 @@ module RubyProf
       @output << "Thread ID: " << thread_id << "\n"
       @output << "Total: " << total_time << "\n"
       @output << "\n"
-      @output << " %self     total     self     wait  children    calls  name\n"
+      @output << " %self     total     self     wait    child    calls  name\n"
 
       sum = 0    
       methods.each do |method|
@@ -67,7 +67,7 @@ module RubyProf
         sum += method.self_time
         #self_time_called = method.called > 0 ? method.self_time/method.called : 0
         #total_time_called = method.called > 0? method.total_time/method.called : 0
-        @output.printf("%6.2f  %8.2f %8.2f %8.2f  %8.2f %8d  %s\n",
+        @output.printf("%6.2f  %8.2f %8.2f %8.2f %8.2f %8d  %s\n",
                       method.self_time / total_time * 100, # %self
                       method.total_time,                   # total
                       method.self_time,                    # self

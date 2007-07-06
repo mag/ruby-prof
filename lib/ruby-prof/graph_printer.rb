@@ -20,7 +20,7 @@ module RubyProf
   class GraphPrinter
     PERCENTAGE_WIDTH = 8
     TIME_WIDTH = 10
-    CALL_WIDTH = 20
+    CALL_WIDTH = 17
   
     # Create a GraphPrinter.  Result is a RubyProf::Result  
     # object generated from a profiling run.
@@ -117,8 +117,8 @@ module RubyProf
       @output << sprintf("%#{TIME_WIDTH}s", "total")
       @output << sprintf("%#{TIME_WIDTH}s", "self")
       @output << sprintf("%#{TIME_WIDTH}s", "wait")
-      @output << sprintf("%#{TIME_WIDTH+2}s", "children")
-      @output << sprintf("%#{CALL_WIDTH-2}s", "calls")
+      @output << sprintf("%#{TIME_WIDTH}s", "child")
+      @output << sprintf("%#{CALL_WIDTH}s", "calls")
       @output << "   Name"
       @output << "\n"
     end

@@ -173,7 +173,7 @@ module RubyProf
           <th><%= sprintf("%#{PERCENTAGE_WIDTH}s", "%Self") %></th>
           <th><%= sprintf("%#{TIME_WIDTH}s", "Total") %></th>
           <th><%= sprintf("%#{TIME_WIDTH}s", "Self") %></th>
-          <th><%= sprintf("%#{TIME_WIDTH+2}s", "Children") %></th>
+          <th><%= sprintf("%#{TIME_WIDTH+2}s", "Child") %></th>
           <th><%= sprintf("%#{CALL_WIDTH}s", "Calls") %></th>
           <th>Name</th>
         </tr>
