@@ -230,20 +230,20 @@ method_name(VALUE klass, ID mid, int depth)
       rb_str_cat2(method_name, buffer);
     }
 
-    if (klass == NULL || klass == Qnil)
+    if (klass == 0 || klass == Qnil)
     {
         result = rb_str_new2("#");
     }
-    else if (TYPE(klass) == T_MODULE)
+    else if (BUILTIN_TYPE(klass) == T_MODULE)
     {
         result = rb_inspect(klass);
         rb_str_cat2(result, "#");
     }
-    else if (TYPE(klass) == T_CLASS && FL_TEST(klass, FL_SINGLETON))
+    else if (BUILTIN_TYPE(klass) == T_CLASS && FL_TEST(klass, FL_SINGLETON))
     {
         result = figure_singleton_name(klass);
     }
-    else if (TYPE(klass) == T_CLASS)
+    else if (BUILTIN_TYPE(klass) == T_CLASS)
     {
         result = rb_inspect(klass);
         rb_str_cat2(result, "#");
@@ -303,10 +303,8 @@ stack_push(prof_stack_t *stack)
      its size. */
   if (stack->ptr == stack->end)
   {
-    int len;
-    int new_capacity;
-    len = stack->ptr - stack->start;
-    new_capacity = (stack->end - stack->start) * 2;
+    size_t len = stack->ptr - stack->start;
+    size_t new_capacity = (stack->end - stack->start) * 2;
     REALLOC_N(stack->start, prof_frame_t, new_capacity);
     stack->ptr = stack->start + len;
     stack->end = stack->start + new_capacity;
@@ -332,7 +330,7 @@ stack_peek(prof_stack_t *stack)
       return stack->ptr - 1;
 }
 
-static inline int
+static inline size_t
 stack_size(prof_stack_t *stack)
 {
     return stack->ptr - stack->start;
@@ -347,7 +345,7 @@ method_info_table_create()
     return st_init_numtable();
 }
 
-static inline int
+static inline size_t
 method_info_table_insert(st_table *table, st_data_t key, prof_method_t *val)
 {
     return st_insert(table, key, (st_data_t) val);
@@ -384,7 +382,7 @@ caller_table_create()
     return st_init_numtable();
 }
 
-static inline int
+static inline size_t
 caller_table_insert(st_table *table, st_data_t key, prof_call_info_t *val)
 {
     return st_insert(table, key, (st_data_t) val);
@@ -455,7 +453,7 @@ call_info_new(prof_call_info_t *result)
 static prof_call_info_t *
 get_call_info_result(VALUE obj)
 {
-    if (TYPE(obj) != T_DATA)
+    if (BUILTIN_TYPE(obj) != T_DATA)
     {
         /* Should never happen */
       rb_raise(rb_eTypeError, "Not a call info object");
@@ -610,12 +608,6 @@ prof_method_new(prof_method_t *result)
 static prof_method_t *
 get_prof_method(VALUE obj)
 {
-   /* if (TYPE(obj) != T_DATA ||
-      RDATA(obj)->dfree != (RUBY_DATA_FUNC) prof_method_free)
-    {*/
-      /* Should never happen */
-   /*     rb_raise(rb_eTypeError, "wrong profile result");
-    }*/
     return (prof_method_t *) DATA_PTR(obj);
 }
 
@@ -859,7 +851,7 @@ threads_table_create()
     return st_init_numtable();
 }
 
-static inline int
+static inline size_t
 threads_table_insert(st_table *table, VALUE thread, thread_data_t *thread_data)
 {
     /* Its too slow to key on the real thread id so just typecast thread instead. */
@@ -1106,7 +1098,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
            module class since we want to combine all profiling
            results for that module. */
         
-        if (klass != NULL)
+        if (klass != 0)
           klass = (BUILTIN_TYPE(klass) == T_ICLASS ? RBASIC(klass)->klass : klass);
           
         key = method_key(klass, mid, 0);
@@ -1228,7 +1220,7 @@ prof_result_new()
 static prof_result_t *
 get_prof_result(VALUE obj)
 {
-    if (TYPE(obj) != T_DATA ||
+    if (BUILTIN_TYPE(obj) != T_DATA ||
       RDATA(obj)->dfree != (RUBY_DATA_FUNC) prof_result_free)
     {
         /* Should never happen */

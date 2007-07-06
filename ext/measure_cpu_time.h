@@ -28,7 +28,7 @@
 #if defined(_WIN32) || (defined(__GNUC__) && (defined(__i386__) || defined(__powerpc__) || defined(__ppc__)))
 #define MEASURE_CPU_TIME 2
 
-static double cpu_frequency;
+static unsigned long long cpu_frequency;
 
 #if defined(__GNUC__)
 
@@ -75,7 +75,7 @@ measure_cpu_time()
 /* The _WIN32 check is needed for msys (and maybe cygwin?) */
 #if defined(__GNUC__) && !defined(_WIN32)
 
-double get_cpu_frequency()
+unsigned long long get_cpu_frequency()
 {
     unsigned long long x, y;
 
@@ -90,10 +90,10 @@ double get_cpu_frequency()
 
 #elif defined(_WIN32)
 
-double get_cpu_frequency()
+unsigned long long get_cpu_frequency()
 {
     unsigned long long x, y;
-    double frequency;
+    unsigned long long frequency;
     x = measure_cpu_time();
 
     /* Use the windows sleep function, not Ruby's */
@@ -119,7 +119,7 @@ RubyProf::measure_mode is set to CPU_TIME. */
 static VALUE
 prof_get_cpu_frequency(VALUE self)
 {
-    return rb_float_new(cpu_frequency);
+    return LONG2NUM(cpu_frequency);
 }
 
 /* Document-method: prof_set_cpu_frequency
@@ -131,7 +131,7 @@ RubyProf::measure_mode is set to CPU_TIME. */
 static VALUE
 prof_set_cpu_frequency(VALUE self, VALUE val)
 {
-    cpu_frequency = NUM2DBL(val);
+    cpu_frequency = NUM2LONG(val);
     return val;
 }
 
