@@ -579,8 +579,8 @@ prof_method_create(NODE *node, st_data_t key, VALUE klass, ID mid, int depth)
     result->children = caller_table_create();
     result->active_frame = 0;
         
-    result->source_file = (node != NULL ? node->nd_file : 0);
-    result->line =        (node != NULL ? nd_line(node) : 0);
+    result->source_file = (node ? node->nd_file : 0);
+    result->line =        (node ? nd_line(node) : 0);
     return result;
 }
 
@@ -1023,8 +1023,8 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     thread_data_t* thread_data = NULL;
     prof_frame_t *frame = NULL;
     
-    /*
-    {
+    
+/*    {
         st_data_t key = 0;
         static unsigned long last_thread_id = 0;
 
@@ -1032,8 +1032,8 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         unsigned long thread_id = get_thread_id(thread);
         char* class_name = rb_obj_classname(klass);
         char* method_name = rb_id2name(mid);
-        char* source_file = node->nd_file;
-        unsigned int source_line = nd_line(node);
+        char* source_file = node ? node->nd_file : 0;
+        unsigned int source_line = node ? nd_line(node) : 0;
         char* event_name = get_event_name(event);
         
         if (last_thread_id != thread_id)
@@ -1087,7 +1087,8 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
          called from. */
       if (frame)
       {
-        frame->line = nd_line(node);
+        if (node)
+          frame->line = nd_line(node);
         break;
       }
       /* If we get here there was no frame, which means this is 
@@ -1145,7 +1146,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         frame->start_time = now;
         frame->wait_time = 0;
         frame->child_time = 0;
-        frame->line = nd_line(node);
+        frame->line = node ? nd_line(node) : 0;
 
         break;
     }
