@@ -149,8 +149,6 @@ typedef struct {
 /* ================  Variables  =================*/
 static int measure_mode;
 static st_table *threads_tbl = NULL;
-static VALUE class_tbl = Qnil;
-
 
 
 /* ================  Helper Functions  =================*/
@@ -282,9 +280,9 @@ method_key(VALUE klass, ID mid, int depth)
 static prof_stack_t *
 stack_create()
 {
-    prof_stack_t *stack;
-    stack = ALLOC(prof_stack_t);
-    stack->start = stack->ptr =	ALLOC_N(prof_frame_t, INITIAL_STACK_SIZE);
+    prof_stack_t *stack = ALLOC(prof_stack_t);
+    stack->start = ALLOC_N(prof_frame_t, INITIAL_STACK_SIZE);
+    stack->ptr = stack->start;
     stack->end = stack->start + INITIAL_STACK_SIZE;
     return stack;
 }
@@ -369,6 +367,8 @@ method_info_table_lookup(st_table *table, st_data_t key)
 static void
 method_info_table_free(st_table *table)
 {
+    /* Don't free the contents since they are wrapped by
+       Ruby objects! */
     st_free_table(table);
 }
 
@@ -812,9 +812,9 @@ collect_methods(st_data_t key, st_data_t value, st_data_t result)
 {
     /* Called for each method stored in a thread's method table. 
        We want to store the method info information into an array.*/
-    VALUE array = (VALUE) result;
+    VALUE methods = (VALUE) result;
     prof_method_t *method = (prof_method_t *) value;
-    rb_ary_push(array, prof_method_new(method));
+    rb_ary_push(methods, prof_method_new(method));
 
     return ST_CONTINUE;
 }
@@ -1018,8 +1018,9 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     thread_data_t* thread_data = NULL;
     prof_frame_t *frame = NULL;
     
-   /*#ifdef _DEBUG
+   #ifdef _DEBUG
     {
+        st_data_t key = 0;
         static unsigned long last_thread_id = 0;
 
         VALUE thread = rb_thread_current();
@@ -1033,11 +1034,14 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         if (last_thread_id != thread_id)
           printf("\n");
           
-        printf("%2d: %-8s :%2d  %s#%s\n",
-               thread_id, event_name, source_line, class_name, method_name);
+        if (klass != 0)
+          klass = (BUILTIN_TYPE(klass) == T_ICLASS ? RBASIC(klass)->klass : klass);
+        key = method_key(klass, mid, 0);          
+        printf("%2d: %-8s :%2d  %s#%s (%u)\n",
+               thread_id, event_name, source_line, class_name, method_name, key);
         last_thread_id = thread_id;               
     } 
-    #endif */
+    #endif 
     
     /* Special case - skip any methods from the mProf 
        module, such as Prof.stop, since they clutter
@@ -1345,7 +1349,6 @@ prof_start(VALUE self)
     }
 
     /* Setup globals */
-    class_tbl = rb_hash_new();
     threads_tbl = threads_table_create();
     
     rb_add_event_hook(prof_event_hook,
@@ -1368,7 +1371,7 @@ prof_stop(VALUE self)
 
     if (threads_tbl == NULL)
     {
-        rb_raise(rb_eRuntimeError, "RubyProf.start is not called yet");
+        rb_raise(rb_eRuntimeError, "RubyProf is not running.");
     }
 
     /* Now unregister from event   */
@@ -1381,9 +1384,6 @@ prof_stop(VALUE self)
     threads_table_free(threads_tbl);
     threads_tbl = NULL;
 
-    /* Free reference to class_tbl */
-    class_tbl = Qnil;
-    
     return result;
 }
 
@@ -1466,7 +1466,5 @@ Init_ruby_prof()
     rb_define_method(cCallInfo, "wait_time", call_info_wait_time, 0);
     rb_define_method(cCallInfo, "line", call_info_line, 0);
     rb_define_method(cCallInfo, "children_time", call_info_children_time, 0);
-
-    rb_global_variable(&class_tbl);
 }
 
