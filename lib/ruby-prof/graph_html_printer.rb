@@ -1,3 +1,4 @@
+require 'ruby-prof/abstract_printer'
 require "erb"
 
 module RubyProf
@@ -19,7 +20,7 @@ module RubyProf
   # the report.  Use this parameter to eliminate methods
   # that are not important to the overall profiling results.
   
-  class GraphHtmlPrinter
+  class GraphHtmlPrinter < AbstractPrinter
     PERCENTAGE_WIDTH = 8
     TIME_WIDTH = 10
     CALL_WIDTH = 20
@@ -27,7 +28,7 @@ module RubyProf
     # Create a GraphPrinter.  Result is a RubyProf::Result  
     # object generated from a profiling run.
     def initialize(result)
-      @result = result
+      super(result)
       @thread_times = Hash.new
       calculate_thread_times
     end
@@ -37,13 +38,12 @@ module RubyProf
     # output - Any IO oject, including STDOUT or a file. 
     # The default value is STDOUT.
     # 
-    # min_percent - The minimum %total (the methods 
-    # total time divided by the overall total time) that
-    # a method must take for it to be printed out in 
-    # the report. Default value is 0.
-    def print(output = STDOUT, min_percent = 0)
+    # options - Hash of print options.  See #setup_options 
+    #           for more information.
+    #
+    def print(output = STDOUT, options = {})
       @output = output
-      @min_percent = min_percent
+      setup_options(options)
       
       _erbout = @output
       erb = ERB.new(template, nil, nil)
@@ -85,7 +85,7 @@ module RubyProf
     # specified by the user, since they will not be
     # printed out.
     def create_link(thread_id, method)
-      if self.total_percent(thread_id, method) < @min_percent
+      if self.total_percent(thread_id, method) < min_percent
         # Just return name
         method.name
       else
@@ -180,7 +180,7 @@ module RubyProf
 
         <% methods.sort.reverse_each do |method|
             total_percentage = (method.total_time/total_time) * 100
-            next if total_percentage < @min_percent
+            next if total_percentage < min_percent
             self_percentage = (method.self_time/total_time) * 100 %>
           
             <!-- Parents -->
@@ -204,7 +204,7 @@ module RubyProf
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.self_time) %></td>
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.children_time) %></td>
               <td><%= sprintf("%#{CALL_WIDTH}i", method.called) %></td>
-              <td><a name="<%= link_href(thread_id, method) %>"><%= method.name %></a></td>
+              <td><a name="<%= link_href(thread_id, method) %>"><%= method_name(method) %></a></td>
             </tr>
 
             <!-- Children -->

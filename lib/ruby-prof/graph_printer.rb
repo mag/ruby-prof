@@ -1,3 +1,5 @@
+require 'ruby-prof/abstract_printer'
+
 module RubyProf
   # Generates graph[link:files/examples/graph_txt.html] profile reports as text. 
   # To use the graph printer:
@@ -17,16 +19,15 @@ module RubyProf
   # the report.  Use this parameter to eliminate methods
   # that are not important to the overall profiling results.
 
-  class GraphPrinter
+  class GraphPrinter < AbstractPrinter
     PERCENTAGE_WIDTH = 8
     TIME_WIDTH = 10
     CALL_WIDTH = 17
   
     # Create a GraphPrinter.  Result is a RubyProf::Result  
     # object generated from a profiling run.
-    def initialize(result, min_percent = 0)
-      @result = result
-      @min_percent = min_percent
+    def initialize(result)
+      super(result)
       @thread_times = Hash.new
       calculate_thread_times
     end
@@ -49,13 +50,12 @@ module RubyProf
     # output - Any IO oject, including STDOUT or a file. 
     # The default value is STDOUT.
     # 
-    # min_percent - The minimum %total (the methods 
-    # total time divided by the overall total time) that
-    # a method must take for it to be printed out in 
-    # the report. Default value is 0.
-    def print(output = STDOUT, min_percent = 0)
+    # options - Hash of print options.  See #setup_options 
+    #           for more information.
+    #
+    def print(output = STDOUT, options = {})
       @output = output
-      @min_percent = min_percent
+      setup_options(options)
       print_threads
     end
 
@@ -85,7 +85,7 @@ module RubyProf
         total_percentage = (method.total_time/total_time) * 100
         self_percentage = (method.self_time/total_time) * 100
         
-        next if total_percentage < @min_percent
+        next if total_percentage < min_percent
         
         @output << "-" * 80 << "\n"
 
@@ -99,7 +99,7 @@ module RubyProf
         @output << sprintf("%#{TIME_WIDTH}.2f", method.wait_time)
         @output << sprintf("%#{TIME_WIDTH}.2f", method.children_time)
         @output << sprintf("%#{CALL_WIDTH}i", method.called)
-        @output << sprintf("     %s", method.name)
+        @output << sprintf("     %s", method_name(method))
         @output << "\n"
     
         print_children(method)

@@ -1,3 +1,5 @@
+require 'ruby-prof/abstract_printer'
+
 module RubyProf
   # Generates flat[link:files/examples/flat_txt.html] profile reports as text. 
   # To use the flat printer:
@@ -9,25 +11,18 @@ module RubyProf
   #   printer = RubyProf::FlatPrinter.new(result)
   #   printer.print(STDOUT, 0)
   #
-  class FlatPrinter
-    # Create a FlatPrinter.  Result is a RubyProf::Result 
-    # object generated from a profiling run.
-    def initialize(result)
-      @result = result
-    end
-
+  class FlatPrinter < AbstractPrinter
     # Print a flat profile report to the provided output.
     # 
     # output - Any IO oject, including STDOUT or a file. 
     # The default value is STDOUT.
     # 
-    # min_percent - The minimum %self (the methods 
-    # self time divided by the overall total time) that
-    # a method must take for it to be printed out in 
-    # the report. Default value is 0.
-    def print(output = STDOUT, min_percent = 0)
-      @min_percent = min_percent
+    # options - Hash of print options.  See #setup_options 
+    #           for more information.
+    #
+    def print(output = STDOUT, options = {})
       @output = output
+      setup_options(options)
       print_threads
     end      
     
@@ -62,11 +57,12 @@ module RubyProf
       sum = 0    
       methods.each do |method|
         self_percent = (method.self_time / total_time) * 100
-        next if self_percent < @min_percent
+        next if self_percent < min_percent
         
         sum += method.self_time
         #self_time_called = method.called > 0 ? method.self_time/method.called : 0
         #total_time_called = method.called > 0? method.total_time/method.called : 0
+        
         @output.printf("%6.2f  %8.2f %8.2f %8.2f %8.2f %8d  %s\n",
                       method.self_time / total_time * 100, # %self
                       method.total_time,                   # total
@@ -74,7 +70,7 @@ module RubyProf
                       method.wait_time,                    # wait
                       method.children_time,                # children
                       method.called,                       # calls
-                      method.name)                         # name
+                      method_name(method))                 # name
       end
     end
   end

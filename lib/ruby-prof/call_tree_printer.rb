@@ -1,16 +1,15 @@
-module RubyProf
+require 'ruby-prof/abstract_printer'
 
+module RubyProf
   # Generate profiling information in calltree format
   # for use by kcachegrind and similar tools.
 
-  class CallTreePrinter
+  class CallTreePrinter  < AbstractPrinter
     @@conv_factor = 1000
-    def initialize(result)
-      @result = result
-    end
-
-    def print(output = STDOUT)
+    
+    def print(output = STDOUT, options = {})
       @output = output
+      setup_options(options)
       
       # add a header - this information is somewhat arbitrary
       @output << "events: milliseconds\n"
