@@ -135,7 +135,7 @@ typedef struct {
 
 /* Profiling information for a thread. */
 typedef struct {
-    unsigned long thread_id;         /* Thread id */
+    long thread_id;                  /* Thread id */
     st_table* method_info_table;     /* All called methods */
     prof_stack_t* stack;             /* Active methods */
     prof_measure_t last_switch;      /* Point of last context switch */
@@ -155,7 +155,7 @@ static VALUE class_tbl = Qnil;
 
 /* ================  Helper Functions  =================*/
 /* Helper method to get the id of a Ruby thread. */
-static inline unsigned long
+static inline long
 get_thread_id(VALUE thread)
 {
     return NUM2LONG(rb_obj_id(thread));
@@ -914,7 +914,7 @@ collect_threads(st_data_t key, st_data_t value, st_data_t result)
     st_foreach(thread_data->method_info_table, collect_methods, methods);
     
     /* Store the results in the threads hash keyed on the thread id. */
-    rb_hash_aset(threads_hash, INT2NUM(thread_data->thread_id), methods);
+    rb_hash_aset(threads_hash, LONG2NUM(thread_data->thread_id), methods);
 
     return ST_CONTINUE;
 }
@@ -1020,10 +1020,10 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     
    /*#ifdef _DEBUG
     {
-        static unsigned long last_thread_id = 0;
+        static long last_thread_id = 0;
 
         VALUE thread = rb_thread_current();
-        unsigned long thread_id = get_thread_id(thread);
+        long thread_id = get_thread_id(thread);
         char* class_name = rb_obj_classname(klass);
         char* method_name = rb_id2name(mid);
         char* source_file = node->nd_file;

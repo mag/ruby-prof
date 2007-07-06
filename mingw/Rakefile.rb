@@ -25,7 +25,7 @@ end
 SRC.each do |srcfile|
   objfile = File.basename(srcfile).ext('o')
   file objfile => srcfile do
-    sh   "gcc -c -o #{objfile} #{srcfile} -I#{RUBY_INCLUDE_DIR}" 
+    sh   "gcc -c -fPIC -O0 -g -o #{objfile} #{srcfile} -I#{RUBY_INCLUDE_DIR}" 
   end
 end
 
