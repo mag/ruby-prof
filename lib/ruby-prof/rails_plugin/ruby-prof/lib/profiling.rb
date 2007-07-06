@@ -20,12 +20,16 @@ module ActionController #:nodoc:
         
         output = StringIO.new
         output << " [#{complete_request_uri rescue "unknown"}]"
+        output << "\n\n"
         
+        # Create a flat printer
         printer = RubyProf::FlatPrinter.new(result)
-        # Skip anything less than 1% - which is a lot of
-        # stuff in Rails
-        printer.print(output, 1)
         
+        # Skip anything less than 1% - which is a lot of
+        # stuff in Rails. Don't print the source file
+        # its too noisy.
+        printer.print(output, {:min_percent => 1,
+                               :print_file => false})
         logger.info(output.string)
       end
     end
