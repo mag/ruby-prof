@@ -149,6 +149,9 @@ typedef struct {
 /* ================  Variables  =================*/
 static int measure_mode;
 static st_table *threads_tbl = NULL;
+/* TODO - If Ruby become multi-threaded this has to turn into
+   a separate stack since this isn't thread safe! */
+static thread_data_t* last_thread_data = NULL;
 
 
 /* ================  Helper Functions  =================*/
@@ -952,7 +955,7 @@ update_result(thread_data_t* thread_data,
               prof_measure_t total_time,
               prof_frame_t  *parent_frame, prof_frame_t *child_frame)
 {
-    prof_method_t *parent = parent_frame->method;
+    prof_method_t *parent = NULL;
     prof_method_t *child = child_frame->method;
     prof_call_info_t *parent_call_info = NULL;
     prof_call_info_t *child_call_info = NULL;
@@ -965,8 +968,11 @@ update_result(thread_data_t* thread_data,
     child->total_time += total_time;
     child->self_time += self_time;
     child->wait_time += wait_time;
+
+    if (!parent_frame) return;
     
-    /* Update parent's child information */
+    parent = parent_frame->method;
+        
     child_call_info = caller_table_lookup(parent->children, child->key);
     if (child_call_info == NULL)
     {
@@ -978,8 +984,8 @@ update_result(thread_data_t* thread_data,
     child_call_info->total_time += total_time;
     child_call_info->self_time += self_time;
     child_call_info->wait_time += wait_time;
-    child_call_info->line = (parent_frame ? parent_frame->line : 0);
-    
+    child_call_info->line = parent_frame->line;
+        
     /* Update child's parent information  */
     parent_call_info = caller_table_lookup(child->parents, parent->key);
     if (parent_call_info == NULL)
@@ -1000,7 +1006,7 @@ update_result(thread_data_t* thread_data,
        the top method is never popped since sooner or later
        the user has to call RubyProf::stop.*/
       
-    if (parent && stack_size(thread_data->stack) == 1)
+    if (stack_size(thread_data->stack) == 1)
     {
       parent->total_time += total_time;
       parent->wait_time += wait_time;
@@ -1011,7 +1017,6 @@ update_result(thread_data_t* thread_data,
 static void
 prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
 {
-    static thread_data_t* last_thread_data = NULL;
     
     VALUE thread;
     prof_measure_t now = 0;
@@ -1159,7 +1164,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
            a method that exits.  And it can happen if an exception is raised
            in code that is being profiled and the stack unwinds (RubProf is
            not notified of that by the ruby runtime. */
-        if (frame == NULL || caller_frame == NULL)
+        if (frame == NULL)
         {
           prof_stop();
           return;
@@ -1352,6 +1357,7 @@ prof_start(VALUE self)
     }
 
     /* Setup globals */
+    last_thread_data = NULL;
     threads_tbl = threads_table_create();
     
     rb_add_event_hook(prof_event_hook,
@@ -1383,7 +1389,9 @@ prof_stop(VALUE self)
     /* Create the result */
     result = prof_result_new();
 
-    /* Free threads table */
+    /* Unset the last_thread_data (very important!) 
+       and the threads table */
+    last_thread_data = NULL;
     threads_table_free(threads_tbl);
     threads_tbl = NULL;
 
