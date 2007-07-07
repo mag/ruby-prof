@@ -71,9 +71,6 @@ class TimingTest < Test::Unit::TestCase
       method3
     end
 
-    printer = RubyProf::FlatPrinter.new(result)
-    printer.print
-      
     assert_equal(1, result.threads.length)
     methods = result.threads.values.first
     assert_equal(5, methods.length)
