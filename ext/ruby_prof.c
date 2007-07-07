@@ -1179,16 +1179,16 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         
         if (depth > 0)
         {
-          prof_method_t *base_method = method;
           key = method_key(klass, mid, depth);
           method = method_info_table_lookup(thread_data->method_info_table, key);
           
           if (!method)
           {
+            prof_method_t *base_method = method;
             method = prof_method_create(node, key, klass, mid, depth);
+            method->base = base_method;
             method_info_table_insert(thread_data->method_info_table, key, method);
           }
-          method->base = base_method;
         }
 
         /* Push a new frame onto the stack */
@@ -1218,7 +1218,6 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         if (frame == NULL) return;
 
         total_time = now - frame->start_time;
-        
 
         if (caller_frame)
         {
