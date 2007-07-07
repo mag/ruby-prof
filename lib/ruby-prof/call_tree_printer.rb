@@ -5,17 +5,23 @@ module RubyProf
   # for use by kcachegrind and similar tools.
 
   class CallTreePrinter  < AbstractPrinter
-    @@conv_factor = 1000
-    
     def print(output = STDOUT, options = {})
       @output = output
       setup_options(options)
-      
+        
       # add a header - this information is somewhat arbitrary
-      @output << "events: milliseconds\n"
-      @output << "cmd: your ruby script\n\n"
-
-      # we don't know any files right now so put in dummy information
+      @output << "events: "
+      case RubyProf.measure_mode
+        when RubyProf::PROCESS_TIME
+          @output << 'process_time'
+        when RubyProf::WALL_TIME
+          @output << 'wall_time'
+        when RubyProf::CPU_TIME
+          @output << 'cpu_time'
+        when RubyProf::ALLOCATIONS
+          @output << 'allocations'
+      end
+      @output << "\n\n"        
 
       print_threads
     end
@@ -38,7 +44,7 @@ module RubyProf
 
         @output << "fn=#{method.name}\n"
         # line number and the converted timings
-        @output << "#{method.line} #{(method.self_time * @@conv_factor).to_int}\n"
+        @output << "#{method.line} #{method.self_time}\n"
         # output children timings
         method.children.each do |callee|
           # only output the foreign file name if it is different than
@@ -50,7 +56,7 @@ module RubyProf
           @output << "cfn=#{callee.target.name}\n"
           @output << "calls=#{callee.target.called} #{callee.line}\n"
           # timings: note total time in child
-          @output << "#{callee.line} #{(callee.target.total_time * @@conv_factor).to_int}\n"
+          @output << "#{callee.line} #{callee.target.total_time}\n"
         end
       end
     end #end print_methods
