@@ -82,7 +82,7 @@ static VALUE cMethodInfo;
 static VALUE cCallInfo;
 
 /* Profiling information for each method. */
-typedef struct {
+typedef struct prof_method_t {
     st_data_t key;              /* Cache hash value for speed reasons. */
     VALUE name;                 /* Name of the method. */
     VALUE klass;                /* The method's class. */
@@ -99,6 +99,7 @@ typedef struct {
     int active_frame;           /* # of active frames for this method.  Used to detect
                                    recursion.  Stashed here to avoid extra lookups in 
                                    the hook method - so a bit hackey. */
+    struct prof_method_t *base;        /* For recursion - this is the parent method */
 } prof_method_t;
 
 
@@ -119,7 +120,6 @@ typedef struct {
     /* Caching prof_method_t values significantly
        increases performance. */
     prof_method_t *method;
-    prof_method_t *base_method;  /* For recursion - this is the parent method */
     prof_measure_t start_time;
     prof_measure_t wait_time;
     prof_measure_t child_time;
@@ -588,6 +588,7 @@ prof_method_create(NODE *node, st_data_t key, VALUE klass, ID mid, int depth)
     result->parents = caller_table_create();
     result->children = caller_table_create();
     result->active_frame = 0;
+    result->base = result;
         
     result->source_file = (node ? node->nd_file : 0);
     result->line =        (node ? nd_line(node) : 0);
@@ -774,6 +775,25 @@ prof_full_name(VALUE self)
 {
     prof_method_t *method = get_prof_method(self);
     return full_name(method->klass, method->mid, method->depth);
+}
+
+/* call-seq:
+   called -> MethodInfo
+
+For recursively called methods, returns the base method.  Otherwise, 
+returns self. */
+static VALUE
+prof_method_base(VALUE self)
+{
+    prof_method_t *method = get_prof_method(self);
+    
+    if (method == method->base)
+      return self;
+    else
+      /* Target is a pointer to a method_info - so we have to be careful
+         about the GC.  We will wrap the method_info but provide no
+         free method so the underlying object is not freed twice! */
+      return Data_Wrap_Struct(cMethodInfo, NULL, NULL, method->base);
 }
 
 static int
@@ -1136,7 +1156,6 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         int depth = 0;
         st_data_t key = 0;
         prof_method_t *method = NULL;
-        prof_method_t *base_method = NULL;
         
         /* Is this an include for a module?  If so get the actual
            module class since we want to combine all profiling
@@ -1147,23 +1166,20 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
           
         key = method_key(klass, mid, 0);
    
-        base_method = method_info_table_lookup(thread_data->method_info_table, key);
+        method = method_info_table_lookup(thread_data->method_info_table, key);
         
-        if (!base_method)
+        if (!method)
         {
-          base_method = prof_method_create(node, key, klass, mid, depth);
-          method_info_table_insert(thread_data->method_info_table, key, base_method);
+          method = prof_method_create(node, key, klass, mid, depth);
+          method_info_table_insert(thread_data->method_info_table, key, method);
         }
         
-        depth = base_method->active_frame;
-        base_method->active_frame++;                  
+        depth = method->active_frame;
+        method->active_frame++;                  
         
-        if (depth == 0)
+        if (depth > 0)
         {
-          method = base_method;
-        }
-        else
-        {
+          prof_method_t *base_method = method;
           key = method_key(klass, mid, depth);
           method = method_info_table_lookup(thread_data->method_info_table, key);
           
@@ -1172,12 +1188,12 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
             method = prof_method_create(node, key, klass, mid, depth);
             method_info_table_insert(thread_data->method_info_table, key, method);
           }
+          method->base = base_method;
         }
 
         /* Push a new frame onto the stack */
         frame = stack_push(thread_data->stack);
         frame->method = method;
-        frame->base_method = base_method;
         frame->start_time = now;
         frame->wait_time = 0;
         frame->child_time = 0;
@@ -1209,7 +1225,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
             caller_frame->child_time += total_time;
         }
           
-        frame->base_method->active_frame--;
+        frame->method->base->active_frame--;
         
         update_result(thread_data, total_time, caller_frame, frame);
         break;
@@ -1491,6 +1507,7 @@ Init_ruby_prof()
     rb_define_method(cMethodInfo, "method_name", prof_method_name, 0);
     rb_define_method(cMethodInfo, "full_name", prof_full_name, 0);
     rb_define_method(cMethodInfo, "method_id", prof_method_id, 0);
+    rb_define_method(cMethodInfo, "base", prof_method_base, 0);
     
     rb_define_method(cMethodInfo, "parents", prof_method_parents, 0);
     rb_define_method(cMethodInfo, "children", prof_method_children, 0);
