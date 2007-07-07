@@ -133,7 +133,7 @@ module RubyProf
     
         call_called = "#{caller.called}/#{method.called}"
         @output << sprintf("%#{CALL_WIDTH}s", call_called)
-        @output << sprintf("     %s", caller.target.name)
+        @output << sprintf("     %s", caller.target.full_name)
         @output << "\n"
       end
     end
@@ -151,7 +151,7 @@ module RubyProf
 
         call_called = "#{child.called}/#{child.target.called}"
         @output << sprintf("%#{CALL_WIDTH}s", call_called)
-        @output << sprintf("     %s", child.target.name)
+        @output << sprintf("     %s", child.target.full_name)
         @output << "\n"
       end
     end
