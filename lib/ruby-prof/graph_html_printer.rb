@@ -89,12 +89,12 @@ module RubyProf
         # Just return name
         method.name
       else
-        href = '#' + link_href(thread_id, method)
+        href = '#' + method_href(thread_id, method)
         "<a href=\"#{href}\">#{method.name}</a>" 
       end
     end
     
-    def link_href(thread_id, method)
+    def method_href(thread_id, method)
       method.name.gsub(/[><#\.\?=:]/,"_") + "_" + thread_id.to_s
     end
     
@@ -176,6 +176,9 @@ module RubyProf
           <th><%= sprintf("%#{TIME_WIDTH+2}s", "Child") %></th>
           <th><%= sprintf("%#{CALL_WIDTH}s", "Calls") %></th>
           <th>Name</th>
+          <% if print_file %>
+          <th>File</th>
+          <% end %>
         </tr>
 
         <% methods.sort.reverse_each do |method|
@@ -194,6 +197,9 @@ module RubyProf
                 <% called = "#{caller.called}/#{method.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
                 <td><%= create_link(thread_id, caller.target) %></td>
+                <% if print_file %>
+                <td><a href="file://<%= File.expand_path(caller.target.source_file) %>#line=<%= caller.line %>">(file)</a></td>
+                <% end %>
               </tr>
             <% end %>
 
@@ -204,7 +210,10 @@ module RubyProf
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.self_time) %></td>
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.children_time) %></td>
               <td><%= sprintf("%#{CALL_WIDTH}i", method.called) %></td>
-              <td><a name="<%= link_href(thread_id, method) %>"><%= method_name(method) %></a></td>
+              <td><a name="<%= method_href(thread_id, method) %>"><%= method.name %></a></td>
+              <% if print_file %>
+              <td><a href="file://<%= File.expand_path(method.source_file) %>#line=<%= method.line %>">(file)</a></td>
+              <% end %>
             </tr>
 
             <!-- Children -->
@@ -218,10 +227,13 @@ module RubyProf
                 <% called = "#{callee.called}/#{callee.target.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
                 <td><%= create_link(thread_id, callee.target) %></td>
+                <% if print_file %>
+                <td><a href="file://<%= File.expand_path(callee.target.source_file) %>#line=<%= callee.line %>">(file)</a></td>
+                <% end %>
               </tr>
             <% end %>
             <!-- Create divider row -->
-            <tr class="break"><td colspan="7"></td></tr>
+            <tr class="break"><td colspan="<%= 7 + (print_file ? 1 : 0) %>"></td></tr>
         <% end %>
       </table>
     <% end %>
