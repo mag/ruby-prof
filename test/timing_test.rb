@@ -25,7 +25,6 @@ RubyProf::measure_mode = RubyProf::WALL_TIME
 class TimingTest < Test::Unit::TestCase
 
   def test_basic
-    return
     result = RubyProf.profile do
       method1
     end
@@ -68,7 +67,6 @@ class TimingTest < Test::Unit::TestCase
   end
   
   def test_timings
-
     result = RubyProf.profile do
       method3
     end
@@ -76,12 +74,6 @@ class TimingTest < Test::Unit::TestCase
     printer = RubyProf::FlatPrinter.new(result)
     printer.print
       
-    printer = RubyProf::CallTreePrinter.new(result)
-    File.open('c:/temp/callgraph.out', 'w') do |file|
-      printer.print(file)
-    end
-    
-    
     assert_equal(1, result.threads.length)
     methods = result.threads.values.first
     assert_equal(5, methods.length)

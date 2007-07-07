@@ -21,7 +21,7 @@ module RubyProf
         when RubyProf::ALLOCATIONS
           @output << 'allocations'
       end
-      @output << "\n\n"        
+      @output << "\n\n"  
 
       print_threads
     end
@@ -32,32 +32,38 @@ module RubyProf
       end
     end
 
-    def print_methods(thread_id ,methods)
-      last_sourcefile = nil
-      methods.reverse_each do |method| 
-        # iterate through each method and print out the timings.
-        sf = method.source_file
-        if last_sourcefile == nil || (last_sourcefile != sf && sf != "toplevel")
-          last_sourcefile = sf
-          @output << "fl=#{last_sourcefile}\n"
-        end
+	def convert(value)
+	  (value * 1000).round
+    end
 
-        @output << "fn=#{method.name}\n"
-        # line number and the converted timings
-        @output << "#{method.line} #{method.self_time}\n"
-        # output children timings
+    def file(method)
+      File.expand_path(method.source_file)
+    end
+
+    def name(method)
+      "#{method.klass_name}::#{method.method_name}"
+    end
+
+    def print_methods(thread_id, methods)
+
+      methods.reverse_each do |method| 
+		# Print out the file and method name
+        @output << "fl=#{file(method)}\n"
+        @output << "fn=#{name(method)}\n"
+
+        # Now print out the function line number and its self time
+        @output << "#{method.line} #{convert(method.self_time)}\n"
+
+        # Now print out all the children methods
         method.children.each do |callee|
-          # only output the foreign file name if it is different than
-          # the current source file.
-          if callee.target.source_file != last_sourcefile
-            @output << "cfl=#{callee.target.source_file}\n"
-          end
-          
-          @output << "cfn=#{callee.target.name}\n"
-          @output << "calls=#{callee.target.called} #{callee.line}\n"
-          # timings: note total time in child
-          @output << "#{callee.line} #{callee.target.total_time}\n"
+		  @output << "cfl=#{file(callee.target)}\n"
+          @output << "cfn=#{name(callee.target)}\n"
+          @output << "calls=#{callee.called} #{callee.line}\n"
+
+          # Print out total times here!
+          @output << "#{callee.line} #{convert(callee.total_time)}\n"
         end
+		@output << "\n"
       end
     end #end print_methods
   end # end class
