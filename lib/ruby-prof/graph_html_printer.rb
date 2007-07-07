@@ -87,15 +87,15 @@ module RubyProf
     def create_link(thread_id, method)
       if self.total_percent(thread_id, method) < min_percent
         # Just return name
-        method.name
+        method.full_name
       else
         href = '#' + method_href(thread_id, method)
-        "<a href=\"#{href}\">#{method.name}</a>" 
+        "<a href=\"#{href}\">#{method.full_name}</a>" 
       end
     end
     
     def method_href(thread_id, method)
-      method.name.gsub(/[><#\.\?=:]/,"_") + "_" + thread_id.to_s
+      method.full_name.gsub(/[><#\.\?=:]/,"_") + "_" + thread_id.to_s
     end
     
     def template
@@ -210,7 +210,7 @@ module RubyProf
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.self_time) %></td>
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.children_time) %></td>
               <td><%= sprintf("%#{CALL_WIDTH}i", method.called) %></td>
-              <td><a name="<%= method_href(thread_id, method) %>"><%= method.name %></a></td>
+              <td><a name="<%= method_href(thread_id, method) %>"><%= method.full_name %></a></td>
               <% if print_file %>
               <td><a href="file://<%= File.expand_path(method.source_file) %>#line=<%= method.line %>">(file)</a></td>
               <% end %>

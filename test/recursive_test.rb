@@ -51,7 +51,7 @@ class RecursiveTest < Test::Unit::TestCase
     assert_equal(6, methods.length)   
 
     method = methods[0]
-    assert_equal('RecursiveTest#test_recursive', method.name)
+    assert_equal('RecursiveTest#test_recursive', method.full_name)
     assert_in_delta(2, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
     assert_in_delta(0, method.wait_time, 0.02)
@@ -61,7 +61,7 @@ class RecursiveTest < Test::Unit::TestCase
     assert_equal(1, method.children.length)
 
     method = methods[1]
-    assert_equal('Object#simple', method.name)
+    assert_equal('Object#simple', method.full_name)
     assert_in_delta(2, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
     assert_in_delta(0, method.wait_time, 0.02)
@@ -71,7 +71,7 @@ class RecursiveTest < Test::Unit::TestCase
     assert_equal(4, method.children.length)
     
     method = methods[2]
-    assert_equal('Kernel#sleep', method.name)
+    assert_equal('Kernel#sleep', method.full_name)
     assert_in_delta(2, method.total_time, 0.02)
     assert_in_delta(2, method.self_time, 0.02)
     assert_in_delta(0, method.wait_time, 0.02)
@@ -81,7 +81,7 @@ class RecursiveTest < Test::Unit::TestCase
     assert_equal(0, method.children.length)
     
     method = methods[3]
-    assert_equal('Object#simple-1', method.name)
+    assert_equal('Object#simple-1', method.full_name)
     assert_in_delta(1, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
     assert_in_delta(0, method.wait_time, 0.02)
@@ -91,7 +91,7 @@ class RecursiveTest < Test::Unit::TestCase
     assert_equal(3, method.children.length)
     
     method = methods[4]
-    assert_equal('Fixnum#==', method.name)
+    assert_equal('Fixnum#==', method.full_name)
     assert_in_delta(0, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
     assert_in_delta(0, method.wait_time, 0.02)
@@ -101,7 +101,7 @@ class RecursiveTest < Test::Unit::TestCase
     assert_equal(0, method.children.length)
     
     method = methods[5]
-    assert_equal('Fixnum#-', method.name)
+    assert_equal('Fixnum#-', method.full_name)
     assert_in_delta(0, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
     assert_in_delta(0, method.wait_time, 0.02)

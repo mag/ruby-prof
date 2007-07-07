@@ -9,6 +9,6 @@ end
 
 method = result.threads.values.first.sort.last
 
-if method.name != '#[No method]'
-  raise(RuntimeError, "Wrong method name.  Expected: #[No method].  Actual: #{method.name}")
+if method.full_name != '#[No method]'
+  raise(RuntimeError, "Wrong method name.  Expected: #[No method].  Actual: #{method.full_name}")
 end

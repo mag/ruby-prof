@@ -101,13 +101,13 @@ class BasicTest < Test::Unit::TestCase
     # Check the names
     methods = methods.sort.reverse
     
-    assert_equal('BasicTest#test_class_and_instance_methods', methods[0].name)
-    assert_equal('Kernel#sleep', methods[1].name)
-    assert_equal('C1#hello', methods[2].name)
-    assert_equal('<Class::C1>#hello', methods[3].name)
-    assert_equal('<Class::Object>#allocate', methods[4].name)
-    assert_equal('Class#new', methods[5].name)
-    assert_equal('Object#initialize', methods[6].name)
+    assert_equal('BasicTest#test_class_and_instance_methods', methods[0].full_name)
+    assert_equal('Kernel#sleep', methods[1].full_name)
+    assert_equal('C1#hello', methods[2].full_name)
+    assert_equal('<Class::C1>#hello', methods[3].full_name)
+    assert_equal('<Class::Object>#allocate', methods[4].full_name)
+    assert_equal('Class#new', methods[5].full_name)
+    assert_equal('Object#initialize', methods[6].full_name)
   end
   
   def test_module_methods
@@ -131,12 +131,12 @@ class BasicTest < Test::Unit::TestCase
     # Check the names
     methods = methods.sort.reverse
     
-    assert_equal('BasicTest#test_module_methods', methods[0].name)
-    assert_equal('Kernel#sleep', methods[1].name)
-    assert_equal('M1#hello', methods[2].name)
-    assert_equal('<Class::Object>#allocate', methods[3].name)
-    assert_equal('Class#new', methods[4].name)
-    assert_equal('Object#initialize', methods[5].name)
+    assert_equal('BasicTest#test_module_methods', methods[0].full_name)
+    assert_equal('Kernel#sleep', methods[1].full_name)
+    assert_equal('M1#hello', methods[2].full_name)
+    assert_equal('<Class::Object>#allocate', methods[3].full_name)
+    assert_equal('Class#new', methods[4].full_name)
+    assert_equal('Object#initialize', methods[5].full_name)
   end
   
   def test_singleton
@@ -160,8 +160,8 @@ class BasicTest < Test::Unit::TestCase
     # Check singleton method
     methods = methods.sort.reverse
     
-    assert_equal('BasicTest#test_singleton', methods[0].name)
-    assert_equal('<Object::C3>#hello', methods[1].name)
+    assert_equal('BasicTest#test_singleton', methods[0].full_name)
+    assert_equal('<Object::C3>#hello', methods[1].full_name)
   end
   
   def test_traceback

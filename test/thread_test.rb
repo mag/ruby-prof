@@ -30,7 +30,7 @@ class ThreadTest < Test::Unit::TestCase
     assert_equal(2, methods.length)
     
     method = methods[0]
-    assert_equal('ThreadTest#test_thread_timings', method.name)
+    assert_equal('ThreadTest#test_thread_timings', method.full_name)
     assert_in_delta(2.5, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
     assert_in_delta(0.5, method.wait_time, 0.02)
@@ -40,7 +40,7 @@ class ThreadTest < Test::Unit::TestCase
     assert_equal(1, method.children.length)
 
     method = methods[1]
-    assert_equal('Kernel#sleep', method.name)
+    assert_equal('Kernel#sleep', method.full_name)
     assert_in_delta(2.5, method.total_time, 0.02)
     assert_in_delta(2.0, method.self_time, 0.02)
     assert_in_delta(0.5, method.wait_time, 0.02)
@@ -55,7 +55,7 @@ class ThreadTest < Test::Unit::TestCase
     methods = methods.sort.reverse
     
     method = methods[0]
-    assert_equal('ThreadTest#test_thread_timings', method.name)
+    assert_equal('ThreadTest#test_thread_timings', method.full_name)
     assert_in_delta(4.5, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
     assert_in_delta(2.0, method.wait_time, 0.02)
@@ -65,7 +65,7 @@ class ThreadTest < Test::Unit::TestCase
     assert_equal(3, method.children.length)
 
     method = methods[1]
-    assert_equal('Thread#join', method.name)
+    assert_equal('Thread#join', method.full_name)
     assert_in_delta(2.5, method.total_time, 0.02)
     assert_in_delta(0.5, method.self_time, 0.02)
     assert_in_delta(2.0, method.wait_time, 0.02)
@@ -75,7 +75,7 @@ class ThreadTest < Test::Unit::TestCase
     assert_equal(0, method.children.length)
     
     method = methods[2]
-    assert_equal('Kernel#sleep', method.name)
+    assert_equal('Kernel#sleep', method.full_name)
     assert_in_delta(2, method.total_time, 0.02)
     assert_in_delta(2.0, method.self_time, 0.02)
     assert_in_delta(0, method.wait_time, 0.02)
@@ -86,7 +86,7 @@ class ThreadTest < Test::Unit::TestCase
     
     
     method = methods[3]
-    assert_equal('Thread#initialize', method.name)
+    assert_equal('Thread#initialize', method.full_name)
     assert_in_delta(0, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
     assert_in_delta(0, method.wait_time, 0.02)
@@ -96,7 +96,7 @@ class ThreadTest < Test::Unit::TestCase
     assert_equal(0, method.children.length)
     
     method = methods[4]
-    assert_equal('<Class::Thread>#new', method.name)
+    assert_equal('<Class::Thread>#new', method.full_name)
     assert_in_delta(0, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
     assert_in_delta(0, method.wait_time, 0.02)

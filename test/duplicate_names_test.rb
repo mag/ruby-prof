@@ -25,7 +25,7 @@ class DuplicateNames < Test::Unit::TestCase
     methods = result.threads.values.first
     
     methods = methods.select do |method|
-      method.name == 'DuplicateNames::Foo::Bar#foo'
+      method.full_name == 'DuplicateNames::Foo::Bar#foo'
     end
     
     assert_equal(3, methods.length)

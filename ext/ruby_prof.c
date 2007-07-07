@@ -176,7 +176,7 @@ figure_singleton_name(VALUE klass)
     {
         result = rb_str_new2("<Class::");
         rb_str_append(result, rb_inspect(attached));
-        rb_str_cat2(result, ">#");
+        rb_str_cat2(result, ">");
     }
 
     /* Is this for singleton methods on a module? */
@@ -184,7 +184,7 @@ figure_singleton_name(VALUE klass)
     {
         result = rb_str_new2("<Module::");
         rb_str_append(result, rb_inspect(attached));
-        rb_str_cat2(result, ">#");
+        rb_str_cat2(result, ">");
     }
 
     /* Is this for singleton methods on an object? */
@@ -196,7 +196,7 @@ figure_singleton_name(VALUE klass)
         VALUE super = rb_class_real(RCLASS(klass)->super);
         result = rb_str_new2("<Object::");
         rb_str_append(result, rb_inspect(super));
-        rb_str_cat2(result, ">#");
+        rb_str_cat2(result, ">");
     }
     
     /* Ok, this could be other things like an array made put onto
@@ -211,34 +211,17 @@ figure_singleton_name(VALUE klass)
 }
 
 static VALUE
-method_name(VALUE klass, ID mid, int depth)
+klass_name(VALUE klass)
 {
-    VALUE result;
-    VALUE method_name;
-
-    if (mid == ID_ALLOCATOR) 
-        method_name = rb_str_new2("allocate");
-    else if (mid == 0)
-        method_name = rb_str_new2("[No method]");
-    else
-        method_name = rb_String(ID2SYM(mid));
+    VALUE result = Qnil;
     
-    if (depth > 0)
-    {
-      char buffer[65];
-      sprintf(buffer, "%i", depth);
-      rb_str_cat2(method_name, "-");
-      rb_str_cat2(method_name, buffer);
-    }
-
     if (klass == 0 || klass == Qnil)
     {
-        result = rb_str_new2("#");
+        result = rb_str_new2("Global");
     }
     else if (BUILTIN_TYPE(klass) == T_MODULE)
     {
         result = rb_inspect(klass);
-        rb_str_cat2(result, "#");
     }
     else if (BUILTIN_TYPE(klass) == T_CLASS && FL_TEST(klass, FL_SINGLETON))
     {
@@ -247,22 +230,49 @@ method_name(VALUE klass, ID mid, int depth)
     else if (BUILTIN_TYPE(klass) == T_CLASS)
     {
         result = rb_inspect(klass);
-        rb_str_cat2(result, "#");
     }
     else
     {
         /* Should never happen. */
-        result = rb_str_new2("Unknown#");
-        rb_str_append(result, rb_inspect(klass));
-        rb_str_cat2(result, ">#");
-        rb_raise(rb_eRuntimeError, "Unsupported type in method name: %i\n", result);
+        result = rb_str_new2("Unknown");
     }
-
-    /* Last add in the method name */
-    rb_str_append(result, method_name);
 
     return result;
 }
+
+static VALUE
+method_name(ID mid, int depth)
+{
+    VALUE result;
+
+    if (mid == ID_ALLOCATOR) 
+        result = rb_str_new2("allocate");
+    else if (mid == 0)
+        result = rb_str_new2("[No method]");
+    else
+        result = rb_String(ID2SYM(mid));
+    
+    if (depth > 0)
+    {
+      char buffer[65];
+      sprintf(buffer, "%i", depth);
+      rb_str_cat2(result, "-");
+      rb_str_cat2(result, buffer);
+    }
+
+    return result;
+}
+
+static VALUE
+full_name(VALUE klass, ID mid, int depth)
+{
+  VALUE result = klass_name(klass);
+  rb_str_cat2(result, "#");
+  rb_str_append(result, method_name(mid, depth));
+  
+  return result;
+}
+
 
 static inline st_data_t
 method_key(VALUE klass, ID mid, int depth)
@@ -709,7 +719,7 @@ static VALUE prof_method_source_file(VALUE self)
 
 Returns the Ruby klass that owns this method. */
 static VALUE
-prof_method_class(VALUE self)
+prof_method_klass(VALUE self)
 {
     prof_method_t *result = get_prof_method(self);
 
@@ -729,6 +739,19 @@ prof_method_id(VALUE self)
 }
 
 /* call-seq:
+   klass_name -> string
+
+Returns the name of this method's class.  Singleton classes
+will have the form <Object::Object>. */
+
+static VALUE
+prof_klass_name(VALUE self)
+{
+    prof_method_t *method = get_prof_method(self);
+    return klass_name(method->klass);
+}
+
+/* call-seq:
    method_name -> string
 
 Returns the name of this method in the format Object#method.  Singletons
@@ -738,7 +761,19 @@ static VALUE
 prof_method_name(VALUE self)
 {
     prof_method_t *method = get_prof_method(self);
-    return method_name(method->klass, method->mid, method->depth);
+    return method_name(method->mid, method->depth);
+}
+
+/* call-seq:
+   full_name -> string
+
+Returns the full name of this method in the format Object#method.*/
+
+static VALUE
+prof_full_name(VALUE self)
+{
+    prof_method_t *method = get_prof_method(self);
+    return full_name(method->klass, method->mid, method->depth);
 }
 
 static int
@@ -1450,9 +1485,13 @@ Init_ruby_prof()
     cMethodInfo = rb_define_class_under(mProf, "MethodInfo", rb_cObject);
     rb_include_module(cMethodInfo, rb_mComparable);
     rb_undef_method(CLASS_OF(cMethodInfo), "new");
-    rb_define_method(cMethodInfo, "name", prof_method_name, 0);
-    rb_define_method(cMethodInfo, "method_class", prof_method_class, 0);
+    
+    rb_define_method(cMethodInfo, "klass", prof_method_klass, 0);
+    rb_define_method(cMethodInfo, "klass_name", prof_klass_name, 0);
+    rb_define_method(cMethodInfo, "method_name", prof_method_name, 0);
+    rb_define_method(cMethodInfo, "full_name", prof_full_name, 0);
     rb_define_method(cMethodInfo, "method_id", prof_method_id, 0);
+    
     rb_define_method(cMethodInfo, "parents", prof_method_parents, 0);
     rb_define_method(cMethodInfo, "children", prof_method_children, 0);
     rb_define_method(cMethodInfo, "<=>", prof_method_cmp, 1);

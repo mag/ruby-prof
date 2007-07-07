@@ -31,7 +31,7 @@ module RubyProf
     end
     
     def method_name(method)
-      name = method.name
+      name = method.full_name
       if print_file
         name += " (#{method.source_file}:#{method.line}}"
       end
