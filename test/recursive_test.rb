@@ -120,7 +120,6 @@ class RecursiveTest < Test::Unit::TestCase
   end
   
   def test_cycle
-    return
     result = RubyProf.profile do
       cycle(2)
     end
@@ -134,7 +133,6 @@ class RecursiveTest < Test::Unit::TestCase
   end
   
   def test_factorial
-    return
     result = RubyProf.profile do
       # Around 700 on windows causes "stack level too deep" error
       factorial(650)
