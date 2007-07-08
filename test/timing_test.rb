@@ -4,6 +4,9 @@ require 'test/unit'
 require 'ruby-prof'
 require 'test_helper'
 
+# Need to use wall time for this test due to the sleep calls
+RubyProf::measure_mode = RubyProf::WALL_TIME
+
 def method1
   sleep(1)
 end
@@ -19,8 +22,6 @@ def method3
   method1
 end
 
-# Need to use wall time for this test due to the sleep calls
-RubyProf::measure_mode = RubyProf::WALL_TIME
 
 class TimingTest < Test::Unit::TestCase
 

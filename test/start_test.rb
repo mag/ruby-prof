@@ -3,6 +3,7 @@
 require 'test/unit'
 require 'ruby-prof'
 
+
 def start
   RubyProf.start
 end

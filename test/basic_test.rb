@@ -4,6 +4,9 @@ require 'test/unit'
 require 'ruby-prof'
 require 'test_helper'
 
+# Need to use wall time for this test due to the sleep calls
+RubyProf::measure_mode = RubyProf::WALL_TIME
+
 class C1
   def C1.hello
     sleep(0.1)

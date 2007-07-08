@@ -5,6 +5,9 @@ require 'ruby-prof'
 require 'timeout'
 require 'test_helper'
 
+# Need to use wall time for this test due to the sleep calls
+RubyProf::measure_mode = RubyProf::WALL_TIME
+
 # --  Tests ----
 class ThreadTest < Test::Unit::TestCase
   def test_thread_timings

@@ -4,6 +4,9 @@ require 'test/unit'
 require 'ruby-prof'
 require 'test_helper'
 
+# Need to use wall time for this test due to the sleep calls
+RubyProf::measure_mode = RubyProf::WALL_TIME
+
 
 def simple(n)
   sleep(1)
@@ -37,6 +40,11 @@ class RecursiveTest < Test::Unit::TestCase
   def test_recursive
     result = RubyProf.profile do
       simple(2)
+    end
+    
+    printer = RubyProf::GraphHtmlPrinter.new(result)
+    File.open('c:/temp/request.html', 'w') do |file|
+      printer.print(file)
     end
     
     result.threads.values.each do |methods|
@@ -112,6 +120,7 @@ class RecursiveTest < Test::Unit::TestCase
   end
   
   def test_cycle
+    return
     result = RubyProf.profile do
       cycle(2)
     end
@@ -125,6 +134,7 @@ class RecursiveTest < Test::Unit::TestCase
   end
   
   def test_factorial
+    return
     result = RubyProf.profile do
       # Around 700 on windows causes "stack level too deep" error
       factorial(650)
