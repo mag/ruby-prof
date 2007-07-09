@@ -33,13 +33,7 @@ module Test
     
           # Write the results
           File.open(file_path, 'w') do |file|
-            RubyProf.start
             printer.print(file, min_percent)
-            r2 = RubyProf.stop
-            File.open('c:/temp/output.html', 'w') do |file2|
-              p2 = self.printer.new(r2)
-              p2.print(file2)
-            end
           end
         end
         
