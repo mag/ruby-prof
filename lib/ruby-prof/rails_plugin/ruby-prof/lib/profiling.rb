@@ -11,7 +11,8 @@ module ActionController #:nodoc:
     end
 
     def perform_action_with_profiling
-      if not logger or logger.level != Logger::DEBUG
+      if not logger or
+         not logger.level == Logger::DEBUG
         perform_action_without_profiling
       else
         result = RubyProf.profile do
@@ -31,6 +32,20 @@ module ActionController #:nodoc:
         printer.print(output, {:min_percent => 1,
                                :print_file => false})
         logger.info(output.string)
+        
+        ## Example for Graph html printer
+        #printer = RubyProf::GraphHtmlPrinter.new(result)
+        #File.open('c:/temp/request.html', 'w') do |file|
+          #printer.print(file, {:min_percent => 1,
+                               #:print_file => true})
+        #end   
+        
+        ## Used for KCacheGrind visualizations
+        #printer = RubyProf::CallTreePrinter.new(result)
+        #File.open('c:/temp/callgrind.out', 'w') do |file|
+          #printer.print(file, {:min_percent => 1,
+                                 #:print_file => true})
+        #end          
       end
     end
   end
