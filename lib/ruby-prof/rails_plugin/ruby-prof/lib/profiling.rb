@@ -11,7 +11,10 @@ module ActionController #:nodoc:
     end
 
     def perform_action_with_profiling
-      if not logger or
+      # Profling could be running if this
+      # is a render_component call.
+      if RubyProf.running? or
+         not logger or
          not logger.level == Logger::DEBUG
         perform_action_without_profiling
       else
