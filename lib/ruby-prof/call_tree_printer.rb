@@ -32,8 +32,8 @@ module RubyProf
       end
     end
 
-	def convert(value)
-	  (value * 1000).round
+    def convert(value)
+      (value * 1000).round
     end
 
     def file(method)
@@ -45,9 +45,8 @@ module RubyProf
     end
 
     def print_methods(thread_id, methods)
-
       methods.reverse_each do |method| 
-		# Print out the file and method name
+        # Print out the file and method name
         @output << "fl=#{file(method)}\n"
         @output << "fn=#{name(method)}\n"
 
@@ -56,14 +55,14 @@ module RubyProf
 
         # Now print out all the children methods
         method.children.each do |callee|
-		  @output << "cfl=#{file(callee.target)}\n"
+          @output << "cfl=#{file(callee.target)}\n"
           @output << "cfn=#{name(callee.target)}\n"
           @output << "calls=#{callee.called} #{callee.line}\n"
 
           # Print out total times here!
           @output << "#{callee.line} #{convert(callee.total_time)}\n"
         end
-		@output << "\n"
+      @output << "\n"
       end
     end #end print_methods
   end # end class
