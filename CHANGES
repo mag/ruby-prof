@@ -1,19 +1,26 @@
-0.5.0 (?)
+0.5.0 (2007-07-09)
 ========================
 
 Features
 --------
-* Added support for 64 bit systems (patch from Diego 'Flameeyes' Pettenò)
+* Added support for timing multi-threaded applications
+* Added support for 64 bit systems (patch from Diego 'Flameeyes' Petten)
 * Added suport for outputting data in the format used by
   KCacheGrind (patch from Carl Shimer)
 * Add filename and line numbers to call tree information (patch from Carl Shimer)
 * Added Visual Studio 2005 project file.
+* Added replace-progname switch, als rcov.
+* Added better support for recursive methods
+* Added better support for profiling Rails applications
 
 Fixes
 -------
-* Fixes a bug when the type of an attached object (singleton) is inherited
+* Fixes bug when the type of an attached object (singleton) is inherited
   from T_OBJECT as opposed to being a T_OBJECT (identified by Francis Cianfrocca)
-
+* ruby-prof now works in IRB.
+* Fix sort order in reports.
+* Fixed rdoc compile error.
+* Fix tabs in erb template for graph html report on windows.
 
 0.4.1 (2006-06-26)
 ========================

@@ -61,7 +61,7 @@ particular segments of code.
   # Print a flat profile to text
   printer = RubyProf::TextPrinter.new(result)
   printer.print(STDOUT, 0)
-	
+  
 Alternatively, you can use a block to tell ruby-prof what
 to profile:
 
@@ -83,7 +83,7 @@ to profile:
 
 The third way of using ruby-prof is by requiring unprof.rb:
 
-	require 'unprof'
+  require 'unprof'
 
 This will start profiling immediately and will output the results
 using a flat profile report.
@@ -195,11 +195,11 @@ You may also specify the measure_mode by using the RUBY_PROF_MEASURE_MODE
 environment variable:
 
 * export RUBY_PROF_MEASURE_MODE=process
-*	export RUBY_PROF_MEASURE_MODE=wall
+* export RUBY_PROF_MEASURE_MODE=wall
 * export RUBY_PROF_MEASURE_MODE=cpu
 * export RUBY_PROF_MEASURE_MODE=allocations
   
-Note that these values have changed since ruby-prof-0.3.0.	
+Note that these values have changed since ruby-prof-0.3.0.  
 
 On Linux, process time is measured using the clock method provided 
 by the C runtime library. Note that the clock method does not
@@ -214,6 +214,12 @@ provided by the C runtime library.  Note though, these values are
 wall times on Windows and not process times like on Linux.
 Wall time is measured using the GetLocalTime API.
 
+If you use wall time, the results will be affected by other
+processes running on your computer, network delays, disk access,
+etc.  As result, for the best results, try to make sure your
+computer is only performing your profiling run and is 
+otherwise quiescent.
+
 On both platforms, cpu time is measured using the RDTSC assembly
 function provided by the Pentium and PowerPC platforms. CPU time
 is dependent on the cpu's frequency.  On Linux, ruby-prof attempts 
@@ -221,31 +227,62 @@ to read this value from "/proc/cpuinfo."  On Windows, you must
 specify the clock frequency.  This can be done using the
 RUBY_PROF_CPU_FREQUENCY environment variable:
 
-	export RUBY_PROF_CPU_FREQUENCY=<value>
-	
+  export RUBY_PROF_CPU_FREQUENCY=<value>
+  
 You can also directly set the cpu frequency by calling:
 
-	RubyProf.cpu_frequency = <value> 
+  RubyProf.cpu_frequency = <value> 
 
 
 == Recursive Calls
 
 Recursive calls occur when method A calls method A and cycles
 occur when method A calls method B calls method C calls method A.
-ruby-prof can detect recursive calls any cycle calls, but does not
-currently report these in its output.
+ruby-prof detects both direct recursive calls and cycles.  Both
+are indicated in reports by a dash and number following a method
+name.  For example, here is a flat profile from the test method
+RecursiveTest#test_recursive:
+
+
+%self     total     self     wait    child    calls  name
+100.00      2.00     2.00     0.00     0.00        2  Kernel#sleep
+  0.00      2.00     0.00     0.00     2.00        0  RecursiveTest#test_cycle
+  0.00      0.00     0.00     0.00     0.00        2  Fixnum#==
+  0.00      0.00     0.00     0.00     0.00        2  Fixnum#-
+  0.00      1.00     0.00     0.00     1.00        1  Object#sub_cycle-1
+  0.00      2.00     0.00     0.00     2.00        1  Object#sub_cycle
+  0.00      2.00     0.00     0.00     2.00        1  Object#cycle
+  0.00      1.00     0.00     0.00     1.00        1  Object#cycle-1
+
+Notice the presence of Object#cycle and Object#cycle-1.  The -1 means
+the method was either recursively called (directly or indirectly).
 
 However, the self time values for recursive calls should always 
 be accurate.  It is also believed that the total times are
 accurate, but these should be carefully analyzed to verify their veracity.
+
+== Multi-threaded Applications
+
+Unfortunately, Ruby does not provide an internal api
+for detecting thread context switches.  As a result, the
+timings ruby-prof reports for each thread may be slightly
+inaccurate.  In particular, this will happen for newly 
+spanned threads that immediately go to sleep.  For instance,
+if you use Ruby's timeout library to wait for 2 seconds,
+the 2 seconds will be assigned to the foreground thread
+and not the newly created background thread.  These errors
+can largely be avoided if the background thread performs an
+operation before going to sleeep. 
+
 
 == Performance
 
 Significant effort has been put into reducing ruby-prof's overhead
 as much as possible.  Our tests show that the overhead associated
 with profiling code varies considerably with the code being
-profiled.  On the low end overhead is around 10% while on the
-high end its can around 80%.
+profiled.  Most programs will run approximately twice as slow
+while highly recursive programs (like the fibonacci series test)
+will run three times slower.
 
 == Windows Binary
 
