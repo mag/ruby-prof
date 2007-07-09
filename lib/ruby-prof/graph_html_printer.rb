@@ -173,6 +173,7 @@ module RubyProf
           <th><%= sprintf("%#{PERCENTAGE_WIDTH}s", "%Self") %></th>
           <th><%= sprintf("%#{TIME_WIDTH}s", "Total") %></th>
           <th><%= sprintf("%#{TIME_WIDTH}s", "Self") %></th>
+          <th><%= sprintf("%#{TIME_WIDTH}s", "Wait") %></th>
           <th><%= sprintf("%#{TIME_WIDTH+2}s", "Child") %></th>
           <th><%= sprintf("%#{CALL_WIDTH}s", "Calls") %></th>
           <th>Name</th>
@@ -191,6 +192,7 @@ module RubyProf
                 <td>&nbsp;</td>
                 <td><%= sprintf("%#{TIME_WIDTH}.2f", caller.total_time) %></td>
                 <td><%= sprintf("%#{TIME_WIDTH}.2f", caller.self_time) %></td>
+                <td><%= sprintf("%#{TIME_WIDTH}.2f", caller.wait_time) %></td>
                 <td><%= sprintf("%#{TIME_WIDTH}.2f", caller.children_time) %></td>
                 <% called = "#{caller.called}/#{method.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
@@ -204,6 +206,7 @@ module RubyProf
               <td><%= sprintf("%#{PERCENTAGE_WIDTH-1}.2f\%", self_percentage) %></td>
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.total_time) %></td>
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.self_time) %></td>
+              <td><%= sprintf("%#{TIME_WIDTH}.2f", method.wait_time) %></td>
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.children_time) %></td>
               <td><%= sprintf("%#{CALL_WIDTH}i", method.called) %></td>
               <td><a name="<%= method_href(thread_id, method) %>"><%= method.full_name %></a></td>
@@ -217,6 +220,7 @@ module RubyProf
                 <td>&nbsp;</td>
                 <td><%= sprintf("%#{TIME_WIDTH}.2f", callee.total_time) %></td>
                 <td><%= sprintf("%#{TIME_WIDTH}.2f", callee.self_time) %></td>
+                <td><%= sprintf("%#{TIME_WIDTH}.2f", callee.wait_time) %></td>
                 <td><%= sprintf("%#{TIME_WIDTH}.2f", callee.children_time) %></td>
                 <% called = "#{callee.called}/#{callee.target.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
