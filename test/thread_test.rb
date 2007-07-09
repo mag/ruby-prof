@@ -121,7 +121,13 @@ class ThreadTest < Test::Unit::TestCase
       end
     end
     
-    result.threads.values.each do |methods|
+    printer = RubyProf::GraphHtmlPrinter.new(result)
+    File.open('c:/temp/test.html', 'w') do |file|
+      printer.print(file)
+    end
+    
+    result.threads.each do |thread_id, methods|
+      STDOUT << "thread: " << thread_id << "\n"
       methods.each do |method|
         check_parent_times(method)
         check_parent_calls(method)

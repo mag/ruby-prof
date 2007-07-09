@@ -138,8 +138,8 @@ class BasicTest < Test::Unit::TestCase
     assert_equal('M1#hello', methods[1].full_name)
     assert_equal('Kernel#sleep', methods[2].full_name)
     assert_equal('Class#new', methods[3].full_name)
-    assert_equal('Object#initialize', methods[4].full_name)
-    assert_equal('<Class::Object>#allocate', methods[5].full_name)
+    assert_equal('<Class::Object>#allocate', methods[4].full_name)
+    assert_equal('Object#initialize', methods[5].full_name)
   end
   
   def test_singleton
