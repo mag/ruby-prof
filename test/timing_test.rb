@@ -47,7 +47,7 @@ class TimingTest < Test::Unit::TestCase
     assert_equal(0, method.parents.length)
     assert_equal(1, method.children.length)
     
-    method = methods[2]
+    method = methods[1]
     assert_equal('Object#method1', method.full_name)
     assert_in_delta(1, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
@@ -56,7 +56,7 @@ class TimingTest < Test::Unit::TestCase
     assert_equal(1, method.parents.length)
     assert_equal(1, method.children.length)
     
-    method = methods[1]
+    method = methods[2]
     assert_equal('Kernel#sleep', method.full_name)
     assert_in_delta(1, method.total_time, 0.02)
     assert_in_delta(1, method.self_time, 0.02)

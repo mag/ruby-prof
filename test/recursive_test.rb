@@ -7,7 +7,6 @@ require 'test_helper'
 # Need to use wall time for this test due to the sleep calls
 RubyProf::measure_mode = RubyProf::WALL_TIME
 
-
 def simple(n)
   sleep(1)
   n -= 1
@@ -42,11 +41,6 @@ class RecursiveTest < Test::Unit::TestCase
       simple(2)
     end
     
-    printer = RubyProf::GraphHtmlPrinter.new(result)
-    File.open('c:/temp/request.html', 'w') do |file|
-      printer.print(file)
-    end
-    
     result.threads.values.each do |methods|
       methods.each do |method|
         check_parent_times(method)
@@ -69,16 +63,6 @@ class RecursiveTest < Test::Unit::TestCase
     assert_equal(1, method.children.length)
 
     method = methods[1]
-    assert_equal('Object#simple', method.full_name)
-    assert_in_delta(2, method.total_time, 0.02)
-    assert_in_delta(0, method.self_time, 0.02)
-    assert_in_delta(0, method.wait_time, 0.02)
-    assert_in_delta(2, method.children_time, 0.02)
-    assert_equal(1, method.called)
-    assert_equal(1, method.parents.length)
-    assert_equal(4, method.children.length)
-    
-    method = methods[2]
     assert_equal('Kernel#sleep', method.full_name)
     assert_in_delta(2, method.total_time, 0.02)
     assert_in_delta(2, method.self_time, 0.02)
@@ -87,6 +71,16 @@ class RecursiveTest < Test::Unit::TestCase
     assert_equal(2, method.called)
     assert_equal(2, method.parents.length)
     assert_equal(0, method.children.length)
+    
+    method = methods[2]
+    assert_equal('Object#simple', method.full_name)
+    assert_in_delta(2, method.total_time, 0.02)
+    assert_in_delta(0, method.self_time, 0.02)
+    assert_in_delta(0, method.wait_time, 0.02)
+    assert_in_delta(2, method.children_time, 0.02)
+    assert_equal(1, method.called)
+    assert_equal(1, method.parents.length)
+    assert_equal(4, method.children.length)
     
     method = methods[3]
     assert_equal('Object#simple-1', method.full_name)
