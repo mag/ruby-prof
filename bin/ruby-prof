@@ -15,7 +15,10 @@
 #                                        graph_html - Prints a graph profile as html.
 #                                        call_tree - format for KCacheGrind
 #     -f, --file=path                  Output results to a file instead of standard out.
-#     -m, --measure-mode=measure_mode  Select a measurement mode:
+#     -m, --min_percent=min_percent    The minimum percent a method must take before ',
+#                                      being included in output reports.  Should be an
+#                                      integer between 1 and 100.  0 means all methods are printed.
+#         --mode=measure_mode          Select a measurement mode:
 #                                        process - Use process time (default).
 #                                        wall - Use wall time.
 #                                        cpu - Use the CPU clock counter
@@ -79,16 +82,15 @@ opts = OptionParser.new do |opts|
     options.file = file
   end
     
-  opts.on('-m measure_mode', '--measure-mode=measure_mode',
+  opts.on('--mode=measure_mode',
       [:process, :wall, :cpu, :allocations],
       'Select what ruby-prof should measure:',
       '  process - Process time (default).',
       '  wall - Wall time.',
-      '  cpu - CPU time',
-      '        (only supported on Pentium and PowerPCs).',
-      '  allocations - O3bject allocations (required patched Ruby interpreter).') do |measure_mode|
+      '  cpu - CPU time (Pentium and PowerPCs only).',
+      '  allocations - Object allocations (requires patched Ruby interpreter).') do |measure_mode|
       
-      case measure_mode
+      case mode
       when :process
         options.measure_mode = RubyProf::PROCESS_TIME     
       when :wall
@@ -100,14 +102,15 @@ opts = OptionParser.new do |opts|
       end
   end
         
-        opts.on("--replace-progname", "Replace $0 when loading the .rb files.") do
-                options.replace_prog_name = true
-        end
+  opts.on("--replace-progname", "Replace $0 when loading the .rb files.") do
+          options.replace_prog_name = true
+  end
     
   opts.on_tail("-h", "--help", "Show help message") do
       puts opts
       exit
   end
+  
   opts.on_tail("-v", "--version", "Show version") do
       puts "ruby_prof " + RubyProf::VERSION
       exit
@@ -147,11 +150,11 @@ at_exit {
   # Get output
   if options.file
     File.open(options.file, 'w') do |file|
-      printer.print(file, options.min_percent)
+      printer.print(file, {:min_percent => options.min_percent})
     end
   else
     # Print out results 
-    printer.print(STDOUT, options.min_percent)
+    printer.print(STDOUT, {:min_percent => options.min_percent})
   end
 }
 
