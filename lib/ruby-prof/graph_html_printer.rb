@@ -1,5 +1,5 @@
 require 'ruby-prof/abstract_printer'
-require "erb"
+require 'erb'
 
 module RubyProf
   # Generates graph[link:files/examples/graph_html.html] profile reports as html. 
@@ -21,6 +21,8 @@ module RubyProf
   # that are not important to the overall profiling results.
   
   class GraphHtmlPrinter < AbstractPrinter
+    include ERB::Util
+    
     PERCENTAGE_WIDTH = 8
     TIME_WIDTH = 10
     CALL_WIDTH = 20
@@ -87,15 +89,15 @@ module RubyProf
     def create_link(thread_id, method)
       if self.total_percent(thread_id, method) < min_percent
         # Just return name
-        method.full_name
+        h method.full_name
       else
         href = '#' + method_href(thread_id, method)
-        "<a href=\"#{href}\">#{method.full_name}</a>" 
+        "<a href=\"#{href}\">#{h method.full_name}</a>" 
       end
     end
     
     def method_href(thread_id, method)
-      method.full_name.gsub(/[><#\.\?=:]/,"_") + "_" + thread_id.to_s
+      h(method.full_name.gsub(/[><#\.\?=:]/,"_") + "_" + thread_id.to_s)
     end
     
     def template
@@ -209,7 +211,7 @@ module RubyProf
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.wait_time) %></td>
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.children_time) %></td>
               <td><%= sprintf("%#{CALL_WIDTH}i", method.called) %></td>
-              <td><a name="<%= method_href(thread_id, method) %>"><%= method.full_name %></a></td>
+              <td><a name="<%= method_href(thread_id, method) %>"><%= h method.full_name %></a></td>
               <td><a href="file://<%= File.expand_path(method.source_file) %>#line=<%= method.line %>"><%= method.line %></a></td>
             </tr>
 
