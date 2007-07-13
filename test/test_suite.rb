@@ -2,6 +2,7 @@
 require 'test/unit'
 require 'basic_test'
 require 'duplicate_names_test'
+require 'line_number_test'
 require 'measure_mode_test'
 require 'module_test'
 require 'no_method_class_test'

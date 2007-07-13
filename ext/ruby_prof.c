@@ -572,7 +572,8 @@ the RubyProf::Result object.
 
 /* :nodoc: */
 static prof_method_t *
-prof_method_create(NODE *node, st_data_t key, VALUE klass, ID mid, int depth)
+prof_method_create(st_data_t key, VALUE klass, ID mid, int depth, 
+                   const char* source_file, int line)
 {
     prof_method_t *result = ALLOC(prof_method_t);
     
@@ -590,8 +591,8 @@ prof_method_create(NODE *node, st_data_t key, VALUE klass, ID mid, int depth)
     result->active_frame = 0;
     result->base = result;
         
-    result->source_file = (node ? node->nd_file : 0);
-    result->line =        (node ? nd_line(node) : 0);
+    result->source_file = source_file;
+    result->line = line;
     return result;
 }
 
@@ -1079,7 +1080,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     prof_frame_t *frame = NULL;
     
     
-/*    {
+   /* {
         st_data_t key = 0;
         static unsigned long last_thread_id = 0;
 
@@ -1156,7 +1157,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         int depth = 0;
         st_data_t key = 0;
         prof_method_t *method = NULL;
-        
+
         /* Is this an include for a module?  If so get the actual
            module class since we want to combine all profiling
            results for that module. */
@@ -1170,7 +1171,17 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         
         if (!method)
         {
-          method = prof_method_create(node, key, klass, mid, depth);
+          const char* source_file = (node ? node->nd_file : 0);
+          int line = (node ? nd_line(node) : 0);
+          
+          /* Line numbers are not accurate for c method calls */
+            if (event == RUBY_EVENT_C_CALL)
+            {
+              line = 0;
+              source_file = NULL;
+            }
+            
+          method = prof_method_create(key, klass, mid, depth, source_file, line);
           method_info_table_insert(thread_data->method_info_table, key, method);
         }
         
@@ -1185,7 +1196,17 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
           
           if (!method)
           {
-            method = prof_method_create(node, key, klass, mid, depth);
+            const char* source_file = (node ? node->nd_file : 0);
+            int line = (node ? nd_line(node) : 0);
+            
+            /* Line numbers are not accurate for c method calls */
+            if (event == RUBY_EVENT_C_CALL)
+            {
+              line = 0;
+              source_file = NULL;
+            }
+              
+            method = prof_method_create(key, klass, mid, depth, source_file, line);
             method->base = base_method;
             method_info_table_insert(thread_data->method_info_table, key, method);
           }

@@ -199,7 +199,10 @@ module RubyProf
                 <% called = "#{caller.called}/#{method.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
                 <td><%= create_link(thread_id, caller.target) %></td>
-                <td><a href="file://<%= File.expand_path(caller.target.source_file) %>#line=<%= caller.line %>"><%= caller.line %></a></td>
+                <td><% if caller.target.source_file %>
+                      <a href="file://<%= File.expand_path(caller.target.source_file) %>#line=<%= caller.line %>"><%= caller.line %></a>
+                    <% end %>
+                </td>
               </tr>
             <% end %>
 
@@ -212,7 +215,10 @@ module RubyProf
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.children_time) %></td>
               <td><%= sprintf("%#{CALL_WIDTH}i", method.called) %></td>
               <td><a name="<%= method_href(thread_id, method) %>"><%= h method.full_name %></a></td>
-              <td><a href="file://<%= File.expand_path(method.source_file) %>#line=<%= method.line %>"><%= method.line %></a></td>
+              <td><% if method.source_file %>
+                    <a href="file://<%= File.expand_path(method.source_file) %>#line=<%= method.line %>"><%= method.line %></a>
+                  <% end %>
+              </td>
             </tr>
 
             <!-- Children -->
@@ -227,7 +233,10 @@ module RubyProf
                 <% called = "#{callee.called}/#{callee.target.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
                 <td><%= create_link(thread_id, callee.target) %></td>
-                <td><a href="file://<%= File.expand_path(method.source_file) %>#line=<%= callee.line %>"><%= callee.line %></a></td>
+                <td><% if callee.target.source_file %>
+                      <a href="file://<%= File.expand_path(method.source_file) %>#line=<%= callee.line %>"><%= callee.line %></a>
+                    <% end %>
+                </td>
               </tr>
             <% end %>
             <!-- Create divider row -->
