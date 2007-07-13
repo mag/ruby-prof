@@ -707,7 +707,7 @@ static VALUE prof_method_source_file(VALUE self)
     const char* sf = get_prof_method(self)->source_file;
     if(!sf)
     {
-      return Qnil;
+      return rb_str_new2("ruby_runtime");
     }
     else
     {

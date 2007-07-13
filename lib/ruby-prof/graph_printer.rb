@@ -100,7 +100,7 @@ module RubyProf
         @output << sprintf("%#{TIME_WIDTH}.2f", method.children_time)
         @output << sprintf("%#{CALL_WIDTH}i", method.called)
         @output << sprintf("     %s", method_name(method))
-        if print_file and method.source_file
+        if print_file
           @output << sprintf("  %s:%s", method.source_file, method.line)
         end          
         @output << "\n"

@@ -37,7 +37,7 @@ module RubyProf
     end
 
     def file(method)
-      method.source_file ? File.expand_path(method.source_file) : 'ruby_runtime'
+      File.expand_path(method.source_file)
     end
 
     def name(method)
