@@ -233,7 +233,7 @@ module RubyProf
                 <% called = "#{callee.called}/#{callee.target.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
                 <td><%= create_link(thread_id, callee.target) %></td>
-                <td><% if callee.target.source_file %>
+                <td><% if method.source_file %>
                       <a href="file://<%= File.expand_path(method.source_file) %>#line=<%= callee.line %>"><%= callee.line %></a>
                     <% end %>
                 </td>
