@@ -135,10 +135,10 @@ class BasicTest < Test::Unit::TestCase
     methods = methods.sort.reverse
     
     assert_equal('BasicTest#test_module_methods', methods[0].full_name)
-    assert_equal('M1#hello', methods[1].full_name)
-    assert_equal('Kernel#sleep', methods[2].full_name)
-    assert_equal('Class#new', methods[3].full_name)
-    assert_equal('<Class::Object>#allocate', methods[4].full_name)
+    assert_equal('Kernel#sleep', methods[1].full_name)
+    assert_equal('M1#hello', methods[2].full_name)
+    assert_equal('<Class::Object>#allocate', methods[3].full_name)
+    assert_equal('Class#new', methods[4].full_name)
     assert_equal('Object#initialize', methods[5].full_name)
   end
   

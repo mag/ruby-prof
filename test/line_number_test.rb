@@ -5,7 +5,7 @@ require 'ruby-prof'
 require 'prime'
 require 'test_helper'
 
-class Foo
+class LineNumbers
   def method1
     a = 3
   end
@@ -20,12 +20,12 @@ class Foo
 end
 
 # --  Tests ----
-class LineNumbers < Test::Unit::TestCase
+class LineNumbersTest < Test::Unit::TestCase
   def test_function_line_no
-    foo = Foo.new
+    numbers = LineNumbers.new
     
     result = RubyProf.profile do
-      foo.method2
+      numbers.method2
     end
 
     methods = result.threads.values.first.sort.reverse
@@ -35,11 +35,11 @@ class LineNumbers < Test::Unit::TestCase
     assert_equal('LineNumbers#test_function_line_no', method.full_name)
     assert_equal(28, method.line)
     
-    method = methods[2]
+    method = methods[1]
     assert_equal('Foo#method2', method.full_name)
     assert_equal(13, method.line)
     
-    method = methods[1]
+    method = methods[2]
     assert_equal('Foo#method1', method.full_name)
     assert_equal(9, method.line)
   end
@@ -59,11 +59,11 @@ class LineNumbers < Test::Unit::TestCase
     assert_equal(51, method.line)
     
     method = methods[1]
-    assert_equal('Foo#method3', method.full_name)
-    assert_equal(17, method.line)
-    
-    method = methods[2]
     assert_equal('Kernel#sleep', method.full_name)
     assert_equal(0, method.line)
+    
+    method = methods[2]
+    assert_equal('Foo#method3', method.full_name)
+    assert_equal(17, method.line)
   end
 end

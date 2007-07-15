@@ -7,7 +7,6 @@ require 'test_helper'
 # Need to use wall time for this test due to the sleep calls
 RubyProf::measure_mode = RubyProf::WALL_TIME
 
-
 module Foo
   def Foo::hello
     sleep(0.5)
@@ -44,10 +43,10 @@ class ModuleTest < Test::Unit::TestCase
     assert_equal('ModuleTest#test_nested_modules', method.full_name)
     
     method = methods[1]
-    assert_equal('Bar#hello', method.full_name)
+    assert_equal('Kernel#sleep', method.full_name)
     
     method = methods[2]
-    assert_equal('Kernel#sleep', method.full_name)
+    assert_equal('Bar#hello', method.full_name)
     
     method = methods[3]
     assert_equal('<Module::Bar>#hello', method.full_name)
