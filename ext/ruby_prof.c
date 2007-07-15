@@ -57,7 +57,7 @@
 
 /* ================  Constants  =================*/
 #define INITIAL_STACK_SIZE 8
-#define PROF_VERSION "0.5.0"
+#define PROF_VERSION "0.5.1"
 
 
 /* ================  Measurement  =================*/
@@ -159,7 +159,9 @@ static thread_data_t* last_thread_data = NULL;
 static inline long
 get_thread_id(VALUE thread)
 {
-    return NUM2ULONG(rb_obj_id(thread));
+    //return NUM2ULONG(rb_obj_id(thread));
+    // From line 1997 in gc.c
+    return (long)thread;
 }
 
 static VALUE
@@ -918,25 +920,23 @@ threads_table_insert(st_table *table, VALUE thread, thread_data_t *thread_data)
 }
 
 static inline thread_data_t *
-threads_table_lookup(st_table *table, VALUE thread)
+threads_table_lookup(st_table *table, long thread_id)
 {
     thread_data_t* result;
     st_data_t val;
 
     /* Its too slow to key on the real thread id so just typecast thread instead. */
-    if (st_lookup(table, (st_data_t) thread, &val))
+    if (st_lookup(table, (st_data_t) thread_id, &val))
     {
       result = (thread_data_t *) val;
     }
     else
     {
         result = thread_data_create();
-
-        /* Store the real thread id here so it can be shown in the results. */
-        result->thread_id = get_thread_id(thread);
+        result->thread_id = thread_id;
 
         /* Insert the table */
-        threads_table_insert(threads_tbl, thread, result);
+        threads_table_insert(threads_tbl, thread_id, result);
     }
     return result;
 }
@@ -1077,10 +1077,11 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     VALUE thread;
     prof_measure_t now = 0;
     thread_data_t* thread_data = NULL;
+    long thread_id = 0;
     prof_frame_t *frame = NULL;
     
-    
-   /* {
+    /*
+    {
         st_data_t key = 0;
         static unsigned long last_thread_id = 0;
 
@@ -1111,29 +1112,42 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
     /* Get current measurement*/
     now = get_measurement();
     
-    /* Get the current thread and thread data. */
+    /* Get the current thread information. */
     thread = rb_thread_current();
-    thread_data = threads_table_lookup(threads_tbl, thread);
+    thread_id = get_thread_id(thread);
     
-    /* Get the frame at the top of the stack.  This may represent
-       the current method (EVENT_LINE, EVENT_RETURN)  or the
-       previous method (EVENT_CALL).*/
-    frame = stack_peek(thread_data->stack);
-    
-    /* Check for a context switch */
-    if (last_thread_data && last_thread_data != thread_data)
+    /* Was there a context switch? */
+    if (!last_thread_data || last_thread_data->thread_id != thread_id)
     {
-      /* Note how long have we been waiting. */
-      prof_measure_t wait_time = now - thread_data->last_switch;
+      prof_measure_t wait_time = 0;
+      
+      /* Get new thread information. */
+      thread_data = threads_table_lookup(threads_tbl, thread_id);
+
+      /* How long has this thread been waiting? */
+      wait_time = now - thread_data->last_switch;
+      thread_data->last_switch = 0;
+
+      /* Get the frame at the top of the stack.  This may represent
+         the current method (EVENT_LINE, EVENT_RETURN)  or the
+         previous method (EVENT_CALL).*/
+      frame = stack_peek(thread_data->stack);
+    
       if (frame)
         frame->wait_time += wait_time;
         
       /* Save on the last thread the time of the context switch
          and reset this thread's last context switch to 0.*/
-      last_thread_data->last_switch = now;
-      thread_data->last_switch = 0;
+      if (last_thread_data)
+        last_thread_data->last_switch = now;
+        
+      last_thread_data = thread_data;
     }
-    last_thread_data = thread_data;
+    else
+    {
+      thread_data = last_thread_data;
+      frame = stack_peek(thread_data->stack);
+    }
     
     switch (event) {
     case RUBY_EVENT_LINE:
