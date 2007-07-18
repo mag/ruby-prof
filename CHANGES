@@ -1,3 +1,24 @@
+0.5.1 (2007-07-18)
+========================
+
+ruby-prof 0.5.1 is a bug fix and performance release.
+
+Performance
+--------
+* Significantly reduced the number of thread lookups by
+  caching the last executed thread.
+
+Fixes
+-------
+* Properly escape method names in HTML reports
+* Fix use of -m and --min-percent command line switches
+* Default source file information to ruby_runtime#0 for c calls
+* Moved rails_plugin to top level so it is more obvious
+* Updated rails_plugin to write reports to the current
+  Rails log directory
+* Added additional tests
+
+
 0.5.0 (2007-07-09)
 ========================
 
