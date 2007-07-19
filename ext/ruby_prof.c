@@ -57,7 +57,7 @@
 
 /* ================  Constants  =================*/
 #define INITIAL_STACK_SIZE 8
-#define PROF_VERSION "0.5.1"
+#define PROF_VERSION "0.5.2"
 
 
 /* ================  Measurement  =================*/

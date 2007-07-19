@@ -5,7 +5,7 @@ require 'rake/rdoctask'
 SO_NAME = "ruby_prof.so"
 
 # ------- Default Package ----------
-RUBY_PROF_VERSION = "0.5.1"
+RUBY_PROF_VERSION = "0.5.2"
 
 FILES = FileList[
   'Rakefile',
@@ -14,6 +14,7 @@ FILES = FileList[
   'CHANGES',
   'bin/*',
   'lib/**/*',
+  'rails_plugin/**/*',
   'examples/*',
   'ext/*',
   'doc/**/*',
