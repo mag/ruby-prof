@@ -51,8 +51,13 @@
 #include <stdio.h>
 
 #include <ruby.h>
+#ifndef RUBY_VM
 #include <node.h>
 #include <st.h>
+typedef rb_event_t rb_event_flag_t;
+#define rb_sourcefile() (node ? node->nd_file : 0)
+#define rb_sourceline() (node ? nd_line(node) : 0)
+#endif
 
 
 /* ================  Constants  =================*/
@@ -195,7 +200,11 @@ figure_singleton_name(VALUE klass)
         /* Make sure to get the super class so that we don't
            mistakenly grab a T_ICLASS which would lead to
            unknown method errors. */
+#ifdef RCLASS_SUPER
+        VALUE super = rb_class_real(RCLASS_SUPER(klass));
+#else
         VALUE super = rb_class_real(RCLASS(klass)->super);
+#endif
         result = rb_str_new2("<Object::");
         rb_str_append(result, rb_inspect(super));
         rb_str_cat2(result, ">");
@@ -982,7 +991,7 @@ collect_threads(st_data_t key, st_data_t value, st_data_t result)
 /* ================  Profiling    =================*/
 /* Copied from eval.c */
 static char *
-get_event_name(rb_event_t event)
+get_event_name(rb_event_flag_t event)
 {
   switch (event) {
     case RUBY_EVENT_LINE:
@@ -1070,8 +1079,13 @@ update_result(thread_data_t* thread_data,
 }
 
 
+#ifdef RUBY_VM
 static void
-prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
+prof_event_hook(rb_event_flag_t event, VALUE data, VALUE self, ID mid, VALUE klass)
+#else
+static void
+prof_event_hook(rb_event_flag_t event, NODE *node, VALUE self, ID mid, VALUE klass)
+#endif
 {
     
     VALUE thread;
@@ -1157,8 +1171,12 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
          called from. */
       if (frame)
       {
+#ifdef RUBY_VM
+	  frame->line = rb_sourceline();
+#else
         if (node)
           frame->line = nd_line(node);
+#endif
         break;
       }
       /* If we get here there was no frame, which means this is 
@@ -1185,8 +1203,8 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         
         if (!method)
         {
-          const char* source_file = (node ? node->nd_file : 0);
-          int line = (node ? nd_line(node) : 0);
+          const char* source_file = rb_sourcefile();
+          int line = rb_sourceline();
           
           /* Line numbers are not accurate for c method calls */
             if (event == RUBY_EVENT_C_CALL)
@@ -1210,8 +1228,8 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
           
           if (!method)
           {
-            const char* source_file = (node ? node->nd_file : 0);
-            int line = (node ? nd_line(node) : 0);
+            const char* source_file = rb_sourcefile();
+            int line = rb_sourceline();
             
             /* Line numbers are not accurate for c method calls */
             if (event == RUBY_EVENT_C_CALL)
@@ -1232,7 +1250,7 @@ prof_event_hook(rb_event_t event, NODE *node, VALUE self, ID mid, VALUE klass)
         frame->start_time = now;
         frame->wait_time = 0;
         frame->child_time = 0;
-        frame->line = node ? nd_line(node) : 0;
+        frame->line = rb_sourceline();
 
         break;
     }
@@ -1441,10 +1459,17 @@ prof_start(VALUE self)
     last_thread_data = NULL;
     threads_tbl = threads_table_create();
     
+#ifdef RUBY_VM
+    rb_add_event_hook(prof_event_hook,
+          RUBY_EVENT_CALL | RUBY_EVENT_RETURN |
+          RUBY_EVENT_C_CALL | RUBY_EVENT_C_RETURN 
+          | RUBY_EVENT_LINE, Qnil);
+#else
     rb_add_event_hook(prof_event_hook,
           RUBY_EVENT_CALL | RUBY_EVENT_RETURN |
           RUBY_EVENT_C_CALL | RUBY_EVENT_C_RETURN 
           | RUBY_EVENT_LINE);
+#endif
 
     return Qnil;
 }
