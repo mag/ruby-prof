@@ -1093,7 +1093,15 @@ prof_event_hook(rb_event_flag_t event, NODE *node, VALUE self, ID mid, VALUE kla
     thread_data_t* thread_data = NULL;
     long thread_id = 0;
     prof_frame_t *frame = NULL;
-    
+#ifdef RUBY_VM
+    int rb_thread_method_id_and_klass(rb_thread_t *th, ID *idp, VALUE *klassp);
+
+    if (event != RUBY_EVENT_C_CALL &&
+	event != RUBY_EVENT_C_RETURN) {
+	VALUE thread = rb_thread_current();
+	rb_thread_method_id_and_klass(DATA_PTR(thread), &mid, &klass);
+    }
+#endif
     /*
     {
         st_data_t key = 0;

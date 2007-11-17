@@ -26,6 +26,7 @@
 #                                        allocations - Tracks object allocations
 #                                              (requires a patched Ruby interpreter).
 #         --replace-progname           Replace $0 when loading the .rb files.
+#         --specialized-instruction    Turn on specialized instruction.
 #     -h, --help                       Show help message
 #         --version                    Show version
 # 
@@ -43,6 +44,7 @@ options.printer = RubyProf::FlatPrinter
 options.min_percent = 0
 options.file = nil
 options.replace_prog_name = false
+options.specialized_instruction = false
 
 opts = OptionParser.new do |opts|
   opts.banner = "ruby_prof #{RubyProf::VERSION}\n" +
@@ -105,6 +107,12 @@ opts = OptionParser.new do |opts|
   opts.on("--replace-progname", "Replace $0 when loading the .rb files.") do
           options.replace_prog_name = true
   end
+
+  if defined?(VM)
+    opts.on("--specialized-instruction", "Turn on specified instruction.") do
+            options.specialized_instruction = true
+    end
+  end
     
   opts.on_tail("-h", "--help", "Show help message") do
       puts opts
@@ -160,6 +168,14 @@ at_exit {
 
 # Now set measure mode
 RubyProf.measure_mode = options.measure_mode
+
+# Set VM compile option
+if defined?(VM)
+  VM::InstructionSequence.compile_option = {
+    :trace_instruction => true,
+    :specialized_instruction => options.specialized_instruction
+  }
+end
 
 # Get the script we will execute
 script = ARGV.shift
