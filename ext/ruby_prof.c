@@ -1094,7 +1094,8 @@ prof_event_hook(rb_event_flag_t event, NODE *node, VALUE self, ID mid, VALUE kla
     long thread_id = 0;
     prof_frame_t *frame = NULL;
 #ifdef RUBY_VM
-    int rb_thread_method_id_and_klass(rb_thread_t *th, ID *idp, VALUE *klassp);
+    /* workaround */
+    int rb_thread_method_id_and_klass(void *, ID *idp, VALUE *klassp);
 
     if (event != RUBY_EVENT_C_CALL &&
 	event != RUBY_EVENT_C_RETURN) {
