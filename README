@@ -59,7 +59,7 @@ particular segments of code.
   result = RubyProf.stop
   
   # Print a flat profile to text
-  printer = RubyProf::TextPrinter.new(result)
+  printer = RubyProf::FlatPrinter.new(result)
   printer.print(STDOUT, 0)
   
 Alternatively, you can use a block to tell ruby-prof what
