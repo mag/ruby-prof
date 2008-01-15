@@ -1101,7 +1101,9 @@ prof_event_hook(rb_event_flag_t event, NODE *node, VALUE self, ID mid, VALUE kla
   rb_frame_method_id_and_klass(&mid, &klass);
     }
 #endif
-    /*
+    /*  This code is here for debug purposes - uncomment it out
+        when debugging to see a print out of exactly what the
+        profiler is tracing. */
     {
         st_data_t key = 0;
         static unsigned long last_thread_id = 0;
