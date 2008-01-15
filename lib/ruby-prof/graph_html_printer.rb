@@ -9,8 +9,8 @@ module RubyProf
   #     [code to profile]
   #   end
   #
-  #   printer = RubyProf::GraphHtmlPrinter.new(result, 5)
-  #   printer.print(STDOUT, 0)
+  #   printer = RubyProf::GraphHtmlPrinter.new(result)
+  #   printer.print(STDOUT, :min_percent=>0)
   #
   # The constructor takes two arguments.  The first is
   # a RubyProf::Result object generated from a profiling
@@ -47,8 +47,11 @@ module RubyProf
       @output = output
       setup_options(options)
       
+      filename = options[:filename]
+      template = filename ? File.read(filename).untaint : (options[:template] || self.template)
       _erbout = @output
       erb = ERB.new(template, nil, nil)
+      erb.filename = filename
       @output << erb.result(binding)
     end
 
@@ -182,13 +185,16 @@ module RubyProf
           <th>Line</th>
         </tr>
 
-        <% methods.sort.reverse_each do |method|
+        <% min_time = @options[:min_time] || (@options[:nonzero] ? 0.005 : nil)
+           methods.sort.reverse_each do |method|
             total_percentage = (method.total_time/total_time) * 100
             next if total_percentage < min_percent
+            next if min_time && method.total_time < min_time
             self_percentage = (method.self_time/total_time) * 100 %>
           
             <!-- Parents -->
-            <% for caller in method.parents %> 
+            <% for caller in method.parents %>
+            <%   next if min_time && caller.total_time < min_time  %>
               <tr>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
@@ -199,7 +205,7 @@ module RubyProf
                 <% called = "#{caller.called}/#{method.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
                 <td><%= create_link(thread_id, caller.target) %></td>
-                <td><a href="file://<%= File.expand_path(caller.target.source_file) %>#line=<%= caller.line %>"><%= caller.line %></a></td>
+                <td><a href="file://<%=h srcfile=File.expand_path(caller.target.source_file) %>#line=<%= linenum=caller.line %>" title="<%=h srcfile %>:<%= linenum %>"><%= caller.line %></a></td>
               </tr>
             <% end %>
 
@@ -212,11 +218,12 @@ module RubyProf
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.children_time) %></td>
               <td><%= sprintf("%#{CALL_WIDTH}i", method.called) %></td>
               <td><a name="<%= method_href(thread_id, method) %>"><%= h method.full_name %></a></td>
-              <td><a href="file://<%= File.expand_path(method.source_file) %>#line=<%= method.line %>"><%= method.line %></a></td>
+              <td><a href="file://<%=h srcfile=File.expand_path(method.source_file) %>#line=<%= linenum=method.line %>" title="<%=h srcfile %>:<%= linenum %>"><%= method.line %></a></td>
             </tr>
 
             <!-- Children -->
-            <% for callee in method.children %> 
+            <% for callee in method.children %>
+            <%   next if min_time && callee.total_time < min_time  %>
               <tr>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
@@ -227,11 +234,11 @@ module RubyProf
                 <% called = "#{callee.called}/#{callee.target.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
                 <td><%= create_link(thread_id, callee.target) %></td>
-                <td><a href="file://<%= File.expand_path(method.source_file) %>#line=<%= callee.line %>"><%= callee.line %></a></td>
+                <td><a href="file://<%=h srcfile=File.expand_path(method.source_file) %>#line=<%= linenum=callee.line %>" title="<%=h srcfile %>:<%= linenum %>"><%= callee.line %></a></td>
               </tr>
             <% end %>
             <!-- Create divider row -->
-            <tr class="break"><td colspan="8"></td></tr>
+            <tr class="break"><td colspan="9"></td></tr>
         <% end %>
       </table>
     <% end %>
