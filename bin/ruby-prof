@@ -69,6 +69,8 @@ opts = OptionParser.new do |opts|
         options.printer = RubyProf::GraphPrinter
       when :graph_html
         options.printer = RubyProf::GraphHtmlPrinter
+      when :call_tree
+        options.printer = RubyProf::CallTreePrinter
     end
   end
     
