@@ -49,8 +49,8 @@ module RubyProf
         m1.self_time <=> m2.self_time
       end.reverse
       
-      @output << "Thread ID: " << thread_id << "\n"
-      @output << "Total: " << total_time << "\n"
+      @output << "Thread ID: %d\n" % thread_id
+      @output << "Total: %0.6f\n" % total_time
       @output << "\n"
       @output << " %self     total     self     wait    child    calls  name\n"
 
@@ -63,14 +63,15 @@ module RubyProf
         #self_time_called = method.called > 0 ? method.self_time/method.called : 0
         #total_time_called = method.called > 0? method.total_time/method.called : 0
         
-        @output.printf("%6.2f  %8.2f %8.2f %8.2f %8.2f %8d  %s\n",
+        @output << "%6.2f  %8.2f %8.2f %8.2f %8.2f %8d  %s\n" % [
                       method.self_time / total_time * 100, # %self
                       method.total_time,                   # total
                       method.self_time,                    # self
                       method.wait_time,                    # wait
                       method.children_time,                # children
                       method.called,                       # calls
-                      method_name(method))                 # name
+                    method_name(method)                  # name
+                  ]
       end
     end
   end
