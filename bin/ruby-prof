@@ -94,7 +94,7 @@ opts = OptionParser.new do |opts|
       '  cpu - CPU time (Pentium and PowerPCs only).',
       '  allocations - Object allocations (requires patched Ruby interpreter).') do |measure_mode|
       
-      case mode
+      case measure_mode
       when :process
         options.measure_mode = RubyProf::PROCESS_TIME     
       when :wall
