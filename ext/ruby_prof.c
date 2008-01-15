@@ -995,23 +995,23 @@ get_event_name(rb_event_flag_t event)
 {
   switch (event) {
     case RUBY_EVENT_LINE:
-	return "line";
+  return "line";
     case RUBY_EVENT_CLASS:
-	return "class";
+  return "class";
     case RUBY_EVENT_END:
-	return "end";
+  return "end";
     case RUBY_EVENT_CALL:
-	return "call";
+  return "call";
     case RUBY_EVENT_RETURN:
-	return "return";
+  return "return";
     case RUBY_EVENT_C_CALL:
-	return "c-call";
+  return "c-call";
     case RUBY_EVENT_C_RETURN:
-	return "c-return";
+  return "c-return";
     case RUBY_EVENT_RAISE:
-	return "raise";
+  return "raise";
     default:
-	return "unknown";
+  return "unknown";
     }
 }
 
@@ -1096,9 +1096,9 @@ prof_event_hook(rb_event_flag_t event, NODE *node, VALUE self, ID mid, VALUE kla
 #ifdef RUBY_VM
 
     if (event != RUBY_EVENT_C_CALL &&
-	event != RUBY_EVENT_C_RETURN) {
-	VALUE thread = rb_thread_current();
-	rb_frame_method_id_and_klass(&mid, &klass);
+  event != RUBY_EVENT_C_RETURN) {
+  VALUE thread = rb_thread_current();
+  rb_frame_method_id_and_klass(&mid, &klass);
     }
 #endif
     /*
@@ -1179,7 +1179,7 @@ prof_event_hook(rb_event_flag_t event, NODE *node, VALUE self, ID mid, VALUE kla
       if (frame)
       {
 #ifdef RUBY_VM
-	  frame->line = rb_sourceline();
+    frame->line = rb_sourceline();
 #else
         if (node)
           frame->line = nd_line(node);
@@ -1558,7 +1558,7 @@ Init_ruby_prof()
     #endif
         
     #if defined(MEASURE_ALLOCATIONS)
-    rb_define_const(mProf, "ALLOCATED_OBJECTS", INT2NUM(MEASURE_ALLOCATIONS));
+    rb_define_const(mProf, "ALLOCATIONS", INT2NUM(MEASURE_ALLOCATIONS));
     #endif
     
     cResult = rb_define_class_under(mProf, "Result", rb_cObject);
