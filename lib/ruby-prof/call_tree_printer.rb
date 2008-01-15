@@ -13,12 +13,16 @@ module RubyProf
       @output << "events: "
       case RubyProf.measure_mode
         when RubyProf::PROCESS_TIME
+          @value_scale = RubyProf::CLOCKS_PER_SEC;
           @output << 'process_time'
         when RubyProf::WALL_TIME
+          @value_scale = 1_000_000
           @output << 'wall_time'
         when RubyProf::CPU_TIME
+          @value_scale = RubyProf.cpu_frequency
           @output << 'cpu_time'
         when RubyProf::ALLOCATIONS
+          @value_scale = 1
           @output << 'allocations'
       end
       @output << "\n\n"  
@@ -28,12 +32,12 @@ module RubyProf
 
     def print_threads
       @result.threads.each do |thread_id, methods|
-        print_methods(thread_id ,methods)
+        print_methods(thread_id, methods)
       end
     end
 
     def convert(value)
-      (value * 1000).round
+      (value * @value_scale).round
     end
 
     def file(method)

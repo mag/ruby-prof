@@ -1547,6 +1547,7 @@ Init_ruby_prof()
     rb_define_singleton_method(mProf, "measure_mode", prof_get_measure_mode, 0);
     rb_define_singleton_method(mProf, "measure_mode=", prof_set_measure_mode, 1);
 
+    rb_define_const(mProf, "CLOCKS_PER_SEC", INT2NUM(CLOCKS_PER_SEC));
     rb_define_const(mProf, "PROCESS_TIME", INT2NUM(MEASURE_PROCESS_TIME));
     rb_define_const(mProf, "WALL_TIME", INT2NUM(MEASURE_WALL_TIME));
 
