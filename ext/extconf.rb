@@ -17,3 +17,4 @@ end
 
 have_header("sys/times.h")
 create_makefile("ruby_prof")
+have_func("rb_os_allocated_objects")
