@@ -1098,7 +1098,7 @@ prof_event_hook(rb_event_flag_t event, NODE *node, VALUE self, ID mid, VALUE kla
     if (event != RUBY_EVENT_C_CALL &&
   event != RUBY_EVENT_C_RETURN) {
   VALUE thread = rb_thread_current();
-  rb_frame_method_id_and_klass(&mid, &klass);
+  rb_frame_method_id_and_class(&mid, &klass);
     }
 #endif
     /*  This code is here for debug purposes - uncomment it out
