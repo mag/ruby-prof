@@ -865,16 +865,20 @@ prof_method_cmp(VALUE self, VALUE other)
     prof_method_t *x = get_prof_method(self);
     prof_method_t *y = get_prof_method(other);
 
-    if (x->called == 0)
+    if (x->called == 0 && y->called == 0)
+      return INT2FIX(0);
+    else if (x->called == 0)
       return INT2FIX(1);
     else if (y->called == 0)
       return INT2FIX(-1);
-    else if (x->total_time < y->total_time)
+    else if (x->total_time > y->total_time)
       return INT2FIX(-1);
+    else if (x->total_time < y->total_time)
+      return INT2FIX(1);
     else if (x->total_time == y->total_time)
       return INT2FIX(0);
     else
-      return INT2FIX(1);
+      return INT2FIX(0);
 }
 
 static int
@@ -1553,13 +1557,17 @@ Init_ruby_prof()
     rb_define_const(mProf, "PROCESS_TIME", INT2NUM(MEASURE_PROCESS_TIME));
     rb_define_const(mProf, "WALL_TIME", INT2NUM(MEASURE_WALL_TIME));
 
-    #if defined(MEASURE_CPU_TIME)
+    #ifndef MEASURE_CPU_TIME
+    rb_define_const(mProf, "CPU_TIME", Qnil);
+    #else
     rb_define_const(mProf, "CPU_TIME", INT2NUM(MEASURE_CPU_TIME));
     rb_define_singleton_method(mProf, "cpu_frequency", prof_get_cpu_frequency, 0); /* in measure_cpu_time.h */
     rb_define_singleton_method(mProf, "cpu_frequency=", prof_set_cpu_frequency, 1); /* in measure_cpu_time.h */
     #endif
         
-    #if defined(MEASURE_ALLOCATIONS)
+    #ifndef MEASURE_ALLOCATIONS
+    rb_define_const(mProf, "ALLOCATIONS", Qnil);
+    #else
     rb_define_const(mProf, "ALLOCATIONS", INT2NUM(MEASURE_ALLOCATIONS));
     #endif
     
