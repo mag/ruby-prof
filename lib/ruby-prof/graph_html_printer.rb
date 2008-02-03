@@ -149,6 +149,11 @@ module RubyProf
       border-left: 1px solid #CCC;
       text-align: center;
     } 
+
+    .method_name {
+      text-align: left;
+      max-width: 25em;
+    }
   </style>
   </head>
   <body>
@@ -181,7 +186,7 @@ module RubyProf
           <th><%= sprintf("%#{TIME_WIDTH}s", "Wait") %></th>
           <th><%= sprintf("%#{TIME_WIDTH+2}s", "Child") %></th>
           <th><%= sprintf("%#{CALL_WIDTH}s", "Calls") %></th>
-          <th>Name</th>
+          <th class="method_name">Name</th>
           <th>Line</th>
         </tr>
 
@@ -204,7 +209,7 @@ module RubyProf
                 <td><%= sprintf("%#{TIME_WIDTH}.2f", caller.children_time) %></td>
                 <% called = "#{caller.called}/#{method.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
-                <td><%= create_link(thread_id, caller.target) %></td>
+                <td class="method_name"><%= create_link(thread_id, caller.target) %></td>
                 <td><a href="file://<%=h srcfile=File.expand_path(caller.target.source_file) %>#line=<%= linenum=caller.line %>" title="<%=h srcfile %>:<%= linenum %>"><%= caller.line %></a></td>
               </tr>
             <% end %>
@@ -217,7 +222,7 @@ module RubyProf
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.wait_time) %></td>
               <td><%= sprintf("%#{TIME_WIDTH}.2f", method.children_time) %></td>
               <td><%= sprintf("%#{CALL_WIDTH}i", method.called) %></td>
-              <td><a name="<%= method_href(thread_id, method) %>"><%= h method.full_name %></a></td>
+              <td class="method_name"><a name="<%= method_href(thread_id, method) %>"><%= h method.full_name %></a></td>
               <td><a href="file://<%=h srcfile=File.expand_path(method.source_file) %>#line=<%= linenum=method.line %>" title="<%=h srcfile %>:<%= linenum %>"><%= method.line %></a></td>
             </tr>
 
@@ -233,7 +238,7 @@ module RubyProf
                 <td><%= sprintf("%#{TIME_WIDTH}.2f", callee.children_time) %></td>
                 <% called = "#{callee.called}/#{callee.target.called}" %>
                 <td><%= sprintf("%#{CALL_WIDTH}s", called) %></td>
-                <td><%= create_link(thread_id, callee.target) %></td>
+                <td class="method_name"><%= create_link(thread_id, callee.target) %></td>
                 <td><a href="file://<%=h srcfile=File.expand_path(method.source_file) %>#line=<%= linenum=callee.line %>" title="<%=h srcfile %>:<%= linenum %>"><%= callee.line %></a></td>
               </tr>
             <% end %>
