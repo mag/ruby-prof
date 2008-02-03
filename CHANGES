@@ -1,3 +1,44 @@
+0.6.0 (2007-02-03)
+========================
+
+ruby-prof 0.6.0 adds support for Ruby 1.9 and memory profiling.
+
+Features
+--------
+* Added support for ruby 1.9 (Shugo Maeda)
+* Added support for outputting printer results to a String, Array or IO
+  object (Michael Granger)
+* Add new memory profiling mode.  Note this mode depends on a
+  patched Ruby interpreter (Alexander Dymo)
+
+Fixes
+-------
+* Improvements to GraphHtmlPrinter including updated documentation,
+  fixes for min_time support, ability to specify templates using
+  strings or filenames, and table layout fixes (Makoto Kuwata)
+* Fixes to scaling factor for calltrees so that precision is not lost
+  due to the conversion to doubles (Sylvain Joyeux) 
+* Changed constant ALLOCATED_OBJECTS to ALLOCATIONS in the C code to
+  match the Ruby code (Sylvain Joyeux)
+* Added support for calltree printer to ruby-prof binary script (Sylvain Joyeux)
+* Fix support for the allocator measure mode to extconf.rb (Sylvain Joyeux)
+* Honor measure mode when specified on the command line (Sylvain Joyeux)
+* Fix method sorting code so that values with zero don't show up first (Dan Fitch, Charlie Savage)
+* Fix ruby-prof to work with the latest version of GEMS (Alexander Dymo)
+* Always define MEASURE_CPU_TIME and MEASURE_ALLOCATIONS in Ruby code, but
+  set their values to nil if the functionality is not available.
+   
+
+0.5.2 (2007-07-19)
+========================
+
+ruby-prof 0.5.2 is a bug fix release.
+
+Fixes
+-------
+* Include missing rails plugin
+
+
 0.5.1 (2007-07-18)
 ========================
 
