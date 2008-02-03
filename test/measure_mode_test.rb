@@ -60,7 +60,7 @@ class MeasureModeTest < Test::Unit::TestCase
   end
   
   def test_allocated_objects
-    return unless RubyProf.constants.include?('ALLOCATIONS')
+    return if RubyProf::ALLOCATIONS.nil?
     
     RubyProf::measure_mode = RubyProf::ALLOCATIONS
     

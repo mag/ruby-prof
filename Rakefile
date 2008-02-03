@@ -47,7 +47,6 @@ EOF
   spec.bindir = "bin"
   spec.executables = ["ruby-prof"]
   spec.extensions = ["ext/extconf.rb"]
-  spec.autorequire = "ruby-prof"
   spec.files = FILES.to_a
   spec.test_files = Dir["test/test_*.rb"]
   
@@ -73,7 +72,6 @@ EOF
 
 end
 
-
 # Rake task to build the default package
 Rake::GemPackageTask.new(default_spec) do |pkg|
   pkg.need_tar = true
@@ -82,13 +80,11 @@ end
 
 
 # ------- Windows Package ----------
-
 # Windows specification
 win_spec = default_spec.clone
 win_spec.extensions = []
 win_spec.platform = Gem::Platform::CURRENT
 win_spec.files += ["lib/#{SO_NAME}"]
-
 
 desc "Create Windows Gem"
 task :create_win32_gem do

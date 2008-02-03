@@ -49,6 +49,7 @@ class RecursiveTest < Test::Unit::TestCase
       end
     end
     
+    
     methods = result.threads.values.first.sort.reverse
     assert_equal(6, methods.length)   
 
@@ -93,7 +94,7 @@ class RecursiveTest < Test::Unit::TestCase
     assert_equal(3, method.children.length)
     
     method = methods[4]
-    assert_equal('Fixnum#-', method.full_name)
+    assert_equal('Fixnum#==', method.full_name)
     assert_in_delta(0, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
     assert_in_delta(0, method.wait_time, 0.02)
@@ -103,7 +104,7 @@ class RecursiveTest < Test::Unit::TestCase
     assert_equal(0, method.children.length)
     
     method = methods[5]
-    assert_equal('Fixnum#==', method.full_name)
+    assert_equal('Fixnum#-', method.full_name)
     assert_in_delta(0, method.total_time, 0.02)
     assert_in_delta(0, method.self_time, 0.02)
     assert_in_delta(0, method.wait_time, 0.02)

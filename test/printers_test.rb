@@ -67,8 +67,8 @@ class PrintersTest < Test::Unit::TestCase
     printer = RubyProf::CallTreePrinter.new(@result)
     assert_nothing_raised { printer.print(output) }
 
-    assert_match( /fn=Object::find_primes/i, output )
-    assert_match( /events: process_time/i, output )
+    assert_match(/fn=Object::find_primes/i, output)
+    assert_match(/events: process_time/i, output)
   end
 
 end

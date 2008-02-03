@@ -88,10 +88,10 @@ class BasicTest < Test::Unit::TestCase
       C1.hello
       C1.new.hello
     end
- 
+    
     methods = result.threads.values.first
     
-    # Length should be 6:
+    # Length should be 7:
     #   1 test_class_and_instance_methods (this method)
     #   1 Class.new
     #   1 Class:Object allocate
@@ -108,9 +108,15 @@ class BasicTest < Test::Unit::TestCase
     assert_equal('Kernel#sleep', methods[1].full_name)
     assert_equal('C1#hello', methods[2].full_name)
     assert_equal('<Class::C1>#hello', methods[3].full_name)
-    assert_equal('Class#new', methods[4].full_name)
-    assert_equal('<Class::Object>#allocate', methods[5].full_name)
-    assert_equal('Object#initialize', methods[6].full_name)
+    
+    # The last three methods have total times of zero
+    assert_equal(0, methods[4].total_time)
+    assert_equal(0, methods[5].total_time)
+    assert_equal(0, methods[6].total_time)
+    
+    #assert_equal('Class#new', methods[4].full_name)
+    #assert_equal('<Class::Object>#allocate', methods[5].full_name)
+    #assert_equal('Object#initialize', methods[6].full_name)
   end
   
   def test_module_methods
@@ -128,7 +134,7 @@ class BasicTest < Test::Unit::TestCase
     #   1 Object#initialize
     #   1 M1#hello
     #   1 Kernel#sleep
-    
+
     assert_equal(6, methods.length)
 
     # Check the names
@@ -137,9 +143,15 @@ class BasicTest < Test::Unit::TestCase
     assert_equal('BasicTest#test_module_methods', methods[0].full_name)
     assert_equal('Kernel#sleep', methods[1].full_name)
     assert_equal('M1#hello', methods[2].full_name)
-    assert_equal('<Class::Object>#allocate', methods[3].full_name)
-    assert_equal('Class#new', methods[4].full_name)
-    assert_equal('Object#initialize', methods[5].full_name)
+    
+    # The last three methods have times of zero
+    assert_equal(0, methods[3].total_time)
+    assert_equal(0, methods[4].total_time)
+    assert_equal(0, methods[5].total_time)
+    
+    #assert_equal('<Class::Object>#allocate', methods[3].full_name)
+    #assert_equal('Class#new', methods[4].full_name)
+    #assert_equal('Object#initialize', methods[5].full_name)
   end
   
   def test_singleton
