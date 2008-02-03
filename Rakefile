@@ -1,11 +1,12 @@
 require 'rubygems'
 require 'rake/gempackagetask'
 require 'rake/rdoctask'
+require 'date'
 
 SO_NAME = "ruby_prof.so"
 
 # ------- Default Package ----------
-RUBY_PROF_VERSION = "0.5.2"
+RUBY_PROF_VERSION = "0.6.0"
 
 FILES = FileList[
   'Rakefile',
@@ -84,7 +85,7 @@ end
 # Windows specification
 win_spec = default_spec.clone
 win_spec.extensions = []
-win_spec.platform = Gem::Platform::WIN32
+win_spec.platform = Gem::Platform::CURRENT
 win_spec.files += ["lib/#{SO_NAME}"]
 
 
