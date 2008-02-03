@@ -1,4 +1,5 @@
 require 'rubygems'
+require 'date'
 require 'rake/gempackagetask'
 require 'rake/rdoctask'
 require 'date'

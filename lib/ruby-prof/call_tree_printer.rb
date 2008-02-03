@@ -18,12 +18,15 @@ module RubyProf
         when RubyProf::WALL_TIME
           @value_scale = 1_000_000
           @output << 'wall_time'
-        when RubyProf::CPU_TIME
+        when RubyProf.const_defined?(:CPU_TIME) && RubyProf::CPU_TIME
           @value_scale = RubyProf.cpu_frequency
           @output << 'cpu_time'
-        when RubyProf::ALLOCATIONS
+        when RubyProf.const_defined?(:ALLOCATIONS) && RubyProf::ALLOCATIONS
           @value_scale = 1
           @output << 'allocations'
+        when RubyProf.const_defined?(:MEMORY) && RubyProf::MEMORY
+          @value_scale = 1
+          @output << 'memory'
       end
       @output << "\n\n"  
 

@@ -76,6 +76,7 @@ typedef unsigned long prof_measure_t;
 #include "measure_wall_time.h"
 #include "measure_cpu_time.h"
 #include "measure_allocations.h"
+#include "measure_memory.h"
 
 static prof_measure_t (*get_measurement)() = measure_process_time;
 static double (*convert_measurement)(prof_measure_t) = convert_process_time;
@@ -1378,7 +1379,8 @@ prof_result_threads(VALUE self)
    *RubyProf::PROCESS_TIME - Measure process time.  This is default.  It is implemented using the clock functions in the C Runtime library.
    *RubyProf::WALL_TIME - Measure wall time using gettimeofday on Linx and GetLocalTime on Windows
    *RubyProf::CPU_TIME - Measure time using the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms. 
-   *RubyProf::ALLOCATIONS - Measure object allocations.  This requires a patched Ruby interpreter.*/
+   *RubyProf::ALLOCATIONS - Measure object allocations.  This requires a patched Ruby interpreter.
+   *RubyProf::MEMORY - Measure memory size.  This requires a patched Ruby interpreter.*/
 static VALUE
 prof_get_measure_mode(VALUE self)
 {
@@ -1393,7 +1395,8 @@ prof_get_measure_mode(VALUE self)
    *RubyProf::PROCESS_TIME - Measure process time.  This is default.  It is implemented using the clock functions in the C Runtime library.
    *RubyProf::WALL_TIME - Measure wall time using gettimeofday on Linx and GetLocalTime on Windows
    *RubyProf::CPU_TIME - Measure time using the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms. 
-   *RubyProf::ALLOCATIONS - Measure object allocations.  This requires a patched Ruby interpreter.*/
+   *RubyProf::ALLOCATIONS - Measure object allocations.  This requires a patched Ruby interpreter.
+   *RubyProf::MEMORY - Measure memory size.  This requires a patched Ruby interpreter.*/
 static VALUE
 prof_set_measure_mode(VALUE self, VALUE val)
 {
@@ -1428,6 +1431,13 @@ prof_set_measure_mode(VALUE self, VALUE val)
       case MEASURE_ALLOCATIONS:
         get_measurement = measure_allocations;
         convert_measurement = convert_allocations;
+        break;
+      #endif
+        
+      #if defined(MEASURE_MEMORY)
+      case MEASURE_MEMORY:
+        get_measurement = measure_memory;
+        convert_measurement = convert_memory;
         break;
       #endif
         
@@ -1484,6 +1494,10 @@ prof_start(VALUE self)
           | RUBY_EVENT_LINE);
 #endif
 
+#if defined(MEASURE_MEMORY)
+    rb_gc_enable_stats();
+#endif
+
     return Qnil;
 }
 
@@ -1495,6 +1509,10 @@ prof_start(VALUE self)
 static VALUE
 prof_stop(VALUE self)
 {
+#if defined(MEASURE_MEMORY)
+    rb_gc_disable_stats();
+#endif
+
     VALUE result = Qnil;
 
     if (threads_tbl == NULL)
@@ -1569,6 +1587,12 @@ Init_ruby_prof()
     rb_define_const(mProf, "ALLOCATIONS", Qnil);
     #else
     rb_define_const(mProf, "ALLOCATIONS", INT2NUM(MEASURE_ALLOCATIONS));
+    #endif
+    
+    #ifndef MEASURE_MEMORY
+    rb_define_const(mProf, "MEMORY", Qnil);
+    #else
+    rb_define_const(mProf, "MEMORY", INT2NUM(MEASURE_MEMORY));
     #endif
     
     cResult = rb_define_class_under(mProf, "Result", rb_cObject);
