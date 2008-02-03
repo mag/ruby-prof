@@ -872,14 +872,8 @@ prof_method_cmp(VALUE self, VALUE other)
       return INT2FIX(1);
     else if (y->called == 0)
       return INT2FIX(-1);
-    else if (x->total_time > y->total_time)
-      return INT2FIX(-1);
-    else if (x->total_time < y->total_time)
-      return INT2FIX(1);
-    else if (x->total_time == y->total_time)
-      return INT2FIX(0);
     else
-      return INT2FIX(0);
+      return rb_dbl_cmp(x->total_time, y->total_time);
 }
 
 static int
