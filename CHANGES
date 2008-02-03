@@ -23,7 +23,7 @@ Fixes
 * Added support for calltree printer to ruby-prof binary script (Sylvain Joyeux)
 * Fix support for the allocator measure mode to extconf.rb (Sylvain Joyeux)
 * Honor measure mode when specified on the command line (Sylvain Joyeux)
-* Fix method sorting code so that values with zero don't show up first (Dan Fitch, Charlie Savage)
+* Sorting of methods by total time was incorrect (Dan Fitch, Charlie Savage)
 * Fix ruby-prof to work with the latest version of GEMS (Alexander Dymo)
 * Always define MEASURE_CPU_TIME and MEASURE_ALLOCATIONS in Ruby code, but
   set their values to nil if the functionality is not available.
