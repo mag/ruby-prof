@@ -7,7 +7,7 @@ require 'date'
 SO_NAME = "ruby_prof.so"
 
 # ------- Default Package ----------
-RUBY_PROF_VERSION = "0.6.0"
+RUBY_PROF_VERSION = "0.6.1"
 
 FILES = FileList[
   'Rakefile',

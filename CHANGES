@@ -1,4 +1,46 @@
-0.6.0 (2007-02-03)
+0.6.1 (2008-02-25)
+========================
+
+ruby-prof 0.6.1 add support for profiling tests cases. 
+
+Features
+--------
+* Added two new methods - RubyProf.resume and RubyProf.pause. 
+  RubyProf.resume takes an optional block, which ensures that
+  RubyProf.pause is called.  For example:
+  
+  10.times do |i|
+    RubyProf.resume do
+      # Some long process
+    end
+  end
+  
+  result = RubyProf.stop
+
+* Added support for profiling tests that use Ruby's built-in
+  unit test framework (ie, test derived from 
+  Test::Unit::TestCase).  To enable profiling simply add
+  the following line of code to your test class:
+  
+    include RubyProf::Test
+    
+  By default, profiling results are written to the current 
+  processes working directory.  To change this, or other
+  profiling options, simply modify the PROFILE_OPTIONS hash
+  table as needed.        
+
+* Used the new support for profiling test cases to revamp
+  the way that Rails profiling works.  For more information
+  please refer to RubyProf's documentation.
+  
+  
+Fixes
+-------
+* RubyProf.profile no longer crashes if an exception is
+  thrown during a profiling run.
+
+  
+0.6.0 (2008-02-03)
 ========================
 
 ruby-prof 0.6.0 adds support for Ruby 1.9 and memory profiling.

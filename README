@@ -41,11 +41,13 @@ ruby-prof is also available as a tarred gzip archive and zip archive.
 
 There are three ways of running ruby-prof.
 
+
 === ruby-prof executable
 
 The first is to use ruby-prof to run the Ruby program
 you want to profile.  For more information refer to
 the ruby-prof documentation[link:files/bin/ruby-prof.html].
+
 
 === ruby-prof API
 
@@ -81,7 +83,36 @@ to profile:
   printer = RubyProf::GraphPrinter.new(result)
   printer.print(STDOUT, 0)
 
+Starting with the 0.6.1 release, ruby-prof also supports pausing and resuming
+profiling runs.
+
+  require 'ruby-prof'
   
+  # Profile the code
+  RubyProf.start
+  [code to profile]
+  RubyProf.pause
+  [other code]
+  RubyProf.resume
+  [code to profile]
+  result = RubyProf.stop
+  
+Note that resume will automatically call start if a profiling run
+has not yet started.  In addition, resume can also take a block:
+
+  require 'ruby-prof'
+  
+  # Profile the code
+  RubyProf.resume do
+    [code to profile]
+  end
+
+  data = RubyProf.stop
+  
+With this usage, resume will automatically call pause at the 
+end of the block.
+
+
 === require unprof
 
 The third way of using ruby-prof is by requiring unprof.rb:
@@ -93,7 +124,82 @@ using a flat profile report.
 
 This method is provided for backwards compatibility.  Using
 {ruby-prof}[link:files/bin/ruby-prof.html] provides more flexibility.
+
+
+== Profiling Tests
+
+Starting with the 0.6.1 release, ruby-prof supports profiling tests cases
+written using Ruby's built-in	unit test framework (ie, test derived from 
+Test::Unit::TestCase).  To enable profiling simply add the following line 
+of code to your test class:
   
+  	include RubyProf::Test
+  	
+Each test method is profiled separately.  ruby-prof will run each test method
+once as a warmup and then ten additional times to gather profile data.
+Note that the profile data will *not* include the class's setup or 
+teardown methods.
+
+Separate reports are generated for each method and saved, by default, 
+in the test process's working directory.  To change this, or other profiling
+options, modify your test class's PROFILE_OPTIONS hash table. To globally 
+change test profiling options, modify RubyProf::Test::PROFILE_OPTIONS.  
+
+
+== Profiling Rails
+
+To profile a Rails application it is vital to run it using production like 
+settings (cache classes, cache view lookups, etc.).  Otherwise, Rail's
+dependency loading code will overwhelm any time spent in the application
+itself (our tests show that Rails dependency loading causes a roughly 6x
+slowdown).  The best way to do this is create a new Rails environment,
+profile.rb.
+
+So to profile Rails:
+
+1.  Create a new profile.rb environment - or simply copy the example file
+    in ruby-prof/rails/environment/profile.rb
+    
+2.  Copy the file:
+     
+      ruby-prof/rails/profile_test_helper.rb 
+    
+    To:
+    
+      your_rails_app/test/profile_test_helper.rb
+
+3.  Create a new test directory for profiling:
+
+      your_rails_app/test/profile
+    
+
+4.  Write unit, functional or integration tests specifically designed
+    to profile some part of your Rails application.  At the top
+    of each test, replace this line:
+    
+      require File.dirname(__FILE__) + '/../test_helper'
+
+    With:
+    
+      require File.dirname(__FILE__) + '/../profile_test_helper'
+
+    For example:
+
+    require File.dirname(__FILE__) + '/../profile_test_helper'
+    
+    class ExampleTest < Test::Unit::TestCase
+      include RubyProf::Test
+      fixtures ....
+      
+      def test_stuff
+        puts "Test method"
+      end
+    end   
+
+5.  Now run your tests.  Results will be written to:
+
+      your_rails_app/tmp/profile
+    
 
 == Reports
 
@@ -132,6 +238,7 @@ Call graphs output results in the calltree profile format which is used
 by KCachegrind.  Call graph support was generously donated by Carl Shimer.
 More information about the format can be found at
 the {KCachegrind}[link:http://kcachegrind.sourceforge.net/cgi-bin/show.cgi/KcacheGrindCalltreeFormat] site.
+
 
 == Printers
 
@@ -271,6 +378,7 @@ However, the self time values for recursive calls should always
 be accurate.  It is also believed that the total times are
 accurate, but these should be carefully analyzed to verify their veracity.
 
+
 == Multi-threaded Applications
 
 Unfortunately, Ruby does not provide an internal api
@@ -293,6 +401,7 @@ with profiling code varies considerably with the code being
 profiled.  Most programs will run approximately twice as slow
 while highly recursive programs (like the fibonacci series test)
 will run three times slower.
+
 
 == Windows Binary
 
