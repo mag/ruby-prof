@@ -1,6 +1,7 @@
 # file ts_dbaccess.rb
 require 'test/unit'
 require 'basic_test'
+require 'exceptions_test'
 require 'duplicate_names_test'
 require 'line_number_test'
 require 'measure_mode_test'
