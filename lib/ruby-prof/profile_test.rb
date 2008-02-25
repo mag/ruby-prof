@@ -5,7 +5,8 @@ module RubyProf
   module Test
     PROFILE_OPTIONS = {:measure_mode => RubyProf::PROCESS_TIME,
                        :count => 10,
-                       :printer => RubyProf::GraphHtmlPrinter,
+                       :printers => [RubyProf::FlatPrinter,
+                                     RubyProf::GraphHtmlPrinter],
                        :min_percent => 5,
                        :output_dir => Dir.pwd}
     
@@ -92,14 +93,15 @@ module RubyProf
       end
 
       def report(data)
-        # Create a printer
-        printer = PROFILE_OPTIONS[:printer].new(data)
+        PROFILE_OPTIONS[:printers].each do |printer_klass|
+          printer = printer_klass.new(data)
       
-        # Open the file
-        file_name = report_name(printer)
+          # Open the file
+          file_name = report_name(printer)
       
-        File.open(file_name, 'wb') do |file|
-          printer.print(file)
+          File.open(file_name, 'wb') do |file|
+            printer.print(file, PROFILE_OPTIONS)
+          end
         end
       end
       
