@@ -5,6 +5,8 @@ require "ruby-prof/graph_printer"
 require "ruby-prof/graph_html_printer"
 require "ruby-prof/call_tree_printer"
 
+require "ruby-prof/profile_test"
+
 module RubyProf
   # See if the user specified the clock mode via 
   # the RUBY_PROF_MEASURE_MODE environment variable
