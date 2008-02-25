@@ -32,14 +32,14 @@ module RubyProf
         begin
           setup
           yield
-        rescue AssertionFailedError => e
+        rescue ::Test::Unit::AssertionFailedError => e
           add_failure(e.message, e.backtrace)
         rescue StandardError, ScriptError
           add_error($!)
         ensure
           begin
             teardown
-          rescue AssertionFailedError => e
+          rescue ::Test::Unit::AssertionFailedError => e
             add_failure(e.message, e.backtrace)
           rescue StandardError, ScriptError
             add_error($!)
