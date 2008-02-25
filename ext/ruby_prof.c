@@ -62,7 +62,7 @@ typedef rb_event_t rb_event_flag_t;
 
 /* ================  Constants  =================*/
 #define INITIAL_STACK_SIZE 8
-#define PROF_VERSION "0.6.0"
+#define PROF_VERSION "0.6.1"
 
 
 /* ================  Measurement  =================*/
@@ -1102,7 +1102,7 @@ prof_event_hook(rb_event_flag_t event, NODE *node, VALUE self, ID mid, VALUE kla
 #endif
     /*  This code is here for debug purposes - uncomment it out
         when debugging to see a print out of exactly what the
-        profiler is tracing. 
+        profiler is tracing.
     {
         st_data_t key = 0;
         static unsigned long last_thread_id = 0;
@@ -1445,6 +1445,37 @@ prof_set_measure_mode(VALUE self, VALUE val)
 }
 
 /* =========  Profiling ============= */
+void
+prof_install_hook()
+{
+#ifdef RUBY_VM
+    rb_add_event_hook(prof_event_hook,
+          RUBY_EVENT_CALL | RUBY_EVENT_RETURN |
+          RUBY_EVENT_C_CALL | RUBY_EVENT_C_RETURN 
+          | RUBY_EVENT_LINE, Qnil);
+#else
+    rb_add_event_hook(prof_event_hook,
+          RUBY_EVENT_CALL | RUBY_EVENT_RETURN |
+          RUBY_EVENT_C_CALL | RUBY_EVENT_C_RETURN 
+          | RUBY_EVENT_LINE);
+#endif
+
+#if defined(MEASURE_MEMORY)
+    rb_gc_enable_stats();
+#endif
+}
+
+void
+prof_remove_hook()
+{
+#if defined(MEASURE_MEMORY)
+    rb_gc_disable_stats();
+#endif
+
+    /* Now unregister from event   */
+    rb_remove_event_hook(prof_event_hook);
+}
+
 
 
 /* call-seq:
@@ -1461,7 +1492,7 @@ prof_running(VALUE self)
 }
 
 /* call-seq:
-   start -> void
+   start -> RubyProf
    
    Starts recording profile data.*/
 static VALUE
@@ -1475,26 +1506,49 @@ prof_start(VALUE self)
     /* Setup globals */
     last_thread_data = NULL;
     threads_tbl = threads_table_create();
-    
-#ifdef RUBY_VM
-    rb_add_event_hook(prof_event_hook,
-          RUBY_EVENT_CALL | RUBY_EVENT_RETURN |
-          RUBY_EVENT_C_CALL | RUBY_EVENT_C_RETURN 
-          | RUBY_EVENT_LINE, Qnil);
-#else
-    rb_add_event_hook(prof_event_hook,
-          RUBY_EVENT_CALL | RUBY_EVENT_RETURN |
-          RUBY_EVENT_C_CALL | RUBY_EVENT_C_RETURN 
-          | RUBY_EVENT_LINE);
-#endif
+    prof_install_hook();              
+    return self;
+}    
 
-#if defined(MEASURE_MEMORY)
-    rb_gc_enable_stats();
-#endif
+/* call-seq:
+   pause -> RubyProf
 
-    return Qnil;
+   Pauses collecting profile data. */
+static VALUE
+prof_pause(VALUE self)
+{
+    if (threads_tbl == NULL)
+    {
+        rb_raise(rb_eRuntimeError, "RubyProf is not running.");
+    }
+
+    prof_remove_hook();
+    return self;
 }
 
+/* call-seq:
+   resume {block} -> RubyProf
+   
+   Resumes recording profile data.*/
+static VALUE
+prof_resume(VALUE self)
+{
+    if (threads_tbl == NULL)
+    { 
+        return prof_start(self);
+    }
+    else
+    { 
+        prof_install_hook();
+    }
+    
+    if (rb_block_given_p())
+    {
+      rb_ensure(rb_yield, self, prof_pause, self);
+    }
+
+    return self;
+}
 
 /* call-seq:
    stop -> RubyProf::Result
@@ -1503,19 +1557,9 @@ prof_start(VALUE self)
 static VALUE
 prof_stop(VALUE self)
 {
-#if defined(MEASURE_MEMORY)
-    rb_gc_disable_stats();
-#endif
-
     VALUE result = Qnil;
-
-    if (threads_tbl == NULL)
-    {
-        rb_raise(rb_eRuntimeError, "RubyProf is not running.");
-    }
-
-    /* Now unregister from event   */
-    rb_remove_event_hook(prof_event_hook);
+    
+    prof_remove_hook();
 
     /* Create the result */
     result = prof_result_new();
@@ -1529,7 +1573,6 @@ prof_stop(VALUE self)
     return result;
 }
 
-
 /* call-seq:
    profile {block} -> RubyProf::Result
 
@@ -1537,13 +1580,15 @@ Profiles the specified block and returns a RubyProf::Result object. */
 static VALUE
 prof_profile(VALUE self)
 {
+    int result;
+    
     if (!rb_block_given_p())
     {
         rb_raise(rb_eArgError, "A block must be provided to the profile method.");
     }
 
     prof_start(self);
-    rb_yield(Qnil);
+    rb_protect(rb_yield, self, &result);
     return prof_stop(self);
 }
 
@@ -1559,6 +1604,8 @@ Init_ruby_prof()
     rb_define_const(mProf, "VERSION", rb_str_new2(PROF_VERSION));
     rb_define_module_function(mProf, "start", prof_start, 0);
     rb_define_module_function(mProf, "stop", prof_stop, 0);
+    rb_define_module_function(mProf, "resume", prof_resume, 0);
+    rb_define_module_function(mProf, "pause", prof_pause, 0);
     rb_define_module_function(mProf, "running?", prof_running, 0);
     rb_define_module_function(mProf, "profile", prof_profile, 0);
     
