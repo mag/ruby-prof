@@ -1535,7 +1535,7 @@ prof_resume(VALUE self)
 {
     if (threads_tbl == NULL)
     { 
-        return prof_start(self);
+        prof_start(self);
     }
     else
     { 
