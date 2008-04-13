@@ -23,6 +23,24 @@ FILES = FileList[
   'test/*'
 ]
 
+task :default => :show
+
+task :show => 'prof.gif' do
+  # sh "cat prof.gif"
+  sh "open prof.gif"
+end
+
+task :new do
+  sh 'rm -f prof.gif'
+  Rake::Task['show'].invoke
+end
+
+file 'prof.gif' => FILES do
+  Dir.chdir("/Users/nitay/code/os/thrift/test/rb/") do
+    sh 'ruby tprotocol_benchmark.rb > /Users/nitay/code/os/ruby-prof/prof.gif'
+  end
+end
+
 # Default GEM Specification
 default_spec = Gem::Specification.new do |spec|
   spec.name = "ruby-prof"
