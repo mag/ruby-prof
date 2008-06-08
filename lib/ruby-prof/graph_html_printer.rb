@@ -62,7 +62,7 @@ module RubyProf
       # Cache thread times since this is an expensive
       # operation with the required sorting      
       @result.threads.each do |thread_id, methods|
-        top = methods.sort.last
+        top = methods.sort_by(&:total_time).last
         
         thread_time = 0.01
         thread_time = top.total_time if top.total_time > 0
@@ -191,7 +191,7 @@ module RubyProf
         </tr>
 
         <% min_time = @options[:min_time] || (@options[:nonzero] ? 0.005 : nil)
-           methods.sort.reverse_each do |method|
+           methods.sort_by(&:total_time).reverse_each do |method|
             total_percentage = (method.total_time/total_time) * 100
             next if total_percentage < min_percent
             next if min_time && method.total_time < min_time
