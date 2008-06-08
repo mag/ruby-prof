@@ -18,4 +18,6 @@ end
 have_header("sys/times.h")
 have_func("rb_os_allocated_objects")
 have_func("rb_gc_allocated_size")
+have_func("rb_gc_malloc_allocations")
+have_func("rb_gc_malloc_allocated_size")
 create_makefile("ruby_prof")
