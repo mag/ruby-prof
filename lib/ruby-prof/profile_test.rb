@@ -3,13 +3,12 @@ require 'ruby-prof'
 
 module RubyProf
   module Test
-    PROFILE_OPTIONS = {:measure_modes => [RubyProf::PROCESS_TIME],
-                       :count => 10,
-                       :printers => [RubyProf::FlatPrinter,
-                                     RubyProf::GraphHtmlPrinter],
-                       :min_percent => 5,
-                       :output_dir => Dir.pwd}
-
+    PROFILE_OPTIONS = {
+      :measure_modes => [RubyProf::PROCESS_TIME],
+      :count => 10,
+      :printers => [RubyProf::FlatPrinter, RubyProf::GraphHtmlPrinter],
+      :min_percent => 0.05,
+      :output_dir => Dir.pwd }
 
     def self.included(base)
       base.class_eval do
@@ -24,7 +23,7 @@ module RubyProf
         run_warmup
         PROFILE_OPTIONS[:measure_modes].each do |measure_mode|
           data = run_profile(measure_mode)
-          report(data, measure_mode)
+          report_profile(data, measure_mode)
           result.add_run
         end
         yield(self.class::FINISHED, name)
@@ -52,19 +51,19 @@ module RubyProf
       def run_warmup
         # Warmup
         puts "******* #{method_name} *******"
-        puts "Warm up:"
+        print "Warm up:"
 
         run_test do
           bench = Benchmark.realtime do
             __send__(@method_name)
           end
-          print "%.2f seconds\n\n" % bench
+          puts " %.2f seconds\n" % bench
         end
       end
 
       def run_profile(measure_mode)
         # Now run
-        puts "Running:"
+        puts "Running: #{measure_mode_name(measure_mode)}"
         RubyProf.measure_mode = measure_mode
 
         PROFILE_OPTIONS[:count].times do |i|
@@ -90,16 +89,29 @@ module RubyProf
           total += top.total_time
           total
         end
-        puts "%.2f seconds\n\n" % bench
+        puts "#{format_profile_total(bench, measure_mode)}\n\n"
         data
       end
 
-      def report(data, measure_mode)
+      def format_profile_total(total, measure_mode)
+        case measure_mode
+          when RubyProf::PROCESS_TIME, RubyProf::WALL_TIME
+            "%.2f seconds" % total
+          when RubyProf::MEMORY
+            "%.2f kilobytes" % total
+          when RubyProf::ALLOCATIONS
+            "%d allocations" % total
+          else
+            "%.2f #{measure_mode}"
+        end
+      end
+
+      def report_profile(data, measure_mode)
         PROFILE_OPTIONS[:printers].each do |printer_klass|
           printer = printer_klass.new(data)
 
           # Open the file
-          file_name = report_name(printer, measure_mode)
+          file_name = report_filename(printer, measure_mode)
 
           File.open(file_name, 'wb') do |file|
             printer.print(file, PROFILE_OPTIONS)
@@ -107,33 +119,27 @@ module RubyProf
         end
       end
 
-      def report_name(printer, measure_mode)
-        # The report name is:
-        #   test_name + measure_mode + report_type
-        output_dir = PROFILE_OPTIONS[:output_dir]
+      # The report filename is test_name + measure_mode + report_type
+      def report_filename(printer, measure_mode)
+        suffix =
+          case printer
+            when RubyProf::FlatPrinter; 'flat.txt'
+            when RubyProf::GraphPrinter; 'graph.txt'
+            when RubyProf::GraphHtmlPrinter; 'graph.html'
+            when RubyProf::CallTreePrinter; 'tree.txt'
+            else printer.to_s.downcase
+          end
 
-        path = case measure_mode
-          when RubyProf::PROCESS_TIME
-            File.join(output_dir, "#{method_name}_process")
-          when RubyProf::WALL_TIME
-            File.join(output_dir, "#{method_name}_wall")
-          when RubyProf::MEMORY
-            File.join(output_dir, "#{method_name}_memory")
-          when RubyProf::ALLOCATIONS
-            File.join(output_dir, "#{method_name}_allocations")
-        end
+        "#{PROFILE_OPTIONS[:output_dir]}/#{method_name}_#{measure_mode_name(measure_mode)}_#{suffix}"
+      end
 
-        case printer
-          when RubyProf::FlatPrinter
-            path += "_flat.txt"
-          when RubyProf::GraphPrinter
-            path += "_graph.txt"
-          when RubyProf::GraphHtmlPrinter
-            path += "_graph.html"
-          when RubyProf::CallTreePrinter
-            path += "_tree.txt"
-          else
-            raise(RuntimeError, "Unknown printer class: ", printer)
+      def measure_mode_name(measure_mode)
+        case measure_mode
+          when RubyProf::PROCESS_TIME; 'process_time'
+          when RubyProf::WALL_TIME; 'wall_time'
+          when RubyProf::MEMORY; 'memory'
+          when RubyProf::ALLOCATIONS; 'allocations'
+          else "measure#{measure_mode}"
         end
       end
     end
