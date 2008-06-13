@@ -44,15 +44,13 @@ module RubyProf
     end
 
     def run_warmup
-      # Warmup
-      puts "******* #{self.class.name}##{method_name} *******"
-      print "Warmup:"
+      print "#{self.class.name}##{method_name}"
 
       run_test do
         bench = Benchmark.realtime do
           __send__(@method_name)
         end
-        puts " %.2f seconds\n" % bench
+        puts " (%.2f sec)" % bench
       end
     end
 
@@ -65,15 +63,14 @@ module RubyProf
     end
 
     def run_profile(measure_mode)
-      # Now run
-      puts "Profiling #{measure_mode_name(measure_mode)}"
       RubyProf.measure_mode = measure_mode
 
+      print '  '
       PROFILE_OPTIONS[:count].times do |i|
         run_test do
           begin
-            print i % 10 == 0 ? 'x' : '.'
-            STDOUT.flush
+            print '.'
+            $stdout.flush
             GC.disable
 
             RubyProf.resume do
@@ -84,7 +81,6 @@ module RubyProf
           end
         end
       end
-      STDOUT << "\n"
 
       data = RubyProf.stop
       bench = data.threads.values.inject(0) do |total, method_infos|
@@ -92,7 +88,9 @@ module RubyProf
         total += top.total_time
         total
       end
-      puts "#{format_profile_total(bench, measure_mode)}\n\n"
+
+      puts "\n  #{measure_mode_name(measure_mode)}: #{format_profile_total(bench, measure_mode)}\n"
+
       data
     end
 
