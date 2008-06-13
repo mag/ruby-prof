@@ -4,6 +4,7 @@ require 'ruby-prof'
 module RubyProf
   module Test
     PROFILE_OPTIONS = {
+      :benchmarking => false,
       :measure_modes => [RubyProf::PROCESS_TIME],
       :count => 10,
       :printers => [RubyProf::FlatPrinter, RubyProf::GraphHtmlPrinter],
@@ -63,6 +64,9 @@ module RubyProf
     end
 
     def run_profile(measure_mode)
+      if RubyProf.respond_to?(:benchmarking=)
+        RubyProf.benchmarking = PROFILE_OPTIONS[:benchmarking]
+      end
       RubyProf.measure_mode = measure_mode
 
       print '  '
