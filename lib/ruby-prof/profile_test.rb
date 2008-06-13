@@ -11,6 +11,8 @@ module RubyProf
       :output_dir => Dir.pwd }
 
     def run(result)
+      return if @method_name.to_s == "default_test"
+
       yield(self.class::STARTED, name)
       @_result = result
       run_warmup
@@ -64,7 +66,7 @@ module RubyProf
 
     def run_profile(measure_mode)
       # Now run
-      puts "Running: #{measure_mode_name(measure_mode)}"
+      puts "Profiling #{measure_mode_name(measure_mode)}"
       RubyProf.measure_mode = measure_mode
 
       PROFILE_OPTIONS[:count].times do |i|
