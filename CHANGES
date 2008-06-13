@@ -1,7 +1,8 @@
-0.6.1 (2008-02-25)
+0.6.1 (2008-06-13)
 ========================
 
-ruby-prof 0.6.1 add support for profiling tests cases. 
+ruby-prof 0.6.1 add support for profiling tests cases and a
+benchmarking mode.
 
 Features
 --------
@@ -32,8 +33,14 @@ Features
 * Used the new support for profiling test cases to revamp
   the way that Rails profiling works.  For more information
   please refer to RubyProf's documentation.
-  
-  
+
+* Added benchmarking mode which measures total between start
+  and stop but disables profiling. This allows you to benchmark
+  already-instrumented code instead of profiling it with the flip
+  of a a switch: RubyProf.benchmarking = true. RubyProf.stop will
+  return a float total_time instead of a profile result.
+
+
 Fixes
 -------
 * RubyProf.profile no longer crashes if an exception is
