@@ -64,9 +64,7 @@ module RubyProf
     end
 
     def run_profile(measure_mode)
-      if RubyProf.respond_to?(:benchmarking=)
-        RubyProf.benchmarking = PROFILE_OPTIONS[:benchmarking]
-      end
+      RubyProf.benchmarking = PROFILE_OPTIONS[:benchmarking]
       RubyProf.measure_mode = measure_mode
 
       print '  '
@@ -87,11 +85,17 @@ module RubyProf
       end
 
       data = RubyProf.stop
-      bench = data.threads.values.inject(0) do |total, method_infos|
-        top = method_infos.sort.last
-        total += top.total_time
-        total
-      end
+
+      bench =
+        if RubyProf.benchmarking?
+          data
+        else
+          data.threads.values.inject(0) do |total, method_infos|
+            top = method_infos.sort.last
+            total += top.total_time
+            total
+          end
+        end
 
       puts "\n  #{measure_mode_name(measure_mode)}: #{format_profile_total(bench, measure_mode)}\n"
 
@@ -112,14 +116,30 @@ module RubyProf
     end
 
     def report_profile(data, measure_mode)
-      PROFILE_OPTIONS[:printers].each do |printer_klass|
-        printer = printer_klass.new(data)
+      if RubyProf.benchmarking?
+        bench_filename = "#{PROFILE_OPTIONS[:output_dir]}/benchmarks.csv"
+        new_file = !File.exist?(bench_filename)
 
-        # Open the file
-        file_name = report_filename(printer, measure_mode)
+        File.open(bench_filename, 'ab') do |file|
+          if new_file
+            file.puts 'test,metric,measurement,ruby_engine,ruby_version,ruby_patchlevel,ruby_platform,created_at'
+          end
 
-        File.open(file_name, 'wb') do |file|
-          printer.print(file, PROFILE_OPTIONS)
+          file.puts [method_name, measure_mode_name(measure_mode), data,
+            defined?(RUBY_ENGINE) ? RUBY_ENGINE : 'ruby',
+            RUBY_VERSION, RUBY_PATCHLEVEL, RUBY_PLATFORM,
+            Time.now.utc].join(',')
+        end
+      else
+        PROFILE_OPTIONS[:printers].each do |printer_klass|
+          printer = printer_klass.new(data)
+
+          # Open the file
+          file_name = report_filename(printer, measure_mode)
+
+          File.open(file_name, 'wb') do |file|
+            printer.print(file, PROFILE_OPTIONS)
+          end
         end
       end
     end
