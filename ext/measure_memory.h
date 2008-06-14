@@ -37,7 +37,7 @@ measure_memory()
 static double
 convert_memory(prof_measure_t c)
 { 
-    return  c / 1024.0;
+    return  c;
 }
 
 #elif defined(HAVE_RB_GC_MALLOC_ALLOCATED_SIZE)
@@ -52,7 +52,7 @@ measure_memory()
 static double
 convert_memory(prof_measure_t c)
 {
-    return  c / 1024.0;
+    return  c;
 }
 
 #endif
