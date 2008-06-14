@@ -45,13 +45,13 @@ module RubyProf
     end
 
     def run_warmup
-      print "#{self.class.name}##{method_name}"
+      print "\n#{self.class.name}##{method_name}"
 
       run_test do
         bench = Benchmark.realtime do
           __send__(@method_name)
         end
-        puts " (%.2f sec)" % bench
+        puts " (%.2fs warmup)" % bench
       end
     end
 
@@ -122,13 +122,14 @@ module RubyProf
 
         File.open(bench_filename, 'ab') do |file|
           if new_file
-            file.puts 'test,metric,measurement,ruby_engine,ruby_version,ruby_patchlevel,ruby_platform,created_at'
+            file.puts 'test,metric,measurement,runs,ruby_engine,ruby_version,ruby_patchlevel,ruby_platform,created_at'
           end
 
-          file.puts [method_name, measure_mode_name(measure_mode), data,
+          file.puts ["#{self.class.name}##{method_name}", measure_mode_name(measure_mode),
+            data, PROFILE_OPTIONS[:count],
             defined?(RUBY_ENGINE) ? RUBY_ENGINE : 'ruby',
             RUBY_VERSION, RUBY_PATCHLEVEL, RUBY_PLATFORM,
-            Time.now.utc].join(',')
+            Time.now.utc.xmlschema].join(',')
         end
       else
         PROFILE_OPTIONS[:printers].each do |printer_klass|
