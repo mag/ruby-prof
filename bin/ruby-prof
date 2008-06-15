@@ -6,7 +6,7 @@
 #
 # == Usage
 #
-# ruby_prof [options] <script.rb> [options-for-script]
+# ruby_prof [options] <script.rb> [--] [script-options]"
 #
 # Options:
 #     -p, --printer=printer            Select a printer:
@@ -48,7 +48,7 @@ options.specialized_instruction = false
 
 opts = OptionParser.new do |opts|
   opts.banner = "ruby_prof #{RubyProf::VERSION}\n" +
-                "Usage: ruby_prof [options] <script.rb> [--extra-options-for-script]"
+                "Usage: ruby_prof [options] <script.rb> [--] [script-options]"
  
   opts.separator ""
   opts.separator "Options:"
