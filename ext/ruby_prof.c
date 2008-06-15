@@ -1111,8 +1111,15 @@ prof_event_hook(rb_event_flag_t event, NODE *node, VALUE self, ID mid, VALUE kla
         unsigned long thread_id = get_thread_id(thread);
         char* class_name = rb_obj_classname(klass);
         char* method_name = rb_id2name(mid);
-        char* source_file = node ? node->nd_file : 0;
-        unsigned int source_line = node ? nd_line(node) : 0;
+
+        #ifdef RUBY_VM
+          char* source_file = rb_sourcefile();
+          unsigned int source_line = rb_sourceline();
+        #else
+          char* source_file = node ? node->nd_file : 0;
+          unsigned int source_line = node ? nd_line(node) : 0;
+        #endif
+        
         char* event_name = get_event_name(event);
         
         if (last_thread_id != thread_id)
