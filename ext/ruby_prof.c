@@ -67,7 +67,7 @@ typedef rb_event_t rb_event_flag_t;
 
 /* ================  Measurement  =================*/
 #ifdef HAVE_LONG_LONG
-typedef LONG_LONG prof_measure_t;
+typedef unsigned LONG_LONG prof_measure_t;
 #else
 typedef unsigned long prof_measure_t;
 #endif

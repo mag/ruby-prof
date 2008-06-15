@@ -130,7 +130,7 @@ RubyProf::measure_mode is set to CPU_TIME. */
 static VALUE
 prof_get_cpu_frequency(VALUE self)
 {
-    return LONG2NUM(cpu_frequency);
+    return ULL2NUM(cpu_frequency);
 }
 
 /* Document-method: prof_set_cpu_frequency
@@ -142,7 +142,7 @@ RubyProf::measure_mode is set to CPU_TIME. */
 static VALUE
 prof_set_cpu_frequency(VALUE self, VALUE val)
 {
-    cpu_frequency = NUM2LONG(val);
+    cpu_frequency = NUM2ULL(val);
     return val;
 }
 

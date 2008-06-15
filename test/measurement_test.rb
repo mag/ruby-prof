@@ -30,7 +30,7 @@ class MeasurementTest < Test::Unit::TestCase
 
   def test_cpu_time
     return unless RubyProf::CPU_TIME
-    RubyProf.cpu_frequency = 2.33 * 1000000
+    RubyProf.cpu_frequency = 2.33e9
 
     t = RubyProf.measure_cpu_time
     assert_kind_of Float, t

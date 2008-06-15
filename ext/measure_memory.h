@@ -31,7 +31,11 @@
 static prof_measure_t
 measure_memory()
 {
+#if defined(HAVE_LONG_LONG)
+    return NUM2ULL(rb_gc_allocated_size());
+#else
     return NUM2ULONG(rb_gc_allocated_size());
+#endif
 }
 
 static double
@@ -57,7 +61,11 @@ prof_measure_memory(VALUE self)
 static prof_measure_t
 measure_memory()
 {
+#if defined(HAVE_LONG_LONG)
+    return NUM2ULL(rb_gc_malloc_allocated_size());
+#else
     return NUM2ULONG(rb_gc_malloc_allocated_size());
+#endif
 }
 
 static double
