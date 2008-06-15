@@ -41,3 +41,14 @@ convert_allocations(prof_measure_t c)
 }
 
 #endif
+
+/* Document-method: prof_measure_allocations
+   call-seq:
+     measure_allocations -> int
+
+Returns the wall time.*/
+static VALUE
+prof_measure_allocations(VALUE self)
+{
+    return os_allocated_objects(self);
+}

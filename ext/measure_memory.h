@@ -40,6 +40,17 @@ convert_memory(prof_measure_t c)
     return  c;
 }
 
+/* Document-method: prof_measure_memory
+   call-seq:
+     measure_memory -> int
+
+Returns total allocated memory in bytes.*/
+static VALUE
+prof_measure_memory(VALUE self)
+{
+    return gc_allocated_size();
+}
+
 #elif defined(HAVE_RB_GC_MALLOC_ALLOCATED_SIZE)
 #define MEASURE_MEMORY 4
 
@@ -53,6 +64,12 @@ static double
 convert_memory(prof_measure_t c)
 {
     return  c;
+}
+
+static VALUE
+prof_measure_memory(VALUE self)
+{
+    return gc_malloc_allocated_size();
 }
 
 #endif
