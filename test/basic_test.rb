@@ -65,19 +65,16 @@ class BasicTest < Test::Unit::TestCase
   
   def test_double_profile
     RubyProf.start
-    assert_nothing_raised do
+    assert_raise(RuntimeError) do
       RubyProf.start
     end
-
-    assert_nothing_raised do
+    
+    assert_raise(RuntimeError) do
       RubyProf.profile do
         puts 1
       end
     end
-
-    assert_raise(RuntimeError) do
-      RubyProf.stop
-    end
+    RubyProf.stop
   end
   
   def test_no_block

@@ -159,10 +159,6 @@ static st_table *threads_tbl = NULL;
    a separate stack since this isn't thread safe! */
 static thread_data_t* last_thread_data = NULL;
 
-static int benchmarking_mode = 0;
-static prof_measure_t bench_mark_time;
-static prof_measure_t bench_total_time;
-
 
 /* ================  Helper Functions  =================*/
 /* Helper method to get the id of a Ruby thread. */
@@ -1448,46 +1444,6 @@ prof_set_measure_mode(VALUE self, VALUE val)
     return val;
 }
 
-/* call-seq:
-   benchmarking? -> boolean
-
-Returns whether benchmarking mode is enabled.*/
-static VALUE
-prof_get_benchmarking_mode(VALUE self)
-{
-    if (benchmarking_mode)
-        return Qtrue;
-    else
-        return Qfalse;
-}
-
-/* call-seq:
-   benchmarking=value -> void
-
-Enable benchmarking mode. Measure total time only, no profiling.*/
-static VALUE
-prof_set_benchmarking_mode(VALUE self, VALUE val)
-{
-    if (threads_tbl)
-    {
-      rb_raise(rb_eRuntimeError, "can't set measure_mode while profiling");
-    }
-
-    benchmarking_mode = (val == Qfalse || val == Qnil) ? 0 : 1;
-    return val;
-}
-
-/* call-seq:
-   total_time -> float
-
-Returns the total time spent. */
-static VALUE
-prof_get_bench_total_time(VALUE self)
-{
-    return rb_float_new(convert_measurement(bench_total_time));
-}
-
-
 /* =========  Profiling ============= */
 void
 prof_install_hook()
@@ -1542,23 +1498,17 @@ prof_running(VALUE self)
 static VALUE
 prof_start(VALUE self)
 {
-    /* Setup globals. Reset benchmark. */
-    if (threads_tbl == NULL)
+    if (threads_tbl != NULL)
     {
-        last_thread_data = NULL;
-        threads_tbl = threads_table_create();
-        bench_total_time = 0;
+        rb_raise(rb_eRuntimeError, "RubyProf.start was already called");
     }
 
-    /* Begin benchmark. */
-    bench_mark_time = get_measurement();
-
-    /* Install event hook unless benchmarking only. */
-    if (!benchmarking_mode)
-      prof_install_hook();
-
+    /* Setup globals */
+    last_thread_data = NULL;
+    threads_tbl = threads_table_create();
+    prof_install_hook();              
     return self;
-}
+}    
 
 /* call-seq:
    pause -> RubyProf
@@ -1567,40 +1517,37 @@ prof_start(VALUE self)
 static VALUE
 prof_pause(VALUE self)
 {
-    prof_measure_t last;
-
     if (threads_tbl == NULL)
     {
         rb_raise(rb_eRuntimeError, "RubyProf is not running.");
     }
 
-    /* Add to benchmark total. */
-    last = bench_mark_time;
-    bench_mark_time = get_measurement();
-    bench_total_time += bench_mark_time - last;
-
-    /* Remove event hook unless benchmarking only. */
-    if (!benchmarking_mode)
-      prof_remove_hook();
-
+    prof_remove_hook();
     return self;
 }
 
 /* call-seq:
-   resume {block} -> float
+   resume {block} -> RubyProf
    
    Resumes recording profile data.*/
 static VALUE
 prof_resume(VALUE self)
 {
-    prof_start(self);
-
+    if (threads_tbl == NULL)
+    { 
+        prof_start(self);
+    }
+    else
+    { 
+        prof_install_hook();
+    }
+    
     if (rb_block_given_p())
     {
       rb_ensure(rb_yield, self, prof_pause, self);
     }
 
-    return prof_get_bench_total_time(self);
+    return self;
 }
 
 /* call-seq:
@@ -1611,12 +1558,11 @@ static VALUE
 prof_stop(VALUE self)
 {
     VALUE result = Qnil;
+    
+    prof_remove_hook();
 
-    prof_pause(self);
-
-    /* Create the result unless benchmarking only */
-    if (!benchmarking_mode)
-      result = prof_result_new();
+    /* Create the result */
+    result = prof_result_new();
 
     /* Unset the last_thread_data (very important!) 
        and the threads table */
@@ -1624,8 +1570,7 @@ prof_stop(VALUE self)
     threads_table_free(threads_tbl);
     threads_tbl = NULL;
 
-    /* Return the result if profiling or total time if benchmarking only */
-    return (benchmarking_mode ? prof_get_bench_total_time(self) : result);
+    return result;
 }
 
 /* call-seq:
@@ -1636,7 +1581,7 @@ static VALUE
 prof_profile(VALUE self)
 {
     int result;
-
+    
     if (!rb_block_given_p())
     {
         rb_raise(rb_eArgError, "A block must be provided to the profile method.");
@@ -1663,13 +1608,9 @@ Init_ruby_prof()
     rb_define_module_function(mProf, "pause", prof_pause, 0);
     rb_define_module_function(mProf, "running?", prof_running, 0);
     rb_define_module_function(mProf, "profile", prof_profile, 0);
-
+    
     rb_define_singleton_method(mProf, "measure_mode", prof_get_measure_mode, 0);
     rb_define_singleton_method(mProf, "measure_mode=", prof_set_measure_mode, 1);
-
-    rb_define_singleton_method(mProf, "benchmarking?", prof_get_benchmarking_mode, 0);
-    rb_define_singleton_method(mProf, "benchmarking=", prof_set_benchmarking_mode, 1);
-    rb_define_singleton_method(mProf, "total_time", prof_get_bench_total_time, 0);
 
     rb_define_const(mProf, "CLOCKS_PER_SEC", INT2NUM(CLOCKS_PER_SEC));
     rb_define_const(mProf, "PROCESS_TIME", INT2NUM(MEASURE_PROCESS_TIME));
