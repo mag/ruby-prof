@@ -70,7 +70,19 @@ class MeasureModeTest < Test::Unit::TestCase
       Array.new
     end
   end
-  
+
+  def test_memory
+    return unless RubyProf::MEMORY
+
+    RubyProf::measure_mode = RubyProf::MEMORY
+
+    assert_equal(RubyProf::MEMORY, RubyProf::measure_mode)
+
+    result = RubyProf.profile do
+      Array.new
+    end
+  end
+
   def test_invalid
     assert_raise(ArgumentError) do
       RubyProf::measure_mode = 7777

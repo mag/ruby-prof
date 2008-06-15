@@ -46,9 +46,13 @@ convert_allocations(prof_measure_t c)
    call-seq:
      measure_allocations -> int
 
-Returns the wall time.*/
+Returns the total number of object allocations since Ruby started.*/
 static VALUE
 prof_measure_allocations(VALUE self)
 {
-    return os_allocated_objects(self);
+#if defined(HAVE_LONG_LONG)
+    return ULL2NUM(rb_os_allocated_objects());
+#else
+    return ULONG2NUM(rb_os_allocated_objects());
+#endif
 }

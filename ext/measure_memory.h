@@ -31,7 +31,7 @@
 static prof_measure_t
 measure_memory()
 {
-    return rb_gc_allocated_size();
+    return NUM2ULONG(rb_gc_allocated_size());
 }
 
 static double
@@ -48,7 +48,7 @@ Returns total allocated memory in bytes.*/
 static VALUE
 prof_measure_memory(VALUE self)
 {
-    return gc_allocated_size();
+    return rb_gc_allocated_size();
 }
 
 #elif defined(HAVE_RB_GC_MALLOC_ALLOCATED_SIZE)
@@ -57,7 +57,7 @@ prof_measure_memory(VALUE self)
 static prof_measure_t
 measure_memory()
 {
-    return rb_gc_malloc_allocated_size();
+    return NUM2ULONG(rb_gc_malloc_allocated_size());
 }
 
 static double
@@ -69,7 +69,7 @@ convert_memory(prof_measure_t c)
 static VALUE
 prof_measure_memory(VALUE self)
 {
-    return gc_malloc_allocated_size();
+    return rb_gc_malloc_allocated_size();
 }
 
 #endif
