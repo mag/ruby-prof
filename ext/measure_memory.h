@@ -41,7 +41,7 @@ measure_memory()
 static double
 convert_memory(prof_measure_t c)
 { 
-    return  c;
+    return  (double) c / 1024;
 }
 
 /* Document-method: prof_measure_memory
@@ -71,7 +71,7 @@ measure_memory()
 static double
 convert_memory(prof_measure_t c)
 {
-    return  c;
+    return  (double) c / 1024;
 }
 
 static VALUE
