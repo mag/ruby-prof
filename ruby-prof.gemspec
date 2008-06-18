@@ -1,4 +1,4 @@
-Gem::Specification.new do |s|
+Gem::Specification.new do |spec|
   spec.name = "ruby-prof"
 
   spec.homepage = "http://rubyforge.org/projects/ruby-prof/"
