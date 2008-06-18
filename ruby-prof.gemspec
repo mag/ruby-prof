@@ -21,7 +21,20 @@ EOF
   spec.bindir = "bin"
   spec.executables = ["ruby-prof"]
   spec.extensions = ["ext/extconf.rb"]
-  spec.files = FILES.to_a
+  spec.files = FileList[
+    'Rakefile',
+    'README',
+    'LICENSE',
+    'CHANGES',
+    'bin/*',
+    'lib/**/*',
+    'rails_plugin/**/*',
+    'examples/*',
+    'ext/*',
+    'doc/**/*',
+    'test/*'
+  ].to_a
+
   spec.test_files = Dir["test/test_*.rb"]
 
   spec.required_ruby_version = '>= 1.8.4'
