@@ -80,4 +80,25 @@ prof_measure_memory(VALUE self)
     return rb_gc_malloc_allocated_size();
 }
 
+#elif defined(HAVE_RB_HEAP_TOTAL_MEM)
+#define MEASURE_MEMORY 4
+
+static prof_measure_t
+measure_memory()
+{
+    return rb_heap_total_mem();
+}
+
+static double
+convert_memory(prof_measure_t c)
+{
+    return  (double) c / 1024;
+}
+
+static VALUE
+prof_measure_memory(VALUE self)
+{
+    return ULONG2NUM(rb_heap_total_mem());
+}
+
 #endif
