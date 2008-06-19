@@ -21,7 +21,7 @@ EOF
   spec.bindir = "bin"
   spec.executables = ["ruby-prof"]
   spec.extensions = ["ext/extconf.rb"]
-  spec.files = FileList[
+  spec.files = Dir[
     'Rakefile',
     'README',
     'LICENSE',
