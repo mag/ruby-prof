@@ -40,38 +40,38 @@ class MeasureModeTest < Test::Unit::TestCase
       end
     end
   end
-  
-  def test_cpu
-    return unless RubyProf.constants.include?('CPU_TIME')
-    
-    RubyProf::measure_mode = RubyProf::CPU_TIME
-    assert_equal(RubyProf::CPU_TIME, RubyProf::measure_mode)
-    result = RubyProf.profile do
-      run_primes
-    end
-    
-    result.threads.values.each do |methods|
-      methods.each do |method|
-        check_parent_times(method)
-        check_parent_calls(method)
-        check_child_times(method)   
+
+  if RubyProf::CPU_TIME
+    def test_cpu
+      RubyProf::measure_mode = RubyProf::CPU_TIME
+      assert_equal(RubyProf::CPU_TIME, RubyProf::measure_mode)
+      result = RubyProf.profile do
+        run_primes
+      end
+
+      result.threads.values.each do |methods|
+        methods.each do |method|
+          check_parent_times(method)
+          check_parent_calls(method)
+          check_child_times(method)
+        end
       end
     end
   end
-  
-  def test_allocated_objects
-    return if RubyProf::ALLOCATIONS.nil?
-    
-    RubyProf::measure_mode = RubyProf::ALLOCATIONS
-    
-    assert_equal(RubyProf::ALLOCATIONS, RubyProf::measure_mode)
-    
-    result = RubyProf.profile do
-      Array.new
+
+  if RubyProf::ALLOCATIONS
+    def test_allocated_objects
+      RubyProf::measure_mode = RubyProf::ALLOCATIONS
+
+      assert_equal(RubyProf::ALLOCATIONS, RubyProf::measure_mode)
+
+      result = RubyProf.profile do
+        Array.new
+      end
     end
   end
 
-  if defined?(RubyProf::MEMORY) && RubyProf::MEMORY
+  if RubyProf::MEMORY
     def test_memory
       RubyProf::measure_mode = RubyProf::MEMORY
 

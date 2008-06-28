@@ -67,7 +67,7 @@ typedef rb_event_t rb_event_flag_t;
 
 /* ================  Measurement  =================*/
 #ifdef HAVE_LONG_LONG
-typedef LONG_LONG prof_measure_t;
+typedef unsigned LONG_LONG prof_measure_t;
 #else
 typedef unsigned long prof_measure_t;
 #endif
@@ -1616,12 +1616,15 @@ Init_ruby_prof()
 
     rb_define_const(mProf, "CLOCKS_PER_SEC", INT2NUM(CLOCKS_PER_SEC));
     rb_define_const(mProf, "PROCESS_TIME", INT2NUM(MEASURE_PROCESS_TIME));
+    rb_define_singleton_method(mProf, "measure_process_time", prof_measure_process_time, 0); /* in measure_process_time.h */
     rb_define_const(mProf, "WALL_TIME", INT2NUM(MEASURE_WALL_TIME));
+    rb_define_singleton_method(mProf, "measure_wall_time", prof_measure_wall_time, 0); /* in measure_wall_time.h */
 
     #ifndef MEASURE_CPU_TIME
     rb_define_const(mProf, "CPU_TIME", Qnil);
     #else
     rb_define_const(mProf, "CPU_TIME", INT2NUM(MEASURE_CPU_TIME));
+    rb_define_singleton_method(mProf, "measure_cpu_time", prof_measure_cpu_time, 0); /* in measure_cpu_time.h */
     rb_define_singleton_method(mProf, "cpu_frequency", prof_get_cpu_frequency, 0); /* in measure_cpu_time.h */
     rb_define_singleton_method(mProf, "cpu_frequency=", prof_set_cpu_frequency, 1); /* in measure_cpu_time.h */
     #endif
@@ -1630,12 +1633,14 @@ Init_ruby_prof()
     rb_define_const(mProf, "ALLOCATIONS", Qnil);
     #else
     rb_define_const(mProf, "ALLOCATIONS", INT2NUM(MEASURE_ALLOCATIONS));
+    rb_define_singleton_method(mProf, "measure_allocations", prof_measure_allocations, 0); /* in measure_allocations.h */
     #endif
     
     #ifndef MEASURE_MEMORY
     rb_define_const(mProf, "MEMORY", Qnil);
     #else
     rb_define_const(mProf, "MEMORY", INT2NUM(MEASURE_MEMORY));
+    rb_define_singleton_method(mProf, "measure_memory", prof_measure_memory, 0); /* in measure_memory.h */
     #endif
     
     cResult = rb_define_class_under(mProf, "Result", rb_cObject);

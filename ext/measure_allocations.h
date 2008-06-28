@@ -41,3 +41,18 @@ convert_allocations(prof_measure_t c)
 }
 
 #endif
+
+/* Document-method: prof_measure_allocations
+   call-seq:
+     measure_allocations -> int
+
+Returns the total number of object allocations since Ruby started.*/
+static VALUE
+prof_measure_allocations(VALUE self)
+{
+#if defined(HAVE_LONG_LONG)
+    return ULL2NUM(rb_os_allocated_objects());
+#else
+    return ULONG2NUM(rb_os_allocated_objects());
+#endif
+}

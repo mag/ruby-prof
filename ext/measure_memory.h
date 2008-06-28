@@ -31,7 +31,11 @@
 static prof_measure_t
 measure_memory()
 {
-    return rb_gc_allocated_size();
+#if defined(HAVE_LONG_LONG)
+    return NUM2ULL(rb_gc_allocated_size());
+#else
+    return NUM2ULONG(rb_gc_allocated_size());
+#endif
 }
 
 static double
@@ -40,19 +44,40 @@ convert_memory(prof_measure_t c)
     return (double) c / 1024; 
 }
 
+/* Document-method: prof_measure_memory
+   call-seq:
+     measure_memory -> int
+
+Returns total allocated memory in bytes.*/
+static VALUE
+prof_measure_memory(VALUE self)
+{
+    return rb_gc_allocated_size();
+}
+
 #elif defined(HAVE_RB_GC_MALLOC_ALLOCATED_SIZE)
 #define MEASURE_MEMORY 4
 
 static prof_measure_t
 measure_memory()
 {
-    return rb_gc_malloc_allocated_size();
+#if defined(HAVE_LONG_LONG)
+    return NUM2ULL(rb_gc_malloc_allocated_size());
+#else
+    return NUM2ULONG(rb_gc_malloc_allocated_size());
+#endif
 }
 
 static double
 convert_memory(prof_measure_t c)
 {
     return (double) c / 1024;
+}
+
+static VALUE
+prof_measure_memory(VALUE self)
+{
+    return rb_gc_malloc_allocated_size();
 }
 
 #endif

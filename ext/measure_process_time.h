@@ -39,3 +39,14 @@ convert_process_time(prof_measure_t c)
 {
     return (double) c / CLOCKS_PER_SEC;
 }
+
+/* Document-method: prof_measure_process_time
+   call-seq:
+     measure_process_time -> float
+
+Returns the process time.*/
+static VALUE
+prof_measure_process_time(VALUE self)
+{
+    return rb_float_new(convert_process_time(measure_process_time()));
+}
