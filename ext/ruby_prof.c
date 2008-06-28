@@ -1462,7 +1462,7 @@ prof_install_hook()
           | RUBY_EVENT_LINE);
 #endif
 
-#if defined(MEASURE_MEMORY)
+#if defined(TOGGLE_GC_STATS)
     rb_gc_enable_stats();
 #endif
 }
@@ -1470,7 +1470,7 @@ prof_install_hook()
 void
 prof_remove_hook()
 {
-#if defined(MEASURE_MEMORY)
+#if defined(TOGGLE_GC_STATS)
     rb_gc_disable_stats();
 #endif
 

@@ -26,6 +26,7 @@
 
 #if defined(HAVE_RB_GC_ALLOCATED_SIZE)
 #define MEASURE_MEMORY 4
+#define TOGGLE_GC_STATS 1
  
 static prof_measure_t
 measure_memory()
@@ -37,6 +38,21 @@ static double
 convert_memory(prof_measure_t c)
 { 
     return (double) c / 1024; 
+}
+
+#elif defined(HAVE_RB_GC_MALLOC_ALLOCATED_SIZE)
+#define MEASURE_MEMORY 4
+
+static prof_measure_t
+measure_memory()
+{
+    return rb_gc_malloc_allocated_size();
+}
+
+static double
+convert_memory(prof_measure_t c)
+{
+    return (double) c / 1024;
 }
 
 #endif
