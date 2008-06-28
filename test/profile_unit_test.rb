@@ -3,7 +3,7 @@
 require 'test/unit'
 require 'ruby-prof'
 require 'test_helper'
-require 'ruby-prof/profile_test_case'
+require 'ruby-prof/profile_test'
 
 # Need to use wall time for this test due to the sleep calls
 RubyProf::measure_mode = RubyProf::WALL_TIME
