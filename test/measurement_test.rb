@@ -17,7 +17,7 @@ class MeasurementTest < Test::Unit::TestCase
     assert_kind_of Float, t
 
     u = RubyProf.measure_process_time
-    assert u >= t, [t, u].inspect
+    assert u > t, [t, u].inspect
   end
 
   def test_wall_time
@@ -36,7 +36,7 @@ class MeasurementTest < Test::Unit::TestCase
       assert_kind_of Float, t
 
       u = RubyProf.measure_cpu_time
-      assert u >= t, [t, u].inspect
+      assert u > t, [t, u].inspect
     end
   end
 
@@ -46,7 +46,7 @@ class MeasurementTest < Test::Unit::TestCase
       assert_kind_of Integer, t
 
       u = RubyProf.measure_allocations
-      assert u >= t, [t, u].inspect
+      assert u > t, [t, u].inspect
     end
   end
 
@@ -57,6 +57,30 @@ class MeasurementTest < Test::Unit::TestCase
 
       u = RubyProf.measure_memory
       assert u >= t, [t, u].inspect
+    end
+  end
+
+  if RubyProf::GC_RUNS
+    def test_gc_runs
+      t = RubyProf.measure_gc_runs
+      assert_kind_of Integer, t
+
+      GC.start
+
+      u = RubyProf.measure_gc_runs
+      assert u > t, [t, u].inspect
+    end
+  end
+
+  if RubyProf::GC_TIME
+    def test_gc_time
+      t = RubyProf.measure_gc_time
+      assert_kind_of Integer, t
+
+      GC.start
+
+      u = RubyProf.measure_gc_time
+      assert u > t, [t, u].inspect
     end
   end
 end

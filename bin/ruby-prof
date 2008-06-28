@@ -27,6 +27,10 @@
 #                                              (requires a patched Ruby interpreter).
 #                                        memory - Tracks total memory size
 #                                              (requires a patched Ruby interpreter).
+#                                        gc_runs - Tracks number of garbage collection runs
+#                                              (requires a patched Ruby interpreter).
+#                                        gc_time - Tracks time spent doing garbage collection
+#                                              (requires a patched Ruby interpreter).
 #         --replace-progname           Replace $0 when loading the .rb files.
 #         --specialized-instruction    Turn on specialized instruction.
 #     -h, --help                       Show help message
@@ -89,12 +93,15 @@ opts = OptionParser.new do |opts|
   end
     
   opts.on('--mode=measure_mode',
-      [:process, :wall, :cpu, :allocations],
+      [:process, :wall, :cpu, :allocations, :memory, :gc_runs, :gc_time],
       'Select what ruby-prof should measure:',
       '  process - Process time (default).',
       '  wall - Wall time.',
       '  cpu - CPU time (Pentium and PowerPCs only).',
-      '  allocations - Object allocations (requires patched Ruby interpreter).') do |measure_mode|
+      '  allocations - Object allocations (requires patched Ruby interpreter).',
+      '  memory - Allocated memory in KB (requires patched Ruby interpreter).',
+      '  gc_runs - Number of garbage collections (requires patched Ruby interpreter).',
+      '  gc_time - Time spent in garbage collection (requires patched Ruby interpreter).') do |measure_mode|
       
       case measure_mode
       when :process
@@ -107,6 +114,10 @@ opts = OptionParser.new do |opts|
         options.measure_mode = RubyProf::ALLOCATIONS
       when :memory
         options.measure_mode = RubyProf::MEMORY
+      when :gc_runs
+        options.measure_mode = RubyProf::GC_RUNS
+      when :gc_time
+        options.measure_mode = RubyProf::GC_TIME
       end
   end
         

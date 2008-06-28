@@ -27,8 +27,16 @@ module RubyProf
         when RubyProf.const_defined?(:MEMORY) && RubyProf::MEMORY
           @value_scale = 1
           @output << 'memory'
+        when RubyProf.const_defined?(:GC_RUNS) && RubyProf::GC_RUNS
+          @value_scale = 1
+          @output << 'gc_runs'
+        when RubyProf.const_defined?(:GC_TIME) && RubyProf::GC_TIME
+          @value_scale = 1000000
+          @output << 'gc_time'
+        else
+          raise "Unknown measure mode: #{RubyProf.measure_mode}"
       end
-      @output << "\n\n"  
+      @output << "\n\n"
 
       print_threads
     end
