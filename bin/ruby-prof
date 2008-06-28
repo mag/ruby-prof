@@ -25,6 +25,8 @@
 #                                              (only supported on Pentium and PowerPCs).
 #                                        allocations - Tracks object allocations
 #                                              (requires a patched Ruby interpreter).
+#                                        memory - Tracks total memory size
+#                                              (requires a patched Ruby interpreter).
 #         --replace-progname           Replace $0 when loading the .rb files.
 #         --specialized-instruction    Turn on specialized instruction.
 #     -h, --help                       Show help message
@@ -103,6 +105,8 @@ opts = OptionParser.new do |opts|
         options.measure_mode = RubyProf::CPU_TIME
       when :allocations
         options.measure_mode = RubyProf::ALLOCATIONS
+      when :memory
+        options.measure_mode = RubyProf::MEMORY
       end
   end
         
