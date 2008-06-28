@@ -2,9 +2,21 @@ require 'rubygems'
 require 'date'
 require 'rake/gempackagetask'
 require 'rake/rdoctask'
+require 'rake/testtask'
 require 'date'
 
 SO_NAME = "ruby_prof.so"
+
+desc 'Run the ruby-prof test suite'
+task :default => :test
+
+Rake::TestTask.new do |t|
+  t.libs += %w(lib ext test)
+  t.test_files = Dir['test/*_test.rb'] - %w(test/profile_unit_test.rb)
+  t.verbose = true
+  t.warning = true
+end
+
 
 # ------- Default Package ----------
 RUBY_PROF_VERSION = "0.6.1"
