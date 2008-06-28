@@ -70,7 +70,19 @@ class MeasureModeTest < Test::Unit::TestCase
       Array.new
     end
   end
-  
+
+  if defined?(RubyProf::MEMORY) && RubyProf::MEMORY
+    def test_memory
+      RubyProf::measure_mode = RubyProf::MEMORY
+
+      result = RubyProf.profile { Array.new }
+      total = result.threads.values.first.methods.inject(0) { |sum, m| sum + m.total_time }
+
+      assert(total > 0, 'Should measure more than zero kilobytes of memory usage')
+      assert_not_equal(0, total % 1, 'Should not truncate fractional kilobyte measurements')
+    end
+  end
+
   def test_invalid
     assert_raise(ArgumentError) do
       RubyProf::measure_mode = 7777

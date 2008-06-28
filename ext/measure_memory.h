@@ -36,7 +36,7 @@ measure_memory()
 static double
 convert_memory(prof_measure_t c)
 { 
-    return  c / 1024; 
+    return (double) c / 1024; 
 }
 
 #endif
