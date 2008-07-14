@@ -1013,7 +1013,7 @@ get_event_name(rb_event_flag_t event)
   return "raise";
     default:
   return "unknown";
-    }
+  }
 }
 
 static void

@@ -55,17 +55,5 @@ prof_measure_allocations(VALUE self)
     return ULONG2NUM(rb_os_allocated_objects());
 #endif
 }
-
-#else
-
-/* Document-method: prof_measure_allocations
-   call-seq:
-     measure_allocations -> int
-
-Returns the total number of object allocations since Ruby started.*/
-prof_measure_allocations(VALUE self)
-{
-  rb_raise(rb_eRuntimeError, "Requires a patched Ruby interpreter that has rb_os_allocated_objects rb_os_allocated_objects method.");
-}
 #endif
 
