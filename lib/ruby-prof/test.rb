@@ -1,5 +1,6 @@
 # Now load ruby-prof and away we go
 require 'ruby-prof'
+require 'benchmark'
 
 module RubyProf
   module Test
