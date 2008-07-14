@@ -11,6 +11,10 @@ module RubyProf
       :min_percent => 0.05,
       :output_dir => Dir.pwd }
 
+    def output_dir
+      PROFILE_OPTIONS[:output_dir]
+    end
+          
     def run(result)
       return if @method_name.to_s == "default_test"
 
