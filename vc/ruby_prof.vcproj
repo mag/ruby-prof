@@ -193,6 +193,38 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\ext\measure_allocations.h"
+				>
+			</File>
+			<File
+				RelativePath="..\ext\measure_cpu_time.h"
+				>
+			</File>
+			<File
+				RelativePath="..\ext\measure_gc_runs.h"
+				>
+			</File>
+			<File
+				RelativePath="..\ext\measure_gc_time.h"
+				>
+			</File>
+			<File
+				RelativePath="..\ext\measure_memory.h"
+				>
+			</File>
+			<File
+				RelativePath="..\ext\measure_process_time.h"
+				>
+			</File>
+			<File
+				RelativePath="..\ext\measure_wall_time.h"
+				>
+			</File>
+			<File
+				RelativePath="..\ext\version.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

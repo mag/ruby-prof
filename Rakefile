@@ -18,9 +18,15 @@ Rake::TestTask.new do |t|
 end
 
 
-# ------- Default Package ----------
-RUBY_PROF_VERSION = "0.6.1"
+# ------- Version ----
+# Read version from header file
+version_header = File.read('ext/version.h')
+RUBY_PROF_VERSION = version_header.match(/RUBY_PROF_VERSION\s*["](\d.+)["]/)
+if not RUBY_PROF_VERSION
+  raise(RuntimeError, "Could not determine RUBY_PROF_VERSION")
 
+
+# ------- Default Package ----------
 FILES = FileList[
   'Rakefile',
   'README',

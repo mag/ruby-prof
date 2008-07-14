@@ -59,10 +59,10 @@ typedef rb_event_t rb_event_flag_t;
 #define rb_sourceline() (node ? nd_line(node) : 0)
 #endif
 
+#include "version.h"
 
 /* ================  Constants  =================*/
 #define INITIAL_STACK_SIZE 8
-#define PROF_VERSION "0.6.1"
 
 
 /* ================  Measurement  =================*/
@@ -1623,7 +1623,7 @@ void
 Init_ruby_prof()
 {
     mProf = rb_define_module("RubyProf");
-    rb_define_const(mProf, "VERSION", rb_str_new2(PROF_VERSION));
+    rb_define_const(mProf, "VERSION", rb_str_new2(RUBY_PROF_VERSION));
     rb_define_module_function(mProf, "start", prof_start, 0);
     rb_define_module_function(mProf, "stop", prof_stop, 0);
     rb_define_module_function(mProf, "resume", prof_resume, 0);
