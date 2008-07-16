@@ -24,6 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE. */
 
+#include <ruby.h>
 
 #if defined(_WIN32) || (defined(__GNUC__) && (defined(__i386__) || defined(__powerpc__) || defined(__ppc__)))
 #define MEASURE_CPU_TIME 2
@@ -110,6 +111,17 @@ convert_cpu_time(prof_measure_t c)
     return (double) c / cpu_frequency;
 }
 
+/* Document-method: prof_measure_cpu_time
+   call-seq:
+     measure_cpu_time -> float
+
+Returns the cpu time.*/
+static VALUE
+prof_measure_cpu_time(VALUE self)
+{
+    return rb_float_new(convert_cpu_time(measure_cpu_time()));
+}
+
 /* Document-method: prof_get_cpu_frequency
    call-seq:
      cpu_frequency -> int
@@ -119,7 +131,7 @@ RubyProf::measure_mode is set to CPU_TIME. */
 static VALUE
 prof_get_cpu_frequency(VALUE self)
 {
-    return LONG2NUM(cpu_frequency);
+    return ULL2NUM(cpu_frequency);
 }
 
 /* Document-method: prof_set_cpu_frequency
@@ -131,7 +143,7 @@ RubyProf::measure_mode is set to CPU_TIME. */
 static VALUE
 prof_set_cpu_frequency(VALUE self, VALUE val)
 {
-    cpu_frequency = NUM2LONG(val);
+    cpu_frequency = NUM2LL(val);
     return val;
 }
 

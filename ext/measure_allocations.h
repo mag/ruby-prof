@@ -24,6 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE. */
 
+#include <ruby.h>
 
 #if defined(HAVE_RB_OS_ALLOCATED_OBJECTS)
 #define MEASURE_ALLOCATIONS 3
@@ -40,4 +41,19 @@ convert_allocations(prof_measure_t c)
     return  c; 
 }
 
+/* Document-method: prof_measure_allocations
+   call-seq:
+     measure_allocations -> int
+
+Returns the total number of object allocations since Ruby started.*/
+static VALUE
+prof_measure_allocations(VALUE self)
+{
+#if defined(HAVE_LONG_LONG)
+    return ULL2NUM(rb_os_allocated_objects());
+#else
+    return ULONG2NUM(rb_os_allocated_objects());
 #endif
+}
+#endif
+

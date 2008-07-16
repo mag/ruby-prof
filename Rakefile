@@ -2,13 +2,31 @@ require 'rubygems'
 require 'date'
 require 'rake/gempackagetask'
 require 'rake/rdoctask'
+require 'rake/testtask'
 require 'date'
 
 SO_NAME = "ruby_prof.so"
 
-# ------- Default Package ----------
-RUBY_PROF_VERSION = "0.6.1"
+desc 'Run the ruby-prof test suite'
+task :default => :test
 
+Rake::TestTask.new do |t|
+  t.libs += %w(lib ext test)
+  t.test_files = Dir['test/*_test.rb'] - %w(test/profile_unit_test.rb)
+  t.verbose = true
+  t.warning = true
+end
+
+
+# ------- Version ----
+# Read version from header file
+version_header = File.read('ext/version.h')
+match = version_header.match(/RUBY_PROF_VERSION\s*["](\d.+)["]/)
+raise(RuntimeError, "Could not determine RUBY_PROF_VERSION") if not match
+RUBY_PROF_VERSION = match[1]
+  
+
+# ------- Default Package ----------
 FILES = FileList[
   'Rakefile',
   'README',
@@ -75,19 +93,6 @@ EOF
   
   # rdoc
   spec.has_rdoc = true
-  spec.rdoc_options << "--title" << "ruby-prof"
-  # Show source inline with line numbers
-  spec.rdoc_options << "--inline-source" << "--line-numbers"
-  # Make the readme file the start page for the generated html
-  spec.rdoc_options << '--main' << 'README'
-  spec.extra_rdoc_files = ['bin/ruby-prof',
-                           'ext/ruby_prof.c',
-                           'examples/flat.txt',
-                           'examples/graph.txt',
-                           'examples/graph.html',
-                           'README',
-                           'LICENSE']
-
 end
 
 # Rake task to build the default package
@@ -122,7 +127,6 @@ task :create_win32_gem do
   rm(target)
 end
 
-
 task :package => :create_win32_gem
 
 # ---------  RDoc Documentation ------
@@ -145,15 +149,4 @@ Rake::RDocTask.new("rdoc") do |rdoc|
                           'LICENSE')
 end
 
-
-# ---------  Publish to RubyForge  ----------------
-desc "Publish ruby-prof to RubyForge."
-task :publish do 
-  require 'rake/contrib/sshpublisher'
-  
-  # Get ruby-prof path
-  ruby_prof_path = File.expand_path(File.dirname(__FILE__))
-
-  publisher = Rake::SshDirPublisher.new("cfis@rubyforge.org",
-        "/var/www/gforge-projects/ruby-prof", ruby_prof_path)
-end
+task :package => :rdoc

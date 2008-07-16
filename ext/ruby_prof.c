@@ -59,15 +59,15 @@ typedef rb_event_t rb_event_flag_t;
 #define rb_sourceline() (node ? nd_line(node) : 0)
 #endif
 
+#include "version.h"
 
 /* ================  Constants  =================*/
 #define INITIAL_STACK_SIZE 8
-#define PROF_VERSION "0.6.1"
 
 
 /* ================  Measurement  =================*/
 #ifdef HAVE_LONG_LONG
-typedef LONG_LONG prof_measure_t;
+typedef unsigned LONG_LONG prof_measure_t;
 #else
 typedef unsigned long prof_measure_t;
 #endif
@@ -77,6 +77,8 @@ typedef unsigned long prof_measure_t;
 #include "measure_cpu_time.h"
 #include "measure_allocations.h"
 #include "measure_memory.h"
+#include "measure_gc_runs.h"
+#include "measure_gc_time.h"
 
 static prof_measure_t (*get_measurement)() = measure_process_time;
 static double (*convert_measurement)(prof_measure_t) = convert_process_time;
@@ -1011,7 +1013,7 @@ get_event_name(rb_event_flag_t event)
   return "raise";
     default:
   return "unknown";
-    }
+  }
 }
 
 static void
@@ -1111,8 +1113,10 @@ prof_event_hook(rb_event_flag_t event, NODE *node, VALUE self, ID mid, VALUE kla
         unsigned long thread_id = get_thread_id(thread);
         char* class_name = rb_obj_classname(klass);
         char* method_name = rb_id2name(mid);
-        char* source_file = node ? node->nd_file : 0;
-        unsigned int source_line = node ? nd_line(node) : 0;
+
+        char* source_file = rb_sourcefile();
+        unsigned int source_line = rb_sourceline();
+        
         char* event_name = get_event_name(event);
         
         if (last_thread_id != thread_id)
@@ -1374,7 +1378,9 @@ prof_result_threads(VALUE self)
    *RubyProf::WALL_TIME - Measure wall time using gettimeofday on Linx and GetLocalTime on Windows
    *RubyProf::CPU_TIME - Measure time using the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms. 
    *RubyProf::ALLOCATIONS - Measure object allocations.  This requires a patched Ruby interpreter.
-   *RubyProf::MEMORY - Measure memory size.  This requires a patched Ruby interpreter.*/
+   *RubyProf::MEMORY - Measure memory size.  This requires a patched Ruby interpreter.
+   *RubyProf::GC_RUNS - Measure number of garbage collections.  This requires a patched Ruby interpreter.
+   *RubyProf::GC_TIME - Measure time spent doing garbage collection.  This requires a patched Ruby interpreter.*/
 static VALUE
 prof_get_measure_mode(VALUE self)
 {
@@ -1390,7 +1396,9 @@ prof_get_measure_mode(VALUE self)
    *RubyProf::WALL_TIME - Measure wall time using gettimeofday on Linx and GetLocalTime on Windows
    *RubyProf::CPU_TIME - Measure time using the CPU clock counter.  This mode is only supported on Pentium or PowerPC platforms. 
    *RubyProf::ALLOCATIONS - Measure object allocations.  This requires a patched Ruby interpreter.
-   *RubyProf::MEMORY - Measure memory size.  This requires a patched Ruby interpreter.*/
+   *RubyProf::MEMORY - Measure memory size.  This requires a patched Ruby interpreter.
+   *RubyProf::GC_RUNS - Measure number of garbage collections.  This requires a patched Ruby interpreter.
+   *RubyProf::GC_TIME - Measure time spent doing garbage collection.  This requires a patched Ruby interpreter.*/
 static VALUE
 prof_set_measure_mode(VALUE self, VALUE val)
 {
@@ -1434,7 +1442,21 @@ prof_set_measure_mode(VALUE self, VALUE val)
         convert_measurement = convert_memory;
         break;
       #endif
-        
+
+      #if defined(MEASURE_GC_RUNS)
+      case MEASURE_GC_RUNS:
+        get_measurement = measure_gc_runs;
+        convert_measurement = convert_gc_runs;
+        break;
+      #endif
+
+      #if defined(MEASURE_GC_TIME)
+      case MEASURE_GC_TIME:
+        get_measurement = measure_gc_time;
+        convert_measurement = convert_gc_time;
+        break;
+      #endif
+
       default:
         rb_raise(rb_eArgError, "invalid mode: %d", mode);
         break;
@@ -1460,7 +1482,7 @@ prof_install_hook()
           | RUBY_EVENT_LINE);
 #endif
 
-#if defined(MEASURE_MEMORY)
+#if defined(TOGGLE_GC_STATS)
     rb_gc_enable_stats();
 #endif
 }
@@ -1468,7 +1490,7 @@ prof_install_hook()
 void
 prof_remove_hook()
 {
-#if defined(MEASURE_MEMORY)
+#if defined(TOGGLE_GC_STATS)
     rb_gc_disable_stats();
 #endif
 
@@ -1601,7 +1623,7 @@ void
 Init_ruby_prof()
 {
     mProf = rb_define_module("RubyProf");
-    rb_define_const(mProf, "VERSION", rb_str_new2(PROF_VERSION));
+    rb_define_const(mProf, "VERSION", rb_str_new2(RUBY_PROF_VERSION));
     rb_define_module_function(mProf, "start", prof_start, 0);
     rb_define_module_function(mProf, "stop", prof_stop, 0);
     rb_define_module_function(mProf, "resume", prof_resume, 0);
@@ -1614,12 +1636,15 @@ Init_ruby_prof()
 
     rb_define_const(mProf, "CLOCKS_PER_SEC", INT2NUM(CLOCKS_PER_SEC));
     rb_define_const(mProf, "PROCESS_TIME", INT2NUM(MEASURE_PROCESS_TIME));
+    rb_define_singleton_method(mProf, "measure_process_time", prof_measure_process_time, 0); /* in measure_process_time.h */
     rb_define_const(mProf, "WALL_TIME", INT2NUM(MEASURE_WALL_TIME));
+    rb_define_singleton_method(mProf, "measure_wall_time", prof_measure_wall_time, 0); /* in measure_wall_time.h */
 
     #ifndef MEASURE_CPU_TIME
     rb_define_const(mProf, "CPU_TIME", Qnil);
     #else
     rb_define_const(mProf, "CPU_TIME", INT2NUM(MEASURE_CPU_TIME));
+    rb_define_singleton_method(mProf, "measure_cpu_time", prof_measure_cpu_time, 0); /* in measure_cpu_time.h */
     rb_define_singleton_method(mProf, "cpu_frequency", prof_get_cpu_frequency, 0); /* in measure_cpu_time.h */
     rb_define_singleton_method(mProf, "cpu_frequency=", prof_set_cpu_frequency, 1); /* in measure_cpu_time.h */
     #endif
@@ -1628,14 +1653,30 @@ Init_ruby_prof()
     rb_define_const(mProf, "ALLOCATIONS", Qnil);
     #else
     rb_define_const(mProf, "ALLOCATIONS", INT2NUM(MEASURE_ALLOCATIONS));
+    rb_define_singleton_method(mProf, "measure_allocations", prof_measure_allocations, 0); /* in measure_allocations.h */
     #endif
     
     #ifndef MEASURE_MEMORY
     rb_define_const(mProf, "MEMORY", Qnil);
     #else
     rb_define_const(mProf, "MEMORY", INT2NUM(MEASURE_MEMORY));
+    rb_define_singleton_method(mProf, "measure_memory", prof_measure_memory, 0); /* in measure_memory.h */
     #endif
-    
+
+    #ifndef MEASURE_GC_RUNS
+    rb_define_const(mProf, "GC_RUNS", Qnil);
+    #else
+    rb_define_const(mProf, "GC_RUNS", INT2NUM(MEASURE_GC_RUNS));
+    rb_define_singleton_method(mProf, "measure_gc_runs", prof_measure_gc_runs, 0); /* in measure_gc_runs.h */
+    #endif
+
+    #ifndef MEASURE_GC_TIME
+    rb_define_const(mProf, "GC_TIME", Qnil);
+    #else
+    rb_define_const(mProf, "GC_TIME", INT2NUM(MEASURE_GC_TIME));
+    rb_define_singleton_method(mProf, "measure_gc_time", prof_measure_gc_time, 0); /* in measure_gc_time.h */
+    #endif
+
     cResult = rb_define_class_under(mProf, "Result", rb_cObject);
     rb_undef_method(CLASS_OF(cMethodInfo), "new");
     rb_define_method(cResult, "threads", prof_result_threads, 0);

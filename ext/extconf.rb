@@ -16,6 +16,19 @@ else
 end
 
 have_header("sys/times.h")
+
+# Stefan Kaes / Alexander Dymo GC patch
 have_func("rb_os_allocated_objects")
 have_func("rb_gc_allocated_size")
+have_func("rb_gc_collections")
+have_func("rb_gc_time")
+
+# Lloyd Hilaiel's heap info patch
+have_func("rb_heap_total_mem")
+have_func("rb_gc_heap_info")
+
+# Ruby 1.9 unexposed methods
+have_func("rb_gc_malloc_allocations")
+have_func("rb_gc_malloc_allocated_size")
+
 create_makefile("ruby_prof")

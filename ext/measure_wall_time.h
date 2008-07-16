@@ -40,3 +40,14 @@ convert_wall_time(prof_measure_t c)
 {
     return (double) c / 1000000;
 }
+
+/* Document-method: prof_measure_wall_time
+   call-seq:
+     measure_wall_time -> float
+
+Returns the wall time.*/
+static VALUE
+prof_measure_wall_time(VALUE self)
+{
+    return rb_float_new(convert_wall_time(measure_wall_time()));
+}
