@@ -243,7 +243,7 @@ klass_name(VALUE klass)
     }
     else if (BUILTIN_TYPE(klass) == T_CLASS)
     {
-        result = rb_inspect(klass);
+        result = rb_str_new2(rb_class2name(klass));
     }
     else
     {
