@@ -1,5 +1,6 @@
 # Now load ruby-prof and away we go
 require 'ruby-prof'
+require 'benchmark'
 
 module RubyProf
   module Test
@@ -10,6 +11,10 @@ module RubyProf
       :min_percent => 0.05,
       :output_dir => Dir.pwd }
 
+    def output_dir
+      PROFILE_OPTIONS[:output_dir]
+    end
+          
     def run(result)
       return if @method_name.to_s == "default_test"
 
@@ -26,7 +31,7 @@ module RubyProf
 
     def run_test
       begin
-        run_setup
+        setup
         yield
       rescue ::Test::Unit::AssertionFailedError => e
         add_failure(e.message, e.backtrace)
@@ -34,7 +39,7 @@ module RubyProf
         add_error($!)
       ensure
         begin
-          run_teardown
+          teardown
         rescue ::Test::Unit::AssertionFailedError => e
           add_failure(e.message, e.backtrace)
         rescue StandardError, ScriptError
@@ -52,14 +57,6 @@ module RubyProf
         end
         puts " (%.2fs warmup)" % bench
       end
-    end
-
-    def run_setup
-      setup
-    end
-
-    def run_teardown
-      teardown
     end
 
     def run_profile(measure_mode)

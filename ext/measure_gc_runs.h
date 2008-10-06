@@ -31,7 +31,7 @@ static prof_measure_t
 measure_gc_runs()
 {
   VALUE h = rb_gc_heap_info();
-  return NUM2UINT(rb_hash_aget(h, rb_str_new2("num_gc_passes")));
+  return NUM2UINT(rb_hash_aref(h, rb_str_new2("num_gc_passes")));
 }
 
 static double
@@ -44,7 +44,7 @@ static VALUE
 prof_measure_gc_runs(VALUE self)
 {
   VALUE h = rb_gc_heap_info();
-  return rb_hash_aget(h, rb_str_new2("num_gc_passes"));
+  return rb_hash_aref(h, rb_str_new2("num_gc_passes"));
 }
 
 #endif

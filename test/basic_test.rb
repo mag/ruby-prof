@@ -110,9 +110,9 @@ class BasicTest < Test::Unit::TestCase
     assert_equal('<Class::C1>#hello', methods[3].full_name)
     
     # The last three methods have total times of zero
-    assert_equal(0, methods[4].total_time)
-    assert_equal(0, methods[5].total_time)
-    assert_equal(0, methods[6].total_time)
+    assert_in_delta(0, methods[4].total_time, 0.001)
+    assert_in_delta(0, methods[5].total_time, 0.001)
+    assert_in_delta(0, methods[6].total_time, 0.001)
     
     #assert_equal('Class#new', methods[4].full_name)
     #assert_equal('<Class::Object>#allocate', methods[5].full_name)

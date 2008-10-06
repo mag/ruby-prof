@@ -20,42 +20,67 @@ class MeasurementTest < Test::Unit::TestCase
     assert u > t, [t, u].inspect
   end
 
-  def test_process_time
+  def test_wall_time
     t = RubyProf.measure_wall_time
     assert_kind_of Float, t
 
     u = RubyProf.measure_wall_time
-    assert u > t, [t, u].inspect
+    assert u >= t, [t, u].inspect
   end
 
-  def test_cpu_time
-    return unless RubyProf::CPU_TIME
-    RubyProf.cpu_frequency = 2.33e9
+  if RubyProf::CPU_TIME
+    def test_cpu_time
+      RubyProf.cpu_frequency = 2.33e9
 
-    t = RubyProf.measure_cpu_time
-    assert_kind_of Float, t
+      t = RubyProf.measure_cpu_time
+      assert_kind_of Float, t
 
-    u = RubyProf.measure_cpu_time
-    assert u > t, [t, u].inspect
+      u = RubyProf.measure_cpu_time
+      assert u > t, [t, u].inspect
+    end
   end
 
-  def test_allocations
-    return unless RubyProf::ALLOCATIONS
+  if RubyProf::ALLOCATIONS
+    def test_allocations
+      t = RubyProf.measure_allocations
+      assert_kind_of Integer, t
 
-    t = RubyProf.measure_allocations
-    assert_kind_of Integer, t
-
-    u = RubyProf.measure_allocations
-    assert u > t, [t, u].inspect
+      u = RubyProf.measure_allocations
+      assert u > t, [t, u].inspect
+    end
   end
 
-  def test_memory
-    return unless RubyProf::MEMORY
+  if RubyProf::MEMORY
+    def test_memory
+      t = RubyProf.measure_memory
+      assert_kind_of Integer, t
 
-    t = RubyProf.measure_memory
-    assert_kind_of Integer, t
+      u = RubyProf.measure_memory
+      assert u >= t, [t, u].inspect
+    end
+  end
 
-    u = RubyProf.measure_memory
-    assert u > t, [t, u].inspect
+  if RubyProf::GC_RUNS
+    def test_gc_runs
+      t = RubyProf.measure_gc_runs
+      assert_kind_of Integer, t
+
+      GC.start
+
+      u = RubyProf.measure_gc_runs
+      assert u > t, [t, u].inspect
+    end
+  end
+
+  if RubyProf::GC_TIME
+    def test_gc_time
+      t = RubyProf.measure_gc_time
+      assert_kind_of Integer, t
+
+      GC.start
+
+      u = RubyProf.measure_gc_time
+      assert u > t, [t, u].inspect
+    end
   end
 end

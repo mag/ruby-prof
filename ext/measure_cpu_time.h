@@ -24,6 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE. */
 
+#include <ruby.h>
 
 #if defined(_WIN32) || (defined(__GNUC__) && (defined(__i386__) || defined(__powerpc__) || defined(__ppc__)))
 #define MEASURE_CPU_TIME 2
@@ -142,7 +143,7 @@ RubyProf::measure_mode is set to CPU_TIME. */
 static VALUE
 prof_set_cpu_frequency(VALUE self, VALUE val)
 {
-    cpu_frequency = NUM2ULL(val);
+    cpu_frequency = NUM2LL(val);
     return val;
 }
 

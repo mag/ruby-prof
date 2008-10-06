@@ -59,10 +59,10 @@ typedef rb_event_t rb_event_flag_t;
 #define rb_sourceline() (node ? nd_line(node) : 0)
 #endif
 
+#include "version.h"
 
 /* ================  Constants  =================*/
 #define INITIAL_STACK_SIZE 8
-#define PROF_VERSION "0.6.1"
 
 
 /* ================  Measurement  =================*/
@@ -1013,7 +1013,7 @@ get_event_name(rb_event_flag_t event)
   return "raise";
     default:
   return "unknown";
-    }
+  }
 }
 
 static void
@@ -1113,8 +1113,10 @@ prof_event_hook(rb_event_flag_t event, NODE *node, VALUE self, ID mid, VALUE kla
         unsigned long thread_id = get_thread_id(thread);
         char* class_name = rb_obj_classname(klass);
         char* method_name = rb_id2name(mid);
+
         char* source_file = rb_sourcefile();
         unsigned int source_line = rb_sourceline();
+        
         char* event_name = get_event_name(event);
         
         if (last_thread_id != thread_id)
@@ -1621,7 +1623,7 @@ void
 Init_ruby_prof()
 {
     mProf = rb_define_module("RubyProf");
-    rb_define_const(mProf, "VERSION", rb_str_new2(PROF_VERSION));
+    rb_define_const(mProf, "VERSION", rb_str_new2(RUBY_PROF_VERSION));
     rb_define_module_function(mProf, "start", prof_start, 0);
     rb_define_module_function(mProf, "stop", prof_stop, 0);
     rb_define_module_function(mProf, "resume", prof_resume, 0);

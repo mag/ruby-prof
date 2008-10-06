@@ -24,6 +24,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE. */
 
+#include <ruby.h>
 
 #if defined(HAVE_RB_OS_ALLOCATED_OBJECTS)
 #define MEASURE_ALLOCATIONS 3
@@ -40,8 +41,6 @@ convert_allocations(prof_measure_t c)
     return  c; 
 }
 
-#endif
-
 /* Document-method: prof_measure_allocations
    call-seq:
      measure_allocations -> int
@@ -56,3 +55,5 @@ prof_measure_allocations(VALUE self)
     return ULONG2NUM(rb_os_allocated_objects());
 #endif
 }
+#endif
+
