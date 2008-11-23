@@ -37,17 +37,14 @@ module RubyProf
     
     def print_methods(thread_id, methods)
       # Get total time
-      toplevel = methods.sort.last
-      total_time = toplevel.total_time
+      total_time = methods.sort_by(&:total_time).last.total_time
       if total_time == 0
         total_time = 0.01
       end
       
       # Now sort methods by largest self time,
       # not total time like in other printouts
-      methods = methods.sort do |m1, m2|
-        m1.self_time <=> m2.self_time
-      end.reverse
+      methods = methods.sort_by(&:self_time).reverse
       
       @output << "Thread ID: %d\n" % thread_id
       @output << "Total: %0.6f\n" % total_time
